@@ -48,10 +48,10 @@ app.post('/register', upload.single('profilePicture'), async (req, res) => {
 
     // Step 1: Insert into `users` table
     const userInsertQuery = `
-      INSERT INTO users (name, email, password, phone, gender, role)
-      VALUES (?, ?, ?, ?, ?, 'farmer')
+      INSERT INTO users (name, id_number, email, password, phone, gender, role)
+      VALUES (?, ?, ?, ?, ?, ?, 'farmer')
     `;
-    const userValues = [full_name, email, hashedPassword, phone_no, gender];
+    const userValues = [full_name, id_no, email, hashedPassword, phone_no, gender];
 
     db.query(userInsertQuery, userValues, (err, result) => {
       if (err) {
@@ -83,6 +83,45 @@ app.post('/register', upload.single('profilePicture'), async (req, res) => {
     res.send('Something went wrong during registration');
   }
 });
+
+// Login route
+app.post('/login', async (req, res) => {
+  const { identifier, password } = req.body;
+
+  const query = 'SELECT * FROM users WHERE email = ? OR id_number = ?';
+  db.query(query, [identifier, identifier], async (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.send('Database error');
+    }
+
+    if (results.length === 0) {
+      return res.send('User not found');
+    }
+
+    const user = results[0];
+    const match = await bcrypt.compare(password, user.password);
+
+    if (!match) {
+      return res.send('Incorrect password');
+    }
+
+    // Redirect to dashboard based on role
+    switch (user.role) {
+      case 'farmer':
+        return res.sendFile(path.join(__dirname, 'views/farmer_dashboard.html'));
+      case 'admin':
+        return res.sendFile(path.join(__dirname, 'views/admin_dashboard.html'));
+      case 'extension_officer':
+        return res.sendFile(path.join(__dirname, 'views/extension_dashboard.html'));
+      case 'factory_staff':
+        return res.sendFile(path.join(__dirname, 'views/factory_dashboard.html'));
+      default:
+        return res.send('Unknown role');
+    }
+  });
+});
+
 
 // Start server
 app.listen(port, () => {

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="../public/css/farmer_style.css">
+</head>
+
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <h2>🌿 Farmer Dashboard</h2>
+            <ul>
+                <li class="active">Dashboard (home)</li>
+                <li>Request Tea Pickup / Delivery</li>
+                <li>View Delivery History</li>
+                <li>View Payment Records</li>
+                <li>Messages / Notifications</li>
+                <li>Profile</li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <header>
+                <h1>Welcome, Farmer John</h1>
+                <button id="logoutBtn">Logout</button>
+            </header>
+
+            <section class="cards">
+                <div class="card">
+                    <h3>Delivery Summary</h3>
+                    <p>Last delivery status: <strong>Successful</strong></p>
+                    <p>Total tea delivered this month: <strong>500 kg</strong></p>
+                </div>
+
+                <div class="card">
+                    <h3>Pending Payment</h3>
+                    <p>Amount: <strong>$1,500</strong></p>
+                    <p>Due date: <strong>30th November 2023</strong></p>
+                </div>
+            </section>
+
+            <section class="card wide-card">
+                <h3>Latest Notifications</h3>
+                <ul>
+                    <li>Meeting with extension officer on 25th November 2023</li>
+                    <li>New guidelines for tea quality improvement released</li>
+                    <li>Factory maintenance scheduled for 1st December 2023</li>
+                </ul>
+            </section>
+        </main>
+    </div>
+    <script>document.getElementById("logoutBtn").addEventListener("click", () => {
+            alert("You have been logged out.");
+            // Redirect or logout logic can be added here
+        });
+    </script>
+
+    <script src="../main.js"></script>
+</body>
+
+</html>

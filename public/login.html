@@ -4,8 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <link rel="stylesheet" href="./css/style.css">
+    <style>
+    body {
+      font-family: 'Times New Roman', Times, serif;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-direction: column;
+      min-height: 100vh;
+      justify-content: space-between;
+    }
+  </style>
 </head>
-<body>
-    
+<body class="register-page">
+  <div class="container">
+    <h2>Login</h2>
+    <form action="/login" method="POST">
+      <div class="form-group">
+        <label>ID Number or Email</label>
+        <input type="text" name="identifier" required>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" name="password" required>
+      </div>
+      <input type="submit" value="Login" id="submitBtn">
+    </form>
+    <p class="toggle-link">Don't have an account? <a href="register.html">Register</a></p>
+  </div>
 </body>
 </html>
