@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Factory Staff Dashboard</title>
+    <!--<link rel="stylesheet" href="/css/dashboard.css" />-->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+            background: #f8f8f8;
+        }
+
+        .dashboard-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        h1,
+        h2 {
+            color: #2b5d34;
+        }
+
+        form input,
+        form select,
+        form button {
+            margin: 10px 0;
+            padding: 8px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <h1>Welcome, Factory Staff</h1>
+
+        <section class="delivery-section">
+            <h2>Record New Delivery</h2>
+            <form id="deliveryForm">
+                <input type="number" name="farmer_id" placeholder="Farmer ID" required />
+                <input type="date" name="delivery_date" required />
+                <input type="number" step="0.01" name="quantity_kg" placeholder="Quantity (kg)" required />
+                <select name="quality_grade" required>
+                    <option value="">Select Grade</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                </select>
+                <input type="file" name="photo" accept="image/*" required />
+                <button type="submit">Submit Delivery</button>
+            </form>
+        </section>
+
+        <section class="deliveries-table">
+            <h2>All Deliveries</h2>
+            <table id="deliveriesTable">
+                <thead>
+                    <tr>
+                        <th>Delivery ID</th>
+                        <th>Farmer ID</th>
+                        <th>Date</th>
+                        <th>Quantity</th>
+                        <th>Grade</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Populated by JS -->
+                </tbody>
+            </table>
+        </section>
+    </div>
+    <script>
+        document.getElementById('deliveryForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+
+            const res = await fetch('/factory/deliveries', {
+                method: 'POST',
+                body: formData,
+            });
+
+            const msg = await res.text();
+            alert(msg);
+            this.reset();
+            loadDeliveries();
+        });
+
+        async function loadDeliveries() {
+            const res = await fetch('/factory/deliveries');
+            const deliveries = await res.json();
+
+            const tbody = document.querySelector('#deliveriesTable tbody');
+            tbody.innerHTML = '';
+
+            deliveries.forEach(delivery => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+      <td>${delivery.delivery_id}</td>
+      <td>${delivery.farmer_id}</td>
+      <td>${delivery.delivery_date}</td>
+      <td>${delivery.quantity_kg}</td>
+      <td>${delivery.quality_grade}</td>
+      <td>${delivery.status}</td>
+    `;
+                tbody.appendChild(row);
+            });
+        }
+
+        loadDeliveries();
+
+    </script>
+</body>
+
+</html>

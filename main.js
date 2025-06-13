@@ -97,6 +97,7 @@ app.post('/login', async (req, res) => {
 
     if (results.length === 0) {
       return res.send('User not found');
+      //return res.json({ success: false, message: 'User not found' });
     }
 
     const user = results[0];
@@ -104,6 +105,7 @@ app.post('/login', async (req, res) => {
 
     if (!match) {
       return res.send('Incorrect password');
+      //return res.json({ success: false, message: 'Incorrect password' });
     }
 
     // Redirect to dashboard based on role
