@@ -123,6 +123,9 @@ app.post('/login', async (req, res) => {
     }
   });
 });
+app.get('/manage_users.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views/manage_users.html'));
+})
 
 
 // Start server
