@@ -18,7 +18,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'views/index.html'));
+  res.sendFile(path.join(__dirname, 'views/index.html'));
 });
 
 // DB connection
@@ -125,7 +125,30 @@ app.post('/login', async (req, res) => {
 });
 app.get('/manage_users.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'views/manage_users.html'));
-})
+});
+
+// GET all users
+app.get('/admin/users', (req, res) => {
+  db.query('SELECT user_id, name, email, phone, role FROM users', (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ success: false, message: 'Database error' });
+    }
+    res.json(results);
+  });
+});
+
+// DELETE user
+app.delete('/admin/users/:id', (req, res) => {
+  const userId = req.params.id;
+  db.query('DELETE FROM users WHERE user_id = ?', [userId], (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ success: false });
+    }
+    res.json({ success: true });
+  });
+});
 
 
 // Start server
