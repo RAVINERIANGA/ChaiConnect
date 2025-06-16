@@ -4,6 +4,7 @@ const bcrypt = require('bcrypt');
 const multer = require('multer');
 const path = require('path');
 const crypto = require('crypto');
+const session = require('express-session');
 
 const app = express();
 const port = 3000;
@@ -11,6 +12,12 @@ const port = 3000;
 app.use(express.static('public'));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+app.use(session({
+  secret: 'chaiconnect-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  cookie:{secure: false}
+}));
 
 
 const storage = multer.diskStorage({
@@ -110,6 +117,15 @@ app.post('/login', async (req, res) => {
       //return res.json({ success: false, message: 'Incorrect password' });
     }
 
+    //store UserID in session
+    req.session.userId = user.user_id;
+    req.session.role = user.role;
+
+     // ✅ Check if must change password
+    if (user.must_change_password) {
+      return res.sendFile(path.join(__dirname, 'public/change_password.html'));
+    }
+
     // Redirect to dashboard based on role
     switch (user.role) {
       case 'farmer':
@@ -119,7 +135,7 @@ app.post('/login', async (req, res) => {
       case 'extension_officer':
         return res.sendFile(path.join(__dirname, 'public/extension_dashboard.html'));
       case 'factory_staff':
-        return res.sendFile(path.join(__dirname, 'public/factory_dashboard.html'));
+        return res.sendFile(path.join(__dirname, 'public/factory_staff_dashboard.html'));
       default:
         return res.send('Unknown role');
     }
@@ -229,6 +245,36 @@ app.post('/admin/assign-role', (req, res) => {
         res.status(400).json({ success: false, message: 'Invalid role' });
       }
     });
+  });
+});
+
+//change password
+app.post('/change-password', (req, res) => {
+  const userId = req.session.userId; 
+  const { newPassword } = req.body;
+
+  if (!userId) {
+    return res.status(401).json({ success: false, message: 'Not logged in' });
+  }
+
+  bcrypt.hash(newPassword, 10, (err, hashedPassword) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ success: false, message: 'Error hashing password' });
+    }
+
+    db.query(
+      'UPDATE users SET password = ?, must_change_password = false WHERE user_id = ?',
+      [hashedPassword, userId],
+      (err) => {
+        if (err) {
+          console.error(err);
+          return res.status(500).json({ success: false, message: 'Database error' });
+        }
+
+        res.json({ success: true });
+      }
+    );
   });
 });
 
