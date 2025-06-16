@@ -9,6 +9,7 @@ const port = 3000;
 
 app.use(express.static('public'));
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
 
 const storage = multer.diskStorage({
