@@ -19,7 +19,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'views/index.html'));
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // DB connection
@@ -112,20 +112,20 @@ app.post('/login', async (req, res) => {
     // Redirect to dashboard based on role
     switch (user.role) {
       case 'farmer':
-        return res.sendFile(path.join(__dirname, 'views/farmer_dashboard.html'));
+        return res.sendFile(path.join(__dirname, 'public/farmer_dashboard.html'));
       case 'admin':
-        return res.sendFile(path.join(__dirname, 'views/admin_dashboard.html'));
+        return res.sendFile(path.join(__dirname, 'public/admin_dashboard.html'));
       case 'extension_officer':
-        return res.sendFile(path.join(__dirname, 'views/extension_dashboard.html'));
+        return res.sendFile(path.join(__dirname, 'public/extension_dashboard.html'));
       case 'factory_staff':
-        return res.sendFile(path.join(__dirname, 'views/factory_dashboard.html'));
+        return res.sendFile(path.join(__dirname, 'public/factory_dashboard.html'));
       default:
         return res.send('Unknown role');
     }
   });
 });
 app.get('/manage_users.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'views/manage_users.html'));
+  res.sendFile(path.join(__dirname, 'public/manage_users.html'));
 });
 
 // GET all users

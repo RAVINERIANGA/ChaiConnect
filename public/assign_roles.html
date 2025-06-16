@@ -1,117 +1,100 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <title>Assign Roles - Admin</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 40px;
-            background: #f7f7f7;
-        }
-
-        h1 {
-            color: #333;
-        }
-
-        form {
-            background: #fff;
-            padding: 20px;
-            border: 1px solid #ccc;
-            max-width: 500px;
-            margin: auto;
-        }
-
-        label {
-            display: block;
-            margin-top: 10px;
-        }
-
-        input,
-        select {
-            width: 100%;
-            padding: 8px;
-            margin-top: 5px;
-        }
-
-        button {
-            margin-top: 15px;
-            padding: 10px 15px;
-            background: #4CAF50;
-            color: #fff;
-            border: none;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background: #45a049;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Assign Role - Admin</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f7f7f7; padding: 40px; }
+    form { background: #fff; padding: 20px; border: 1px solid #ccc; max-width: 500px; margin: auto; }
+    label { display: block; margin-top: 10px; }
+    input, select { width: 100%; padding: 8px; margin-top: 5px; }
+    .hidden { display: none; }
+    button { margin-top: 15px; padding: 10px 15px; background: #4CAF50; color: #fff; border: none; cursor: pointer; }
+    button:hover { background: #45a049; }
+  </style>
 </head>
-
 <body>
 
-    <h1>Assign Role (Factory Staff / Extension Officer)</h1>
+  <h1>Assign Role (Factory Staff / Extension Officer)</h1>
 
-    <form id="assignRoleForm">
-        <label>Full Name</label>
-        <input type="text" id="name" required>
+  <form id="assignRoleForm">
+    <label>Full Name</label>
+    <input type="text" id="name" required>
 
-        <label>ID Number</label>
-        <input type="text" id="id_number" required>
+    <label>ID Number</label>
+    <input type="text" id="id_number" required>
 
-        <label>Email</label>
-        <input type="email" id="email" required>
+    <label>Email</label>
+    <input type="email" id="email" required>
 
-        <label>Phone</label>
-        <input type="text" id="phone" required>
+    <label>Phone</label>
+    <input type="text" id="phone" required>
 
-        <label>Gender</label>
-        <select id="gender" required>
-            <option value="">Select</option>
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-        </select>
+    <label>Gender</label>
+    <select id="gender" required>
+      <option value="">Select</option>
+      <option value="male">Male</option>
+      <option value="female">Female</option>
+    </select>
 
-        <label>Role</label>
-        <select id="role" required>
-            <option value="">Select</option>
-            <option value="factory_staff">Factory Staff</option>
-            <option value="extension_officer">Extension Officer</option>
-        </select>
+    <label>Role</label>
+    <select id="role" required>
+      <option value="">Select</option>
+      <option value="factory_staff">Factory Staff</option>
+      <option value="extension_officer">Extension Officer</option>
+    </select>
 
-        <button type="submit">Create User</button>
-    </form>
+    <div id="factoryFields" class="hidden">
+      <label>Position</label>
+      <input type="text" id="position">
+    </div>
 
-    <script>
-        document.getElementById('assignRoleForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
+    <div id="extensionFields" class="hidden">
+      <label>Region</label>
+      <input type="text" id="region">
 
-            const data = {
-                name: document.getElementById('name').value,
-                id_number: document.getElementById('id_number').value,
-                email: document.getElementById('email').value,
-                phone: document.getElementById('phone').value,
-                gender: document.getElementById('gender').value,
-                role: document.getElementById('role').value
-            };
+      <label>Specialization</label>
+      <input type="text" id="specialization">
+    </div>
 
-            const res = await fetch('/admin/assign-role', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
+    <button type="submit">Create User</button>
+  </form>
 
-            const result = await res.json();
-            if (result.success) {
-                alert(`User created. Temporary password: ${result.tempPassword}`);
-            } else {
-                alert(result.message || 'Error creating user');
-            }
-        });
-    </script>
+  <script>
+    document.getElementById('role').addEventListener('change', function() {
+      const role = this.value;
+      document.getElementById('factoryFields').classList.toggle('hidden', role !== 'factory_staff');
+      document.getElementById('extensionFields').classList.toggle('hidden', role !== 'extension_officer');
+    });
+
+    document.getElementById('assignRoleForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const data = {
+        name: document.getElementById('name').value,
+        id_number: document.getElementById('id_number').value,
+        email: document.getElementById('email').value,
+        phone: document.getElementById('phone').value,
+        gender: document.getElementById('gender').value,
+        role: document.getElementById('role').value,
+        position: document.getElementById('position').value,
+        region: document.getElementById('region').value,
+        specialization: document.getElementById('specialization').value
+      };
+
+      const res = await fetch('/admin/assign-role', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      const result = await res.json();
+      if (result.success) {
+        alert(`User created. Temporary password: ${result.tempPassword}`);
+      } else {
+        alert(result.message || 'Error creating user');
+      }
+    });
+  </script>
 
 </body>
-
 </html>
