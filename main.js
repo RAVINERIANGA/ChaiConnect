@@ -3,6 +3,7 @@ const mysql = require('mysql');
 const bcrypt = require('bcrypt');
 const multer = require('multer');
 const path = require('path');
+const crypto = require('crypto');
 
 const app = express();
 const port = 3000;
@@ -178,6 +179,56 @@ app.delete('/admin/users/:id', (req, res) => {
       return res.status(500).json({ success: false });
     }
     res.json({ success: true });
+  });
+});
+
+//Assign role page
+app.post('/admin/assign-role', (req, res) => {
+  const { name, id_number, email, phone, gender, role, position, region, specialization } = req.body;
+
+  if (!name || !id_number || !email || !phone || !gender || !role) {
+    return res.status(400).json({ success: false, message: 'All fields required' });
+  }
+
+  const tempPassword = crypto.randomBytes(4).toString('hex');
+  bcrypt.hash(tempPassword, 10, (err, hashedPassword) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ success: false, message: 'Error hashing password' });
+    }
+
+    const userQuery = `
+      INSERT INTO users (name, id_number, email, password, phone, gender, role, must_change_password)
+      VALUES (?, ?, ?, ?, ?, ?, ?, true)
+    `;
+    db.query(userQuery, [name, id_number, email, hashedPassword, phone, gender, role], (err, result) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ success: false, message: 'Database error inserting user' });
+      }
+
+      const userId = result.insertId;
+
+      if (role === 'factory_staff') {
+        db.query('INSERT INTO factory_staff (user_id, position) VALUES (?, ?)', [userId, position || ''], (err2) => {
+          if (err2) {
+            console.error(err2);
+            return res.status(500).json({ success: false, message: 'Error inserting factory staff' });
+          }
+          res.json({ success: true, tempPassword });
+        });
+      } else if (role === 'extension_officer') {
+        db.query('INSERT INTO extension_officers (user_id, region, specialization) VALUES (?, ?, ?)', [userId, region || '', specialization || ''], (err3) => {
+          if (err3) {
+            console.error(err3);
+            return res.status(500).json({ success: false, message: 'Error inserting extension officer' });
+          }
+          res.json({ success: true, tempPassword });
+        });
+      } else {
+        res.status(400).json({ success: false, message: 'Invalid role' });
+      }
+    });
   });
 });
 
