@@ -50,8 +50,8 @@ app.post('/register', upload.single('profilePicture'), async (req, res) => {
 
     // Step 1: Insert into `users` table
     const userInsertQuery = `
-      INSERT INTO users (name, id_number, email, password, phone, gender, role)
-      VALUES (?, ?, ?, ?, ?, ?, 'farmer')
+      INSERT INTO users (name, id_number, email, password, phone, gender, role, must_change_password)
+      VALUES (?, ?, ?, ?, ?, ?, 'farmer', false)
     `;
     const userValues = [full_name, id_no, email, hashedPassword, phone_no, gender];
 
