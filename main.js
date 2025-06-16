@@ -138,6 +138,36 @@ app.get('/admin/users', (req, res) => {
   });
 });
 
+//UPDATE user
+app.put('/admin/users/:id', (req, res) => {
+  const userId = req.params.id;
+  const { name, email, phone, role } = req.body;
+
+  // Simple validation (you can add stricter checks if you'd like)
+  if (!name || !email || !phone || !role) {
+    return res.status(400).json({ success: false, message: 'Missing fields' });
+  }
+
+  const query = `
+    UPDATE users
+    SET name = ?, email = ?, phone = ?, role = ?
+    WHERE user_id = ?
+  `;
+
+  db.query(query, [name, email, phone, role, userId], (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ success: false, message: 'Database error' });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    res.json({ success: true, message: 'User updated successfully' });
+  });
+});
+
 // DELETE user
 app.delete('/admin/users/:id', (req, res) => {
   const userId = req.params.id;
