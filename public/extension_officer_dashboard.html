@@ -4,67 +4,54 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Extension Officer Dashboard | ChaiConnect</title>
-  <link rel="stylesheet" href="styles.css" />
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f1f1f1;
-      margin: 0;
-      padding: 0;
-    }
-    header {
-      background-color: #2e7d32;
-      color: #fff;
-      padding: 1rem;
-      text-align: center;
-    }
-    nav {
-      background-color: #388e3c;
-      padding: 0.5rem;
-    }
-    nav a {
-      color: white;
-      text-decoration: none;
-      margin-right: 1rem;
-    }
-    nav a:hover {
-      text-decoration: underline;
-    }
-    main {
-      padding: 1rem;
-    }
-    .card {
-      background: #fff;
-      padding: 1rem;
-      margin: 1rem 0;
-      border-radius: 4px;
-      box-shadow: 0 0 5px rgba(0,0,0,0.1);
-    }
-  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/extension_style.css" />
 </head>
 <body>
-  <header>
-    <h1>ChaiConnect Extension Officer Dashboard</h1>
-  </header>
-  <nav>
-    <a href="/view-farmers">View Farmers</a>
-    <a href="/training-records">Manage Training Records</a>
-    <a href="/feedback">View Feedback</a>
-    <a href="/logout">Logout</a>
-  </nav>
-  <main>
-    <section class="card">
-      <h2>Welcome, Extension Officer</h2>
-      <p>Use this dashboard to manage farmers, training, and provide support.</p>
-    </section>
-    <section class="card">
-      <h3>Quick Actions</h3>
-      <ul>
-        <li><a href="/add-training">Add New Training Record</a></li>
-        <li><a href="/feedback">Review Farmer Feedback</a></li>
-        <li><a href="/support-requests">Respond to Support Requests</a></li>
-      </ul>
-    </section>
-  </main>
+  <div class="dashboard-container">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2>ChaiConnect</h2>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/extension_officer_dashboard" class="active">Dashboard</a>
+        <a href="/view-farmers">View Farmers</a>
+        <a href="/training-records">Training Records</a>
+        <a href="/feedback">Farmer Feedback</a>
+        <a href="/support-requests">Support Requests</a>
+        <a href="/logout">Logout</a>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+      <header class="main-header">
+        <h1>Welcome, Extension Officer</h1>
+        <p>Manage farmer support, training, and feedback efficiently.</p>
+      </header>
+
+      <section class="cards">
+        <div class="card">
+          <h3>Farmers</h3>
+          <p>View and assist registered farmers in your region.</p>
+          <a href="/view-farmers" class="btn">Go</a>
+        </div>
+        <div class="card">
+          <h3>Training Records</h3>
+          <p>Add or review training activities.</p>
+          <a href="/training-records" class="btn">Go</a>
+        </div>
+        <div class="card">
+          <h3>Feedback</h3>
+          <p>Check feedback provided by farmers and respond.</p>
+          <a href="/feedback" class="btn">Go</a>
+        </div>
+        <div class="card">
+          <h3>Support Requests</h3>
+          <p>View and manage support requests from farmers.</p>
+          <a href="/support-requests" class="btn">Go</a>
+        </div>
+      </section>
+    </main>
+  </div>
 </body>
 </html>

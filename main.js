@@ -133,7 +133,7 @@ app.post('/login', async (req, res) => {
       case 'admin':
         return res.sendFile(path.join(__dirname, 'public/admin_dashboard.html'));
       case 'extension_officer':
-        return res.sendFile(path.join(__dirname, 'public/extension_dashboard.html'));
+        return res.sendFile(path.join(__dirname, 'public/extension_officer_dashboard.html'));
       case 'factory_staff':
         return res.sendFile(path.join(__dirname, 'public/factory_staff_dashboard.html'));
       default:
@@ -271,8 +271,29 @@ app.post('/change-password', (req, res) => {
           console.error(err);
           return res.status(500).json({ success: false, message: 'Database error' });
         }
+        //Redirect to the correct dashboard
+        const role = req.session.role;
+        let dashboardPath = '';
 
-        res.json({ success: true });
+        switch (role) {
+          case 'farmer':
+            dashboardPath = '/farmer_dashboard';
+            break;
+          case 'admin':
+            dashboardPath = '/admin_dashboard';
+            break;
+          case 'extension_officer':
+            dashboardPath = '/extension_dashboard';
+            break;
+          case 'factory_staff':
+            dashboardPath = '/factory_staff_dashboard';
+            break;
+          default:
+            dashboardPath = '/';
+        }
+
+
+        res.redirect(dashboardPath);
       }
     );
   });
