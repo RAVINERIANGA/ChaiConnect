@@ -1,11 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contact Us | ChaiConnect</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="contact_styles.css" />
 </head>
 <body>
-    <h1>Not Yet Done</h1>
+  <div class="contact-container">
+    <header class="contact-header">
+      <h1>Contact <span>ChaiConnect</span></h1>
+      <p>We're here to support farmers, factories, and officers. Reach out to us anytime!</p>
+    </header>
+
+    <main class="contact-content">
+      <form action="/contact-submit" method="POST" class="contact-form">
+        <div class="form-group">
+          <label for="name">Full Name</label>
+          <input type="text" name="name" id="name" required placeholder="Your name" />
+        </div>
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input type="email" name="email" id="email" required placeholder="you@example.com" />
+        </div>
+        <div class="form-group">
+          <label for="subject">Subject</label>
+          <input type="text" name="subject" id="subject" required placeholder="Subject of your message" />
+        </div>
+        <div class="form-group">
+          <label for="message">Message</label>
+          <textarea name="message" id="message" rows="5" required placeholder="Write your message here..."></textarea>
+        </div>
+        <button type="submit">Send Message</button>
+      </form>
+
+      <aside class="contact-info">
+        <h2>Our Contacts</h2>
+        <p><strong>Email:</strong> support@chaiconnect.co.ke</p>
+        <p><strong>Phone:</strong> +254 712 345 678</p>
+        <p><strong>Address:</strong> ChaiConnect HQ, Nairobi, Kenya</p>
+      </aside>
+    </main>
+  </div>
 </body>
 </html>
