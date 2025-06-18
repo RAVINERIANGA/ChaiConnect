@@ -16,7 +16,7 @@ app.use(session({
   secret: 'chaiconnect-secret-key',
   resave: false,
   saveUninitialized: false,
-  cookie:{secure: false}
+  cookie: { secure: false }
 }));
 
 
@@ -121,7 +121,7 @@ app.post('/login', async (req, res) => {
     req.session.userId = user.user_id;
     req.session.role = user.role;
 
-     // ✅ Check if must change password
+    // ✅ Check if must change password
     if (user.must_change_password) {
       return res.sendFile(path.join(__dirname, 'public/change_password.html'));
     }
@@ -161,7 +161,7 @@ app.put('/admin/users/:id', (req, res) => {
   const userId = req.params.id;
   const { name, email, phone, role } = req.body;
 
-  // Simple validation (you can add stricter checks if you'd like)
+
   if (!name || !email || !phone || !role) {
     return res.status(400).json({ success: false, message: 'Missing fields' });
   }
@@ -250,7 +250,7 @@ app.post('/admin/assign-role', (req, res) => {
 
 //change password
 app.post('/change-password', (req, res) => {
-  const userId = req.session.userId; 
+  const userId = req.session.userId;
   const { newPassword } = req.body;
 
   if (!userId) {
@@ -296,6 +296,46 @@ app.post('/change-password', (req, res) => {
         res.redirect(dashboardPath);
       }
     );
+  });
+});
+
+// Dashboard stats API route
+app.get('/api/dashboard-stats', (req, res) => {
+  const stats = {
+    totalFarmers: 0,
+    totalFactoryStaff: 0,
+    totalExtensionOfficers: 0,
+    teaDeliveredToday: 0
+  };
+
+  const farmerQuery = `SELECT COUNT(*) AS count FROM users WHERE role = 'farmer'`;
+  const staffQuery = `SELECT COUNT(*) AS count FROM users WHERE role = 'factory_staff'`;
+  const officerQuery = `SELECT COUNT(*) AS count FROM users WHERE role = 'extension_officer'`;
+  const teaQuery = `SELECT IFNULL(SUM(quantity_kg), 0) AS total FROM deliveries WHERE delivery_date = CURDATE()`;
+
+  db.query(farmerQuery, (err, farmerResult) => {
+    if (err) return res.status(500).json({ error: 'DB error (farmers)' });
+
+    stats.totalFarmers = farmerResult[0].count;
+
+    db.query(staffQuery, (err2, staffResult) => {
+      if (err2) return res.status(500).json({ error: 'DB error (staff)' });
+
+      stats.totalFactoryStaff = staffResult[0].count;
+
+      db.query(officerQuery, (err3, officerResult) => {
+        if (err3) return res.status(500).json({ error: 'DB error (officers)' });
+
+        stats.totalExtensionOfficers = officerResult[0].count;
+
+        db.query(teaQuery, (err4, teaResult) => {
+          if (err4) return res.status(500).json({ error: 'DB error (tea)' });
+
+          stats.teaDeliveredToday = teaResult[0].total;
+          res.json(stats);
+        });
+      });
+    });
   });
 });
 
