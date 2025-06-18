@@ -25,8 +25,8 @@ async function addAdmin() {
   const hashedPassword = await bcrypt.hash(password, 10);
 
   db.query(
-    'INSERT INTO users (name, id_number, email, password, phone, gender, role) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    [name, id_number, email, hashedPassword, phone, gender, 'admin'],
+    'INSERT INTO users (name, id_number, email, password, phone, gender, role, must_change_password) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    [name, id_number, email, hashedPassword, phone, gender, 'admin', false],
     (err, result) => {
       if (err) throw err;
       const userId = result.insertId;
