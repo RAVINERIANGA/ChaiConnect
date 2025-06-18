@@ -4,128 +4,122 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Factory Staff Dashboard</title>
-    <!--<link rel="stylesheet" href="/css/dashboard.css" />-->
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 30px;
-            background: #f8f8f8;
-        }
-
-        .dashboard-container {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-        }
-
-        h1,
-        h2 {
-            color: #2b5d34;
-        }
-
-        form input,
-        form select,
-        form button {
-            margin: 10px 0;
-            padding: 8px;
-            width: 100%;
-            max-width: 400px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-
-        th,
-        td {
-            padding: 10px;
-            border: 1px solid #ccc;
-        }
-    </style>
+    <title>Factory Staff Dashboard | ChaiConnect</title>
+    <link rel="stylesheet" href="/css/factory_style.css" />
 </head>
 
 <body>
-    <div class="dashboard-container">
-        <h1>Welcome, Factory Staff</h1>
+    <div class="sidebar">
+        <h2>ChaiConnect</h2>
+        <ul>
+            <li><a href="#overview" class="active">Dashboard</a></li>
+            <li><a href="#record-delivery">Record Delivery</a></li>
+            <li><a href="#view-deliveries">View All Deliveries</a></li>
+            <li><a href="#logout" onclick="logout()">Logout</a></li>
+        </ul>
+    </div>
 
-        <section class="delivery-section">
-            <h2>Record New Delivery</h2>
-            <form id="deliveryForm">
-                <input type="number" name="farmer_id" placeholder="Farmer ID" required />
-                <input type="date" name="delivery_date" required />
-                <input type="number" step="0.01" name="quantity_kg" placeholder="Quantity (kg)" required />
-                <select name="quality_grade" required>
-                    <option value="">Select Grade</option>
-                    <option value="A">A</option>
-                    <option value="B">B</option>
-                    <option value="C">C</option>
-                </select>
-                <input type="file" name="photo" accept="image/*" required />
-                <button type="submit">Submit Delivery</button>
-            </form>
+    <div class="main-content">
+        <section id="overview">
+            <h1>Welcome, Factory Staff</h1>
+            <p>Monitor and record deliveries from farmers to your tea processing facility.</p>
         </section>
 
-        <section class="deliveries-table">
-            <h2>All Deliveries</h2>
+        <section id="record-delivery">
+            <h2>Record Farmer Delivery</h2>
+            <form id="deliveryForm">
+                <label for="farmer_id">Farmer ID:</label>
+                <input type="text" id="farmer_id" name="farmer_id" required>
+
+                <label for="quantity">Quantity (kg):</label>
+                <input type="number" id="quantity" name="quantity" required>
+
+                <label for="quality">Quality Grade:</label>
+                <select id="quality" name="quality">
+                    <option value="A">Grade A</option>
+                    <option value="B">Grade B</option>
+                    <option value="C">Grade C</option>
+                </select>
+
+                <button type="submit">Submit Delivery</button>
+            </form>
+            <div id="deliveryMessage"></div>
+        </section>
+
+        <section id="view-deliveries">
+            <h2>All Recorded Deliveries</h2>
             <table id="deliveriesTable">
                 <thead>
                     <tr>
                         <th>Delivery ID</th>
                         <th>Farmer ID</th>
+                        <th>Quantity (kg)</th>
+                        <th>Quality</th>
                         <th>Date</th>
-                        <th>Quantity</th>
-                        <th>Grade</th>
-                        <th>Status</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <!-- Populated by JS -->
-                </tbody>
+                <tbody></tbody>
             </table>
         </section>
     </div>
+
     <script>
-        document.getElementById('deliveryForm').addEventListener('submit', async function (e) {
-            e.preventDefault();
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('deliveryForm');
+            const tableBody = document.querySelector('#deliveriesTable tbody');
+            const message = document.getElementById('deliveryMessage');
 
-            const formData = new FormData(this);
+            // Submit delivery
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
 
-            const res = await fetch('/factory/deliveries', {
-                method: 'POST',
-                body: formData,
+                const data = {
+                    farmer_id: form.farmer_id.value,
+                    quantity: form.quantity.value,
+                    quality: form.quality.value
+                };
+
+                const res = await fetch('/deliveries', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await res.json();
+                if (result.success) {
+                    message.textContent = 'Delivery recorded successfully!';
+                    form.reset();
+                    loadDeliveries();
+                } else {
+                    message.textContent = 'Error recording delivery.';
+                }
             });
 
-            const msg = await res.text();
-            alert(msg);
-            this.reset();
+            // Load existing deliveries
+            async function loadDeliveries() {
+                const res = await fetch('/deliveries');
+                const deliveries = await res.json();
+
+                tableBody.innerHTML = '';
+                deliveries.forEach(d => {
+                    const row = `<tr>
+        <td>${d.delivery_id}</td>
+        <td>${d.farmer_id}</td>
+        <td>${d.quantity}</td>
+        <td>${d.quality}</td>
+        <td>${new Date(d.created_at).toLocaleString()}</td>
+      </tr>`;
+                    tableBody.innerHTML += row;
+                });
+            }
+
             loadDeliveries();
         });
 
-        async function loadDeliveries() {
-            const res = await fetch('/factory/deliveries');
-            const deliveries = await res.json();
-
-            const tbody = document.querySelector('#deliveriesTable tbody');
-            tbody.innerHTML = '';
-
-            deliveries.forEach(delivery => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-      <td>${delivery.delivery_id}</td>
-      <td>${delivery.farmer_id}</td>
-      <td>${delivery.delivery_date}</td>
-      <td>${delivery.quantity_kg}</td>
-      <td>${delivery.quality_grade}</td>
-      <td>${delivery.status}</td>
-    `;
-                tbody.appendChild(row);
-            });
+        function logout() {
+            fetch('/logout', { method: 'POST' })
+                .then(() => (window.location.href = '/'));
         }
-
-        loadDeliveries();
 
     </script>
 </body>
