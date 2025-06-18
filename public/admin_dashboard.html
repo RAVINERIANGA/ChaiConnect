@@ -6,13 +6,42 @@
   <link rel="stylesheet" href="/css/admin_style.css">
 </head>
 <body>
-  <header>
-    <h1>Admin Dashboard</h1>
-  </header>
+  <div class="sidebar">
+    <h2>ChaiConnect</h2>
+    <h3>Admin Dashboard</h3>
+    <ul>
+      <li><a href="#" class="active">Dashboard</a></li>
+      <li><a href="assign_roles.html">Create New Users</a></li>
+      <li><a href="manage_users.html">View All System Users</a></li>
+      <li><a href="#system-logs">View System Logs</a></li>
+      <li><a href="#logout" onclick="logout()">Logout</a></li>
+    </ul>
+  </div>
 
-  <div class="dashboard">
-    <h2>Welcome, Admin</h2>
-    <div class="card-container">
+  <div class="main-content">
+    <section id="overview">
+      <h1>Welcome, Admin</h1>
+      <p>Oversee the operations of ChaiConnect.</p>
+    </section>
+
+    <!-- Stat Summary Cards -->
+    <div class="dashboard-cards">
+      <div class="stat-card">
+        <p>Total Farmers</p>
+        <h2>1,250</h2>
+      </div>
+      <div class="stat-card">
+        <p>Total Staff</p>
+        <h2>150</h2>
+      </div>
+      <div class="stat-card">
+        <p>Tea Delivered Today</p>
+        <h2>2,500 kg</h2>
+      </div>
+    </div>
+
+    <!-- Feature Actions -->
+    <div class="card-actions">
       <div class="card">
         <h3>Manage Users</h3>
         <p>View, add, or remove farmers, factory staff and extension officers.</p>
@@ -32,7 +61,6 @@
       </div>
     </div>
 
-    <button class="logout-btn" onclick="location.href='login.html'">Logout</button>
   </div>
 </body>
 </html>
