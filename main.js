@@ -120,6 +120,7 @@ app.post('/login', async (req, res) => {
     //store UserID in session
     req.session.userId = user.user_id;
     req.session.role = user.role;
+    req.session.name = user.name;
 
     // ✅ Check if must change password
     if (user.must_change_password) {
@@ -336,6 +337,18 @@ app.get('/api/dashboard-stats', (req, res) => {
         });
       });
     });
+  });
+});
+
+//Read Admin name
+app.get('/api/me', (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: 'Not logged in' });
+  }
+
+  res.json({
+    name: req.session.name,
+    role: req.session.role
   });
 });
 

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Policy Documents</title>
+</head>
+
+<body>
+    <form action="/admin/upload-policy" method="POST" enctype="multipart/form-data">
+        <input type="text" name="title" placeholder="Document Title" required><br>
+        <input type="file" name="policyFile" required><br>
+        <input type="hidden" name="uploaded_by" value="<%= userId %>">
+        <button type="submit">Upload Policy</button>
+    </form>
+</body>
+
+</html>

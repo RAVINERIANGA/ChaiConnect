@@ -22,7 +22,7 @@
 
   <div class="main-content">
     <section id="overview">
-      <h1>Welcome, Admin</h1>
+      <h1 id="welcomeMessage">Welcome, Admin</h1>
       <p>Oversee the operations of ChaiConnect.</p>
     </section>
 
@@ -62,14 +62,32 @@
       </div>
 
       <div class="card">
-        <h3>View System Logs</h3>
-        <p>Monitor activity across the platform for transparency and auditing.</p>
-        <button onclick="location.href='system_logs.html'">View</button>
+        <h3>Upload Policy Documents</h3>
+        <p>Create and upload documents for the system and upload for the users to view.</p>
+        <button onclick="location.href='/policies.html'">View</button>
       </div>
     </div>
 
   </div>
 </body>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    fetch('/api/me')
+      .then(res => {
+        if (!res.ok) throw new Error('Not authenticated');
+        return res.json();
+      })
+      .then(data => {
+        const name = data.name || 'Admin';
+        document.getElementById('welcomeMessage').textContent = `Welcome, ${name}`;
+      })
+      .catch(err => {
+        console.error('Error fetching user info:', err);
+        document.getElementById('welcomeMessage').textContent = 'Welcome, Admin';
+      });
+  });
+</script>
+
 <script>
   document.addEventListener("DOMContentLoaded", () => {
     fetch('/api/dashboard-stats')
