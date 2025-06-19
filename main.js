@@ -385,6 +385,30 @@ app.get('/admin/payment-rates', (req, res) => {
   });
 });
 
+// Update complaint status
+app.put('/admin/complaints/:id', (req, res) => {
+  const complaintId = req.params.id;
+  const { status } = req.body;
+
+  const allowed = ['open', 'in_progress', 'resolved'];
+  if (!allowed.includes(status)) {
+    return res.status(400).json({ success: false, message: 'Invalid status' });
+  }
+
+  db.query(
+    'UPDATE complaints SET status = ? WHERE complaint_id = ?',
+    [status, complaintId],
+    (err, result) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ success: false });
+      }
+      res.json({ success: true });
+    }
+  );
+});
+
+
 
 // Start server
 app.listen(port, () => {

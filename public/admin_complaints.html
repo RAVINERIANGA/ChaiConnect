@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Review Complaints - ChaiConnect Admin</title>
+  <link rel="stylesheet" href="/css/admin_style.css">
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      background-color: #f9f9f9;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: auto;
+      background-color: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    th, td {
+      padding: 14px;
+      text-align: left;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    th {
+      background-color: #f1f1f1;
+      color: #444;
+    }
+
+    tr:hover {
+      background-color: #f9f9f9;
+    }
+
+    .badge {
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.85em;
+      font-weight: 600;
+      text-transform: capitalize;
+    }
+
+    .open {
+      background-color: #fce4ec;
+      color: #d81b60;
+    }
+
+    .in_progress {
+      background-color: #fff3e0;
+      color: #fb8c00;
+    }
+
+    .resolved {
+      background-color: #e8f5e9;
+      color: #43a047;
+    }
+
+    select {
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+      background-color: #fff;
+    }
+
+    button.back-btn {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: #00796b;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      float: right;
+    }
+
+    button.back-btn:hover {
+      background-color: #004d40;
+    }
+
+    .status-select {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>📝 Farmer Complaints Review</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Farmer Name</th>
+          <th>Complaint</th>
+          <th>Date</th>
+          <th>Status</th>
+          <th>Update</th>
+        </tr>
+      </thead>
+      <tbody id="complaintsTableBody">
+        <!-- Complaints will load here -->
+      </tbody>
+    </table>
+    <button class="back-btn" onclick="window.location.href='/admin_dashboard.html'">← Back to Dashboard</button>
+  </div>
+
+  <script>
+    async function loadComplaints() {
+      const res = await fetch('/admin/complaints');
+      const complaints = await res.json();
+      const tbody = document.getElementById('complaintsTableBody');
+      tbody.innerHTML = '';
+
+      complaints.forEach(complaint => {
+        const row = document.createElement('tr');
+
+        const badgeClass = complaint.status.replace(' ', '_');
+        row.innerHTML = `
+          <td>${complaint.name}</td>
+          <td>${complaint.complaint_text}</td>
+          <td>${new Date(complaint.complaint_date).toLocaleDateString()}</td>
+          <td><span class="badge ${badgeClass}">${complaint.status}</span></td>
+          <td>
+            ${complaint.status !== 'resolved' ? `
+              <div class="status-select">
+                <select onchange="updateStatus(${complaint.complaint_id}, this.value)">
+                  <option value="">Change status</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="resolved">Resolved</option>
+                </select>
+              </div>
+            ` : '<em>N/A</em>'}
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    async function updateStatus(id, status) {
+      const res = await fetch(`/admin/complaints/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        alert('Status updated successfully');
+        loadComplaints();
+      } else {
+        alert('Failed to update status');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadComplaints);
+  </script>
+</body>
+</html>
