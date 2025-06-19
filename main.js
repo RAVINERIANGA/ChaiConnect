@@ -352,6 +352,39 @@ app.get('/api/me', (req, res) => {
   });
 });
 
+// Set payment rate - Admin
+// Save new rate
+app.post('/admin/payment-rate', (req, res) => {
+  const { quality_grade, price_per_kg } = req.body;
+  const query = `
+    INSERT INTO payment_rates (quality_grade, price_per_kg)
+    VALUES (?, ?)
+  `;
+  db.query(query, [quality_grade, price_per_kg], (err) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ success: false });
+    }
+    res.json({ success: true });
+  });
+});
+
+// Fetch current rates
+app.get('/admin/payment-rates', (req, res) => {
+  const query = `
+    SELECT quality_grade, price_per_kg, effective_date
+    FROM payment_rates
+    ORDER BY effective_date DESC
+  `;
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ success: false });
+    }
+    res.json(results);
+  });
+});
+
 
 // Start server
 app.listen(port, () => {
