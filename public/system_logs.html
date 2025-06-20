@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>System Activity Logs</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #36a2eb, #4c83ff);
+      color: #333;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      background: #fff;
+      padding: 30px;
+      border-radius: 15px;
+      max-width: 1200px;
+      margin: 40px auto;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    #filterInput {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 20px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 14px;
+      border-bottom: 1px solid #eee;
+      text-align: left;
+    }
+
+    th {
+      background-color: #4c83ff;
+      color: #fff;
+    }
+
+    tr:hover {
+      background-color: #f5faff;
+    }
+
+    .back-button {
+      display: inline-block;
+      margin-top: 30px;
+      padding: 12px 20px;
+      background: #4c83ff;
+      color: white;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: background 0.3s ease;
+    }
+
+    .back-button:hover {
+      background: #3b6fd8;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>📜 System Activity Logs</h2>
+
+    <input type="text" id="filterInput" placeholder="🔍 Filter by action or user...">
+
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>User</th>
+          <th>Action</th>
+          <th>Details</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody id="logTableBody"></tbody>
+    </table>
+
+    <a href="/admin_dashboard.html" class="back-button">← Back to Dashboard</a>
+  </div>
+
+  <script>
+    async function loadLogs() {
+      try {
+        const res = await fetch('/admin/system-logs');
+        const data = await res.json();
+        const tbody = document.getElementById('logTableBody');
+        tbody.innerHTML = data.map((log, i) => `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${log.user}</td>
+            <td>${log.action}</td>
+            <td>${log.details}</td>
+            <td>${new Date(log.created_at).toLocaleString()}</td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        console.error('Failed to fetch logs:', err);
+      }
+    }
+
+    document.getElementById('filterInput').addEventListener('input', function () {
+      const filter = this.value.toLowerCase();
+      const rows = document.querySelectorAll('#logTableBody tr');
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(filter) ? '' : 'none';
+      });
+    });
+
+    loadLogs();
+  </script>
+</body>
+</html>
