@@ -43,6 +43,13 @@ db.connect(err => {
   console.log('Connected to MySQL');
 });
 
+function logActivity(userId, action, details = '') {
+  const query = `INSERT INTO activity_logs (user_id, action, details) VALUES (?, ?, ?)`;
+  db.query(query, [userId, action, details], (err) => {
+    if (err) console.error('Failed to log activity:', err);
+  });
+}
+
 // Register route
 app.post('/register', upload.single('profilePicture'), async (req, res) => {
   const { full_name, id_no, email, phone_no, location, gender, password, confirm_password } = req.body;
@@ -116,6 +123,7 @@ app.post('/login', async (req, res) => {
       return res.send('Incorrect password');
       //return res.json({ success: false, message: 'Incorrect password' });
     }
+    logActivity(user.user_id, 'Login', `${user.role} logged in`);
 
     //store UserID in session
     req.session.userId = user.user_id;
@@ -407,6 +415,53 @@ app.put('/admin/complaints/:id', (req, res) => {
     }
   );
 });
+
+// Analytics data
+app.get('/admin/analytics', (req, res) => {
+  const todayQuery = `
+    SELECT quality_grade, IFNULL(SUM(quantity_kg),0) AS total
+    FROM deliveries
+    WHERE delivery_date = CURDATE()
+    GROUP BY quality_grade;
+  `;
+  const weekQuery = `
+    SELECT delivery_date, IFNULL(SUM(quantity_kg),0) AS total
+    FROM deliveries
+    WHERE delivery_date >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+    GROUP BY delivery_date
+    ORDER BY delivery_date;
+  `;
+  const feedbackQuery = `
+    SELECT u.name AS officer, AVG(f.rating) AS avg_rating
+    FROM feedback f
+    JOIN training_records t ON f.training_id = t.training_id
+    JOIN users u ON t.officer_id = u.user_id
+    GROUP BY officer
+    HAVING COUNT(*) >= 1;
+  `;
+
+  db.query(todayQuery, (err, todayRows) => {
+    if (err) return res.status(500).send(err);
+    db.query(weekQuery, (err2, weekRows) => {
+      if (err2) return res.status(500).send(err2);
+      db.query(feedbackQuery, (err3, feedbackRows) => {
+        if (err3) return res.status(500).send(err3);
+
+        const todayByGrade = ['A','B','C'].map(g => {
+          const row = todayRows.find(r => r.quality_grade === g);
+          return row ? parseFloat(row.total) : 0;
+        });
+        const weekDates = weekRows.map(r => r.delivery_date.toISOString().slice(5));
+        const weekDeliveryAmounts = weekRows.map(r => parseFloat(r.total));
+        const officerNames = feedbackRows.map(r => r.officer);
+        const officerAvgRatings = feedbackRows.map(r => parseFloat(r.avg_rating).toFixed(2));
+
+        res.json({ todayByGrade, weekDates, weekDeliveryAmounts, officerNames, officerAvgRatings });
+      });
+    });
+  });
+});
+
 
 
 
