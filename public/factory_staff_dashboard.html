@@ -2,125 +2,95 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Factory Staff Dashboard | ChaiConnect</title>
-    <link rel="stylesheet" href="/css/factory_style.css" />
+    <meta charset="UTF-8">
+    <title>Factory Staff Dashboard</title>
+    <link rel="stylesheet" href="/css/admin_style.css">
+    <link rel="stylesheet" href="/css/factory_style.css">
 </head>
 
 <body>
     <div class="sidebar">
         <h2>ChaiConnect</h2>
+        <h3>Factory Staff Dashboard</h3>
         <ul>
-            <li><a href="#overview" class="active">Dashboard</a></li>
-            <li><a href="#record-delivery">Record Delivery</a></li>
-            <li><a href="#view-deliveries">View All Deliveries</a></li>
-            <li><a href="#logout" onclick="logout()">Logout</a></li>
+            <li>
+                <p>Quick Links</p>
+            </li>
+            <li><a href="#" class="active">Home</a></li>
+            <li><a href="record_delivery.html">Record Delivery</a></li>
+            <li><a href="update_delivery.html">Update Delivery</a></li>
+            <li><a href="grade_tea.html">Grade Tea</a></li>
+            <li><a href="alerts.html">System Alerts</a></li>
         </ul>
     </div>
 
     <div class="main-content">
         <section id="overview">
-            <h1>Welcome, Factory Staff</h1>
-            <p>Monitor and record deliveries from farmers to your tea processing facility.</p>
+            <h1 id="welcomeMessage">Welcome, Factory Staff</h1>
+            <p>Oversee the delivery and grading of tea, manage farmer data, and monitor factory activities.</p>
         </section>
 
-        <section id="record-delivery">
-            <h2>Record Farmer Delivery</h2>
-            <form id="deliveryForm">
-                <label for="farmer_id">Farmer ID:</label>
-                <input type="text" id="farmer_id" name="farmer_id" required>
-
-                <label for="quantity">Quantity (kg):</label>
-                <input type="number" id="quantity" name="quantity" required>
-
-                <label for="quality">Quality Grade:</label>
-                <select id="quality" name="quality">
-                    <option value="A">Grade A</option>
-                    <option value="B">Grade B</option>
-                    <option value="C">Grade C</option>
-                </select>
-
-                <button type="submit">Submit Delivery</button>
-            </form>
-            <div id="deliveryMessage"></div>
-        </section>
-
-        <section id="view-deliveries">
-            <h2>All Recorded Deliveries</h2>
-            <table id="deliveriesTable">
-                <thead>
-                    <tr>
-                        <th>Delivery ID</th>
-                        <th>Farmer ID</th>
-                        <th>Quantity (kg)</th>
-                        <th>Quality</th>
-                        <th>Date</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </section>
+        <div class="dashboard-cards">
+            <div class="card">
+                <h3>Record Delivery</h3>
+                <p>Log tea deliveries from farmers and confirm entry.</p>
+                <button onclick="location.href='record_delivery.html'">Record</button>
+            </div>
+            <div class="card">
+                <h3>Update Delivery</h3>
+                <p>Correct or update delivery entries made earlier.</p>
+                <button onclick="location.href='update_delivery.html'">Update</button>
+            </div>
+            <div class="card">
+                <h3>Grade Tea</h3>
+                <p>Enter or adjust quality grades for delivered tea.</p>
+                <button onclick="location.href='grade_tea.html'">Grade</button>
+            </div>
+            <div class="card">
+                <h3>Upload Photos</h3>
+                <p>Capture and upload tea leaf photos for quality records.</p>
+                <button onclick="location.href='upload_photos.html'">Upload</button>
+            </div>
+            <div class="card">
+                <h3>Verify Deliveries</h3>
+                <p>Cross-check entries for accuracy and legitimacy.</p>
+                <button onclick="location.href='verify_deliveries.html'">Verify</button>
+            </div>
+            <div class="card">
+                <h3>Validate Farmer Info</h3>
+                <p>Confirm registered farmer identities and data.</p>
+                <button onclick="location.href='validate_farmers.html'">Validate</button>
+            </div>
+            <div class="card">
+                <h3>Grading Summary</h3>
+                <p>View reports of graded tea by quality level.</p>
+                <button onclick="location.href='grading_summary.html'">View</button>
+            </div>
+            <div class="card">
+                <h3>Delivery Patterns</h3>
+                <p>Explore daily and weekly delivery trends.</p>
+                <button onclick="location.href='delivery_patterns.html'">Analyze</button>
+            </div>
+            <div class="card">
+                <h3>System Alerts</h3>
+                <p>Check notifications for errors or warnings.</p>
+                <button onclick="location.href='alerts.html'">Alerts</button>
+            </div>
+        </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const form = document.getElementById('deliveryForm');
-            const tableBody = document.querySelector('#deliveriesTable tbody');
-            const message = document.getElementById('deliveryMessage');
-
-            // Submit delivery
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
-
-                const data = {
-                    farmer_id: form.farmer_id.value,
-                    quantity: form.quantity.value,
-                    quality: form.quality.value
-                };
-
-                const res = await fetch('/deliveries', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
+            fetch('/api/me')
+                .then(res => res.json())
+                .then(data => {
+                    const name = data.name || 'Factory Staff';
+                    document.getElementById('welcomeMessage').textContent = `Welcome, ${name}`;
+                })
+                .catch(() => {
+                    document.getElementById('welcomeMessage').textContent = 'Welcome, Factory Staff';
                 });
-
-                const result = await res.json();
-                if (result.success) {
-                    message.textContent = 'Delivery recorded successfully!';
-                    form.reset();
-                    loadDeliveries();
-                } else {
-                    message.textContent = 'Error recording delivery.';
-                }
-            });
-
-            // Load existing deliveries
-            async function loadDeliveries() {
-                const res = await fetch('/deliveries');
-                const deliveries = await res.json();
-
-                tableBody.innerHTML = '';
-                deliveries.forEach(d => {
-                    const row = `<tr>
-        <td>${d.delivery_id}</td>
-        <td>${d.farmer_id}</td>
-        <td>${d.quantity}</td>
-        <td>${d.quality}</td>
-        <td>${new Date(d.created_at).toLocaleString()}</td>
-      </tr>`;
-                    tableBody.innerHTML += row;
-                });
-            }
-
-            loadDeliveries();
         });
-
-        function logout() {
-            fetch('/logout', { method: 'POST' })
-                .then(() => (window.location.href = '/'));
-        }
-
     </script>
 </body>
 
