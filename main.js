@@ -18,7 +18,26 @@ app.use(session({
   saveUninitialized: false,
   cookie: { secure: false }
 }));
- 
+ // === Africa's Talking SMS Setup ===
+const africastalking = require('africastalking')({
+  apiKey: 'atsk_1dea7edb037e882d65b6716cbde4f5e796569ed4d058d311ea99ed51df4ae5f2938c000f',     // Replace with your actual API key from the dashboard
+  username: 'sandbox'            // Use 'sandbox' for testing
+});
+
+const sms = africastalking.SMS;
+
+// Reusable function to send OTP via SMS
+function sendOTP(phone, code) {
+  const options = {
+    to: ['+254758585870'],
+    message: `Your ChaiConnect OTP is: ${123456}`
+  };
+
+  sms.send(options)
+    .then(response => console.log("✅ OTP sent!", response))
+    .catch(error => console.error("❌ Error sending OTP:", error));
+}
+
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, 'uploads/'),
@@ -132,6 +151,8 @@ app.post('/login', async (req, res) => {
     req.session.userId = user.user_id;
     req.session.role = user.role;
     req.session.name = user.name;
+    req.session.mustChangePassword = user.must_change_password;
+
 
     // ✅ Check if must change password
     if (user.must_change_password) {
@@ -359,7 +380,8 @@ app.get('/api/me', (req, res) => {
 
   res.json({
     name: req.session.name,
-    role: req.session.role
+    role: req.session.role,
+    firstTimeUser: req.session.mustChangePassword || false
   });
 });
 
@@ -464,9 +486,39 @@ app.get('/admin/analytics', (req, res) => {
     });
   });
 });
+app.post('/ussd', (req, res) => {
+  const { sessionId, serviceCode, phoneNumber, text } = req.body;
 
+  let response = '';
+  const userInput = text.trim().split('*');
 
+  if (text === '') {
+    // First screen
+    response = `CON Welcome to ChaiConnect:
+1. Check Delivery Status
+2. Check Payment Balance
+3. View Quality Feedback`;
+  } else if (text === '1') {
+    // TODO: Replace with DB query if needed
+    response = `END Latest delivery: 48kg on 2024-06-18.`;
+  } else if (text === '2') {
+    response = `END Your payment balance is KES 3,200.`;
+  } else if (text === '3') {
+    response = `END Latest quality grade: A\nFeedback: Well picked and clean leaves.`;
+  } else {
+    response = `END Invalid option. Please dial *17156# again.`;
+  }
 
+  res.set('Content-Type', 'text/plain');
+  res.send(response);
+});
+
+app.get('/test-sms', (req, res) => {
+  const phone = '+254758585870';
+  const code = Math.floor(100000 + Math.random() * 900000); // Generate OTP
+  sendOTP(phone, code);
+  res.send('Test OTP sent!');
+});
 
 // Start server
 app.listen(port, () => {

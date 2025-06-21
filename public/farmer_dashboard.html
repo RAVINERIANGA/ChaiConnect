@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Farmer Dashboard</title>
     <link rel="stylesheet" href="/css/farmer_style.css">
     <link rel="stylesheet" href="/css/style.css">
 </head>
@@ -25,7 +25,8 @@
 
         <main class="main-content">
             <header>
-                <h1>Welcome, Farmer John</h1>
+                <h1>Welcome, <span id="farmerName">Farmer</span></h1>
+                <p id="firstTimeMessage" class="highlight"></p>
                 <button id="logoutBtn">Logout</button>
             </header>
 
@@ -53,13 +54,23 @@
             </section>
         </main>
     </div>
-    <script>document.getElementById("logoutBtn").addEventListener("click", () => {
+
+    <script>
+        // Fetch name and whether user is new
+        fetch('/api/me')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('farmerName').textContent = data.name;
+                if (data.firstTimeUser) {
+                    document.getElementById('firstTimeMessage').textContent = 'Welcome! As a first-time user, please complete your profile and check SMS for OTP verification.';
+                }
+            });
+
+        document.getElementById("logoutBtn").addEventListener("click", () => {
             alert("You have been logged out.");
-            // Redirect or logout logic can be added here
+            window.location.href = '/login.html';
         });
     </script>
-
-    <script src="../main.js"></script>
 </body>
 
 </html>
