@@ -24,6 +24,18 @@ const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, 'uploads/'),
   filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
 });
+const deliveryStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const fs = require('fs');
+    const uploadDir = 'uploads/deliveries';
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
+});
+const deliveryUpload = multer({ storage: deliveryStorage });
 const upload = multer({ storage });
 
 app.get('/', (req, res) => {
@@ -462,7 +474,55 @@ app.get('/admin/analytics', (req, res) => {
   });
 });
 
+//Deliveries route - Factory Staff
+app.post('/factory/deliveries', upload.single('photo'), (req, res) => {
+  const { id_number, quantity_kg, quality_grade, status } = req.body;
+  const staff_id = req.session.userId;
+  const photoFile = req.file;
 
+  const validStatuses = ['pending', 'graded', 'completed'];
+  if (!id_number || !quantity_kg || !quality_grade || !status || !staff_id) {
+    return res.status(400).json({ success: false, message: 'Missing required fields' });
+  }
+
+  if (!validStatuses.includes(status)) {
+    return res.status(400).json({ success: false, message: 'Invalid status value' });
+  }
+
+  const findFarmer = 'SELECT user_id FROM users WHERE id_number = ? AND role = "farmer"';
+
+  db.query(findFarmer, [id_number], (err, results) => {
+    if (err) {
+      console.error('Error finding farmer:', err);
+      return res.status(500).json({ success: false, message: 'Server error during farmer lookup' });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ success: false, message: 'Farmer not found' });
+    }
+
+    const farmer_id = results[0].user_id;
+    const photo_url = photoFile ? `/uploads/deliveries/${photoFile.filename}` : null;
+
+    const insertDelivery = `
+      INSERT INTO deliveries (farmer_id, staff_id, quantity_kg, quality_grade, delivery_date, photo_url, status)
+      VALUES (?, ?, ?, ?, CURDATE(), ?, ?)
+    `;
+
+    db.query(
+      insertDelivery,
+      [farmer_id, staff_id, quantity_kg, quality_grade, photo_url, status],
+      (err2) => {
+        if (err2) {
+          console.error('Error inserting delivery:', err2);
+          return res.status(500).json({ success: false, message: 'Failed to record delivery' });
+        }
+
+        res.json({ success: true, message: 'Delivery recorded successfully!' });
+      }
+    );
+  });
+});
 
 
 // Start server
