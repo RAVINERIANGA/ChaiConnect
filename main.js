@@ -47,8 +47,7 @@ const db = mysql.createConnection({
   host: 'localhost',
   user: 'root',
   password: 'DBSB3272',
-  database: 'chaiconnect',
-  port: 3307
+  database: 'chaiconnect'
 });
 
 db.connect(err => {
@@ -84,9 +83,7 @@ app.post('/register', upload.single('profilePicture'), async (req, res) => {
 
     db.query(userInsertQuery, userValues, (err, result) => {
       if (err) {
-        console.error(err);
-        console.error("User insert error:", err);
-return res.status(500).send('Error inserting into users table');
+      return res.send('Error inserting into users table');
 
       }
 
