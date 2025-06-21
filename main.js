@@ -18,7 +18,7 @@ app.use(session({
   saveUninitialized: false,
   cookie: { secure: false }
 }));
-
+ 
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, 'uploads/'),
@@ -35,7 +35,8 @@ const db = mysql.createConnection({
   host: 'localhost',
   user: 'root',
   password: 'DBSB3272',
-  database: 'chaiconnect'
+  database: 'chaiconnect',
+  port: 3307
 });
 
 db.connect(err => {
@@ -72,7 +73,9 @@ app.post('/register', upload.single('profilePicture'), async (req, res) => {
     db.query(userInsertQuery, userValues, (err, result) => {
       if (err) {
         console.error(err);
-        return res.send('Error inserting into users table');
+        console.error("User insert error:", err);
+return res.status(500).send('Error inserting into users table');
+
       }
 
       const userId = result.insertId;
