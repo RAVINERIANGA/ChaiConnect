@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Verify Deliveries | ChaiConnect</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/css/factory_style.css">
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f7fafa;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 40px auto;
+      background: #fff;
+      padding: 25px 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 12px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 25px;
+      color: #2c3e50;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 12px 14px;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+
+    thead {
+      background-color: #3b7a57;
+      color: white;
+    }
+
+    #message {
+      text-align: center;
+      font-weight: bold;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Verify Deliveries (View Only)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Delivery ID</th>
+          <th>Farmer Name</th>
+          <th>ID Number</th>
+          <th>Staff</th>
+          <th>Date</th>
+          <th>Qty (kg)</th>
+          <th>Grade</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="deliveryTableBody">
+        <!-- Populated by JS -->
+      </tbody>
+    </table>
+    <div id="message"></div>
+  </div>
+
+  <script>
+    async function loadAllDeliveries() {
+      const res = await fetch('/factory/deliveries/all');
+      const data = await res.json();
+
+      const tbody = document.getElementById('deliveryTableBody');
+      tbody.innerHTML = '';
+
+      if (data.success && data.deliveries.length > 0) {
+        data.deliveries.forEach(delivery => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${delivery.delivery_id}</td>
+            <td>${delivery.farmer_name}</td>
+            <td>${delivery.id_number}</td>
+            <td>${delivery.staff_name}</td>
+            <td>${delivery.delivery_date}</td>
+            <td>${delivery.quantity_kg}</td>
+            <td>${delivery.quality_grade}</td>
+            <td>${delivery.status}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } else {
+        tbody.innerHTML = '<tr><td colspan="8">No deliveries found</td></tr>';
+      }
+    }
+
+    window.onload = loadAllDeliveries;
+  </script>
+</body>
+</html>

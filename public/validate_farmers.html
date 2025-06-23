@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Registered Farmers | ChaiConnect</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="/css/factory_style.css" />
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f9f9f9;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 40px auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.08);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: center;
+      border: 1px solid #ddd;
+    }
+
+    thead {
+      background-color: #3b7a57;
+      color: white;
+    }
+
+    img.profile {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .no-photo {
+      font-style: italic;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Registered Farmers</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Profile</th>
+          <th>Name</th>
+          <th>ID Number</th>
+          <th>Phone</th>
+          <th>Email</th>
+          <th>Location</th>
+          <th>Registration Date</th>
+        </tr>
+      </thead>
+      <tbody id="farmerBody">
+        <!-- Rows will be inserted here -->
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    async function fetchFarmers() {
+      const res = await fetch('/factory/farmers/all');
+      const data = await res.json();
+
+      const tbody = document.getElementById('farmerBody');
+      tbody.innerHTML = '';
+
+      if (data.success && data.farmers.length > 0) {
+        data.farmers.forEach(f => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>
+  ${f.profile_picture 
+      ? `<img src="/uploads/${f.profile_picture}" class="profile" alt="Profile">` 
+      : `<span class="no-photo">No Photo</span>`}
+  <br/>
+  <button onclick="flagMismatch(${f.user_id})" style="margin-top:5px; background:#e74c3c; color:white; border:none; padding:5px 10px; border-radius:4px;">Flag Mismatch</button>
+</td>
+
+            <td>${f.name}</td>
+            <td>${f.id_number}</td>
+            <td>${f.phone || '-'}</td>
+            <td>${f.email || '-'}</td>
+            <td>${f.location || '-'}</td>
+            <td>${f.created_at}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } else {
+        tbody.innerHTML = '<tr><td colspan="7">No farmers found</td></tr>';
+      }
+    }
+
+    window.onload = fetchFarmers;
+
+    async function flagMismatch(userId) {
+  const reason = prompt("Describe the mismatch (e.g., profile photo does not match the farmer):");
+  if (!reason) return;
+
+  const res = await fetch('/factory/farmers/flag-mismatch', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id: userId, reason })
+  });
+
+  const data = await res.json();
+  if (data.success) {
+    alert('Mismatch flagged successfully.');
+  } else {
+    alert('Failed to flag mismatch.');
+  }
+}
+
+  </script>
+</body>
+</html>

@@ -18,6 +18,7 @@ app.use(session({
   saveUninitialized: false,
   cookie: { secure: false }
 }));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
  
 
 const storage = multer.diskStorage({
@@ -37,6 +38,7 @@ const deliveryStorage = multer.diskStorage({
 });
 const deliveryUpload = multer({ storage: deliveryStorage });
 const upload = multer({ storage });
+
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
@@ -135,6 +137,26 @@ app.post('/login', async (req, res) => {
       return res.send('Incorrect password');
       //return res.json({ success: false, message: 'Incorrect password' });
     }
+
+    // Check if the user is suspended (any role)
+    const suspensionQuery = `SELECT * FROM suspended_accounts WHERE user_id = ?`;
+    db.query(suspensionQuery, [user.user_id], (suspErr, suspensionResults) => {
+      if (suspErr) {
+        console.error(suspErr);
+        return res.send('Error checking suspension status');
+      }
+
+       if (suspensionResults.length > 0) {
+        return res.send('Your account has been suspended. Please contact the admin.');
+      }
+
+      // Not suspended → proceed with login
+      proceedWithLogin(req, res, user);
+    });
+  });
+});
+
+function proceedWithLogin(req, res, user) {
     logActivity(user.user_id, 'Login', `${user.role} logged in`);
 
     //store UserID in session
@@ -160,8 +182,7 @@ app.post('/login', async (req, res) => {
       default:
         return res.send('Unknown role');
     }
-  });
-});
+  }
 app.get('/manage_users.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/manage_users.html'));
 });
@@ -648,6 +669,140 @@ app.put('/factory/deliveries/:id', (req, res) => {
     if (result.affectedRows === 0) return res.status(404).json({ success: false, message: 'Delivery not found' });
 
     res.json({ success: true, message: 'Delivery updated successfully!' });
+  });
+});
+
+// GET all farmers - for validate farmers for Factory Staff
+app.get('/factory/farmers/all', (req, res) => {
+  const sql = `
+    SELECT 
+      u.user_id, u.name, u.id_number, u.phone, u.email, u.created_at,
+      fp.location, fp.profile_picture
+    FROM users u
+    LEFT JOIN farmer_profile fp ON u.user_id = fp.farmer_id
+    WHERE u.role = 'farmer'
+    ORDER BY u.created_at DESC
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error('Error fetching farmers:', err);
+      return res.status(500).json({ success: false, message: 'Server error' });
+    }
+
+    results.forEach(farmer => {
+      farmer.created_at = new Date(farmer.created_at).toISOString().slice(0, 10);
+    });
+
+    res.json({ success: true, farmers: results });
+  });
+});
+
+//Flag mismatch - Validating farmers by FS(Factory Staff)
+app.post('/factory/farmers/flag-mismatch', (req, res) => {
+  const { user_id, reason } = req.body;
+  const staff_id = req.session.userId;
+
+  if (!staff_id || !user_id || !reason) {
+    return res.status(400).json({ success: false, message: 'Missing info' });
+  }
+
+  const sql = `
+    INSERT INTO farmer_mismatch_flags (farmer_id, staff_id, reason)
+    VALUES (?, ?, ?)
+  `;
+  db.query(sql, [user_id, staff_id, reason], (err) => {
+    if (err) {
+      console.error('Error logging mismatch:', err);
+      return res.status(500).json({ success: false });
+    }
+    res.json({ success: true });
+  });
+});
+
+// Admin: View all mismatch reports
+app.get('/admin/farmer-mismatches', (req, res) => {
+  const sql = `
+    SELECT 
+      fmf.flag_id,
+      farmers.user_id,
+      farmers.name AS name,
+      farmers.id_number,
+      fp.profile_picture,
+      staff.name AS flagged_by,
+      fmf.reason,
+      fmf.flagged_at
+    FROM farmer_mismatch_flags fmf
+    JOIN users farmers ON fmf.farmer_id = farmers.user_id
+    LEFT JOIN farmer_profile fp ON farmers.user_id = fp.farmer_id
+    JOIN users staff ON fmf.staff_id = staff.user_id
+    ORDER BY fmf.flagged_at DESC
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error('Error fetching mismatches:', err);
+      return res.status(500).json({ success: false });
+    }
+    res.json({ success: true, mismatches: results });
+  });
+});
+
+//Admin Route to Suspend a Farmer
+app.post('/admin/suspend/:userId', (req, res) => {
+  const userId = req.params.userId;
+  const adminId = req.session.userId;
+  const { reason } = req.body;
+
+  if (!adminId || req.session.role !== 'admin') {
+    return res.status(403).json({ success: false, message: 'Unauthorized' });
+  }
+
+  const insertQuery = `
+    INSERT INTO suspended_accounts (user_id, suspended_by, reason)
+    VALUES (?, ?, ?)
+    ON DUPLICATE KEY UPDATE reason = VALUES(reason), suspended_at = CURRENT_TIMESTAMP
+  `;
+  db.query(insertQuery, [userId, adminId, reason || 'No reason provided'], (err) => {
+    if (err) {
+      console.error('Suspension error:', err);
+      return res.status(500).json({ success: false });
+    }
+    res.json({ success: true, message: 'User suspended successfully' });
+  });
+});
+
+//Admin Route to Unsuspend
+app.delete('/admin/unsuspend/:userId', (req, res) => {
+  const userId = req.params.userId;
+
+  if (!req.session.userId || req.session.role !== 'admin') {
+    return res.status(403).json({ success: false, message: 'Unauthorized' });
+  }
+
+  db.query('DELETE FROM suspended_accounts WHERE user_id = ?', [userId], (err) => {
+    if (err) {
+      console.error('Unsuspension error:', err);
+      return res.status(500).json({ success: false });
+    }
+    res.json({ success: true, message: 'User unsuspended' });
+  });
+});
+
+//List all suspended accounts for Admin
+app.get('/admin/suspended-users', (req, res) => {
+  if (req.session.role !== 'admin') return res.status(403).json({ success: false });
+
+  const query = `
+    SELECT u.user_id, u.name, u.email, s.reason, s.suspended_at
+    FROM suspended_accounts s
+    JOIN users u ON s.user_id = u.user_id
+    ORDER BY s.suspended_at DESC
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) return res.status(500).json({ success: false });
+    res.json({ success: true, users: results });
   });
 });
 
