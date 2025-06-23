@@ -18,32 +18,26 @@ app.use(session({
   saveUninitialized: false,
   cookie: { secure: false }
 }));
- // === Africa's Talking SMS Setup ===
-const africastalking = require('africastalking')({
-  apiKey: 'atsk_1dea7edb037e882d65b6716cbde4f5e796569ed4d058d311ea99ed51df4ae5f2938c000f',     // Replace with your actual API key from the dashboard
-  username: 'sandbox'            // Use 'sandbox' for testing
-});
-
-const sms = africastalking.SMS;
-
-// Reusable function to send OTP via SMS
-function sendOTP(phone, code) {
-  const options = {
-    to: ['+254758585870'],
-    message: `Your ChaiConnect OTP is: ${123456}`
-  };
-
-  sms.send(options)
-    .then(response => console.log("✅ OTP sent!", response))
-    .catch(error => console.error("❌ Error sending OTP:", error));
-}
-
+ 
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, 'uploads/'),
   filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
 });
+const deliveryStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const fs = require('fs');
+    const uploadDir = 'uploads/deliveries';
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
+});
+const deliveryUpload = multer({ storage: deliveryStorage });
 const upload = multer({ storage });
+
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
@@ -54,8 +48,7 @@ const db = mysql.createConnection({
   host: 'localhost',
   user: 'root',
   password: 'DBSB3272',
-  database: 'chaiconnect',
-  port: 3307
+  database: 'chaiconnect'
 });
 
 db.connect(err => {
@@ -91,9 +84,7 @@ app.post('/register', upload.single('profilePicture'), async (req, res) => {
 
     db.query(userInsertQuery, userValues, (err, result) => {
       if (err) {
-        console.error(err);
-        console.error("User insert error:", err);
-return res.status(500).send('Error inserting into users table');
+        return res.send('Error inserting into users table');
 
       }
 
@@ -145,35 +136,51 @@ app.post('/login', async (req, res) => {
       return res.send('Incorrect password');
       //return res.json({ success: false, message: 'Incorrect password' });
     }
-    logActivity(user.user_id, 'Login', `${user.role} logged in`);
+
+    // Check if the user is suspended (any role)
+    db.query('SELECT * FROM suspended_accounts WHERE user_id = ?', [user.user_id], (suspErr, suspResults) => {
+      if (suspErr) {
+        console.error('Suspension check error:', suspErr);
+        return res.send('Error checking suspension status');
+      }
+
+      if (suspResults.length > 0) {
+        return res.send('Your account has been suspended. Please contact the admin.');
+      }
+
+      // Not suspended → proceed with login
+      proceedWithLogin(req, res, user);
+    });
+  });
+});
+
+function proceedWithLogin(req, res, user) {
+  logActivity(user.user_id, 'Login', `${user.role} logged in`);
 
     //store UserID in session
     req.session.userId = user.user_id;
     req.session.role = user.role;
     req.session.name = user.name;
-    req.session.mustChangePassword = user.must_change_password;
 
+  // ✅ Check if must change password
+  if (user.must_change_password) {
+    return res.sendFile(path.join(__dirname, 'public/change_password.html'));
+  }
 
-    // ✅ Check if must change password
-    if (user.must_change_password) {
-      return res.sendFile(path.join(__dirname, 'public/change_password.html'));
-    }
-
-    // Redirect to dashboard based on role
-    switch (user.role) {
-      case 'farmer':
-        return res.sendFile(path.join(__dirname, 'public/farmer_dashboard.html'));
-      case 'admin':
-        return res.sendFile(path.join(__dirname, 'public/admin_dashboard.html'));
-      case 'extension_officer':
-        return res.sendFile(path.join(__dirname, 'public/extension_officer_dashboard.html'));
-      case 'factory_staff':
-        return res.sendFile(path.join(__dirname, 'public/factory_staff_dashboard.html'));
-      default:
-        return res.send('Unknown role');
-    }
-  });
-});
+  // Redirect to dashboard based on role
+  switch (user.role) {
+    case 'farmer':
+      return res.sendFile(path.join(__dirname, 'public/farmer_dashboard.html'));
+    case 'admin':
+      return res.sendFile(path.join(__dirname, 'public/admin_dashboard.html'));
+    case 'extension_officer':
+      return res.sendFile(path.join(__dirname, 'public/extension_officer_dashboard.html'));
+    case 'factory_staff':
+      return res.sendFile(path.join(__dirname, 'public/factory_staff_dashboard.html'));
+    default:
+      return res.send('Unknown role');
+  }
+}
 app.get('/manage_users.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/manage_users.html'));
 });
@@ -472,7 +479,7 @@ app.get('/admin/analytics', (req, res) => {
       db.query(feedbackQuery, (err3, feedbackRows) => {
         if (err3) return res.status(500).send(err3);
 
-        const todayByGrade = ['A','B','C'].map(g => {
+        const todayByGrade = ['A', 'B', 'C'].map(g => {
           const row = todayRows.find(r => r.quality_grade === g);
           return row ? parseFloat(row.total) : 0;
         });
@@ -486,39 +493,9 @@ app.get('/admin/analytics', (req, res) => {
     });
   });
 });
-app.post('/ussd', (req, res) => {
-  const { sessionId, serviceCode, phoneNumber, text } = req.body;
 
-  let response = '';
-  const userInput = text.trim().split('*');
 
-  if (text === '') {
-    // First screen
-    response = `CON Welcome to ChaiConnect:
-1. Check Delivery Status
-2. Check Payment Balance
-3. View Quality Feedback`;
-  } else if (text === '1') {
-    // TODO: Replace with DB query if needed
-    response = `END Latest delivery: 48kg on 2024-06-18.`;
-  } else if (text === '2') {
-    response = `END Your payment balance is KES 3,200.`;
-  } else if (text === '3') {
-    response = `END Latest quality grade: A\nFeedback: Well picked and clean leaves.`;
-  } else {
-    response = `END Invalid option. Please dial *17156# again.`;
-  }
 
-  res.set('Content-Type', 'text/plain');
-  res.send(response);
-});
-
-app.get('/test-sms', (req, res) => {
-  const phone = '+254758585870';
-  const code = Math.floor(100000 + Math.random() * 900000); // Generate OTP
-  sendOTP(phone, code);
-  res.send('Test OTP sent!');
-});
 
 // Start server
 app.listen(port, () => {
