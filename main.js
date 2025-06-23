@@ -139,14 +139,13 @@ app.post('/login', async (req, res) => {
     }
 
     // Check if the user is suspended (any role)
-    const suspensionQuery = `SELECT * FROM suspended_accounts WHERE user_id = ?`;
-    db.query(suspensionQuery, [user.user_id], (suspErr, suspensionResults) => {
+    db.query('SELECT * FROM suspended_accounts WHERE user_id = ?', [user.user_id], (suspErr, suspResults) => {
       if (suspErr) {
-        console.error(suspErr);
+        console.error('Suspension check error:', suspErr);
         return res.send('Error checking suspension status');
       }
 
-       if (suspensionResults.length > 0) {
+      if (suspResults.length > 0) {
         return res.send('Your account has been suspended. Please contact the admin.');
       }
 
@@ -748,7 +747,7 @@ app.get('/admin/farmer-mismatches', (req, res) => {
   });
 });
 
-//Admin Route to Suspend a Farmer
+//Admin Route to Suspend a Farmer and remove mismatch flag
 app.post('/admin/suspend/:userId', (req, res) => {
   const userId = req.params.userId;
   const adminId = req.session.userId;
@@ -757,21 +756,52 @@ app.post('/admin/suspend/:userId', (req, res) => {
   if (!adminId || req.session.role !== 'admin') {
     return res.status(403).json({ success: false, message: 'Unauthorized' });
   }
-
-  const insertQuery = `
-    INSERT INTO suspended_accounts (user_id, suspended_by, reason)
-    VALUES (?, ?, ?)
-    ON DUPLICATE KEY UPDATE reason = VALUES(reason), suspended_at = CURRENT_TIMESTAMP
-  `;
-  db.query(insertQuery, [userId, adminId, reason || 'No reason provided'], (err) => {
+  const dbConn=db;
+  dbConn.beginTransaction(err => {
     if (err) {
-      console.error('Suspension error:', err);
-      return res.status(500).json({ success: false });
+      console.error('Transaction error:', err);
+      return res.status(500).json({ success: false, message: 'Transaction start failed' });
     }
-    res.json({ success: true, message: 'User suspended successfully' });
+    // Step 1: Insert into suspended_accounts
+    const insertSuspension = `
+      INSERT INTO suspended_accounts (user_id, suspended_by, reason)
+      VALUES (?, ?, ?)
+      ON DUPLICATE KEY UPDATE reason = VALUES(reason), suspended_at = CURRENT_TIMESTAMP
+    `;
+
+    dbConn.query(insertSuspension, [userId, adminId, reason || 'No reason provided'], (suspendErr) => {
+      if (suspendErr) {
+        return dbConn.rollback(() => {
+          console.error('Suspension error:', suspendErr);
+          res.status(500).json({ success: false, message: 'Failed to suspend user' });
+        });
+      }
+      // Step 2: Delete from mismatch flags
+      const deleteMismatch = `DELETE FROM farmer_mismatch_flags WHERE farmer_id = ?`;
+
+      dbConn.query(deleteMismatch, [userId], (deleteErr) => {
+        if (deleteErr) {
+          return dbConn.rollback(() => {
+            console.error('Delete mismatch error:', deleteErr);
+            res.status(500).json({ success: false, message: 'Failed to remove mismatch flag' });
+          });
+        }
+
+        // Step 3: Commit transaction
+        dbConn.commit(commitErr => {
+          if (commitErr) {
+            return dbConn.rollback(() => {
+              console.error('Commit error:', commitErr);
+              res.status(500).json({ success: false, message: 'Failed to complete suspension' });
+            });
+          }
+
+          res.json({ success: true, message: 'User suspended and removed from mismatches' });
+        });
+      });
+    });
   });
 });
-
 //Admin Route to Unsuspend
 app.delete('/admin/unsuspend/:userId', (req, res) => {
   const userId = req.params.userId;
@@ -794,7 +824,9 @@ app.get('/admin/suspended-users', (req, res) => {
   if (req.session.role !== 'admin') return res.status(403).json({ success: false });
 
   const query = `
-    SELECT u.user_id, u.name, u.email, s.reason, s.suspended_at
+    SELECT 
+      u.user_id, u.name, u.email, u.id_number, u.role,
+      s.reason, s.suspended_at
     FROM suspended_accounts s
     JOIN users u ON s.user_id = u.user_id
     ORDER BY s.suspended_at DESC
@@ -805,6 +837,31 @@ app.get('/admin/suspended-users', (req, res) => {
     res.json({ success: true, users: results });
   });
 });
+
+//unflag user - Admin
+app.delete('/admin/unflag/:userId', (req, res) => {
+  const { userId } = req.params;
+
+  if (!req.session.userId || req.session.role !== 'admin') {
+    return res.status(403).json({ success: false, message: 'Unauthorized' });
+  }
+
+  const deleteQuery = `DELETE FROM farmer_mismatch_flags WHERE farmer_id = ?`;
+
+  db.query(deleteQuery, [userId], (err, result) => {
+    if (err) {
+      console.error('Unflag error:', err);
+      return res.status(500).json({ success: false, message: 'Database error' });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'No flag found for this user' });
+    }
+
+    res.json({ success: true, message: 'Farmer unflagged successfully' });
+  });
+});
+
 
 
 
