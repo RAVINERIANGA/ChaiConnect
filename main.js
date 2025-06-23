@@ -48,7 +48,8 @@ const db = mysql.createConnection({
   host: 'localhost',
   user: 'root',
   password: 'DBSB3272',
-  database: 'chaiconnect'
+  database: 'chaiconnect',
+  port:3307
 });
 
 db.connect(err => {

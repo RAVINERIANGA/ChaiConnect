@@ -2,75 +2,116 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Farmer Dashboard</title>
-    <link rel="stylesheet" href="/css/farmer_style.css">
-    <link rel="stylesheet" href="/css/style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Farmer Dashboard</title>
+  <link rel="stylesheet" href="/css/farmer_style.css" />
+  <link rel="stylesheet" href="/css/style.css" />
 </head>
 
 <body>
-    <div class="container">
-        <aside class="sidebar">
-            <h2>🌿 Farmer Dashboard</h2>
-            <ul>
-                <li class="active">Dashboard (home)</li>
-                <li>Request Tea Pickup / Delivery</li>
-                <li>View Delivery History</li>
-                <li>View Payment Records</li>
-                <li>Messages / Notifications</li>
-                <li>Profile</li>
-            </ul>
-        </aside>
+  <div class="container">
+    <aside class="sidebar">
+      <h2>🌿 Farmer Dashboard</h2>
+      <ul>
+        <li class="active">Dashboard (home)</li>
+        <li>Request Tea Pickup / Delivery</li>
+        <li>View Delivery History</li>
+        <li>View Payment Records</li>
+        <li>Messages / Notifications</li>
+        <li>Profile</li>
+      </ul>
+    </aside>
 
-        <main class="main-content">
-            <header>
-                <h1>Welcome, <span id="farmerName">Farmer</span></h1>
-                <p id="firstTimeMessage" class="highlight"></p>
-                <button id="logoutBtn">Logout</button>
-            </header>
+    <main class="main-content">
+      <header>
+        <h1>Welcome, <span id="farmerName">Farmer</span></h1>
+        <p id="firstTimeMessage" class="highlight"></p>
+        <button id="logoutBtn">Logout</button>
+      </header>
 
-            <section class="cards">
-                <div class="card">
-                    <h3>Delivery Summary</h3>
-                    <p>Last delivery status: <strong>Successful</strong></p>
-                    <p>Total tea delivered this month: <strong>500 kg</strong></p>
-                </div>
+      <!-- Summary Cards -->
+      <section class="cards">
+        <div class="card">
+          <h3>Delivery Summary</h3>
+          <p>Last delivery status: <strong id="lastDelivery">Loading...</strong></p>
+          <p>Total tea delivered this month: <strong id="totalDelivery">Loading...</strong></p>
+        </div>
 
-                <div class="card">
-                    <h3>Pending Payment</h3>
-                    <p>Amount: <strong>$1,500</strong></p>
-                    <p>Due date: <strong>30th November 2023</strong></p>
-                </div>
-            </section>
+        <div class="card">
+          <h3>Pending Payment</h3>
+          <p>Amount: <strong id="pendingPayment">Loading...</strong></p>
+          <p>Due date: <strong>30th June 2025</strong></p> <!-- You may make this dynamic -->
+        </div>
+      </section>
 
-            <section class="card wide-card">
-                <h3>Latest Notifications</h3>
-                <ul>
-                    <li>Meeting with extension officer on 25th November 2023</li>
-                    <li>New guidelines for tea quality improvement released</li>
-                    <li>Factory maintenance scheduled for 1st December 2023</li>
-                </ul>
-            </section>
-        </main>
-    </div>
+      <!-- Notifications -->
+      <section class="card wide-card">
+        <h3>Latest Notifications</h3>
+        <ul id="notifications">
+          <li>Loading...</li>
+        </ul>
+      </section>
+    </main>
+  </div>
 
-    <script>
-        // Fetch name and whether user is new
-        fetch('/api/me')
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('farmerName').textContent = data.name;
-                if (data.firstTimeUser) {
-                    document.getElementById('firstTimeMessage').textContent = 'Welcome! As a first-time user, please complete your profile and check SMS for OTP verification.';
-                }
-            });
+  <script>
+    const farmerId = 1; // Replace this with session-based ID
 
-        document.getElementById("logoutBtn").addEventListener("click", () => {
-            alert("You have been logged out.");
-            window.location.href = '/login.html';
-        });
-    </script>
+    // Get farmer profile
+    fetch(`/api/farmer/${farmerId}/profile`)
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById('farmerName').textContent = data.name;
+        if (data.must_change_password) {
+          document.getElementById('firstTimeMessage').textContent =
+            'Welcome! As a first-time user, please complete your profile and check SMS for OTP verification.';
+        }
+      });
+
+    // Get deliveries
+    fetch(`/api/farmer/${farmerId}/deliveries`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.length > 0) {
+          const last = data[data.length - 1];
+          document.getElementById('lastDelivery').textContent = `${last.date} - ${last.quality_grade}`;
+          const total = data.reduce((sum, d) => sum + parseFloat(d.quantity_kg), 0);
+          document.getElementById('totalDelivery').textContent = `${total} kg`;
+        } else {
+          document.getElementById('lastDelivery').textContent = 'No deliveries';
+          document.getElementById('totalDelivery').textContent = '0 kg';
+        }
+      });
+
+    // Get payments
+    fetch(`/api/farmer/${farmerId}/payments`)
+      .then(res => res.json())
+      .then(data => {
+        let total = 0;
+        data.forEach(p => total += parseFloat(p.amount_paid));
+        document.getElementById('pendingPayment').textContent = `KES ${total.toFixed(2)}`;
+      });
+
+    // Notifications (can be improved to pull from DB later)
+    const notif = [
+      "Meeting with extension officer on 25th June 2025",
+      "New tea quality grading guidelines available",
+      "Factory system upgrade scheduled for 1st July 2025"
+    ];
+    const notifList = document.getElementById('notifications');
+    notifList.innerHTML = '';
+    notif.forEach(n => {
+      const li = document.createElement('li');
+      li.textContent = n;
+      notifList.appendChild(li);
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      alert("You have been logged out.");
+      window.location.href = '/login.html';
+    });
+  </script>
 </body>
 
 </html>
