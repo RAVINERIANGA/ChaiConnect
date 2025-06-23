@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Update Delivery | ChaiConnect</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="/css/factory_style.css" />
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f2f6f9;
+      padding: 0;
+      margin: 0;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      text-align: center;
+      color: #333;
+    }
+
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+
+    .readonly {
+      background-color: #f2f2f2;
+      color: #555;
+    }
+
+    button {
+      margin-top: 25px;
+      padding: 12px;
+      background-color: #3b7a57;
+      color: white;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    #message {
+      margin-top: 20px;
+      font-weight: bold;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Update Delivery</h2>
+    <form id="updateForm">
+      <label>Delivery ID:</label>
+      <input type="text" id="delivery_id" class="readonly" readonly />
+
+      <label>Farmer Name:</label>
+      <input type="text" id="farmer_name" class="readonly" readonly />
+
+      <label>Farmer ID Number:</label>
+      <input type="text" id="id_number" class="readonly" readonly />
+
+      <label>Quantity (kg):</label>
+      <input type="number" id="quantity_kg" name="quantity_kg" step="0.01" required />
+
+      <label>Quality Grade:</label>
+      <select id="quality_grade" name="quality_grade" required>
+        <option value="">Select Grade</option>
+        <option value="A">Grade A</option>
+        <option value="B">Grade B</option>
+        <option value="C">Grade C</option>
+      </select>
+
+      <label>Status:</label>
+      <select id="status" name="status" required>
+        <option value="">Select Status</option>
+        <option value="pending">Pending</option>
+        <option value="graded">Graded</option>
+        <option value="completed">Completed</option>
+      </select>
+
+      <button type="submit">Update Delivery</button>
+    </form>
+    <div id="message"></div>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const deliveryId = urlParams.get('delivery_id');
+
+    async function fetchDeliveryDetails() {
+      const res = await fetch(`/factory/deliveries/${deliveryId}`);
+      const data = await res.json();
+
+      if (!data.success) {
+        document.getElementById('message').textContent = '❌ Could not load delivery.';
+        return;
+      }
+
+      const d = data.delivery;
+      document.getElementById('delivery_id').value = d.delivery_id;
+      document.getElementById('farmer_name').value = d.farmer_name;
+      document.getElementById('id_number').value = d.id_number;
+      document.getElementById('quantity_kg').value = d.quantity_kg;
+      document.getElementById('quality_grade').value = d.quality_grade;
+      document.getElementById('status').value = d.status;
+    }
+
+    document.getElementById('updateForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const formData = {
+        quantity_kg: form.quantity_kg.value,
+        quality_grade: form.quality_grade.value,
+        status: form.status.value
+      };
+
+      const res = await fetch(`/factory/deliveries/${deliveryId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      const result = await res.json();
+      const msg = document.getElementById('message');
+      msg.textContent = result.success ? '✅ Updated successfully!' : `❌ ${result.message}`;
+      msg.style.color = result.success ? 'green' : 'red';
+    });
+
+    fetchDeliveryDetails();
+  </script>
+</body>
+</html>

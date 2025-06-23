@@ -524,6 +524,138 @@ app.post('/factory/deliveries', upload.single('photo'), (req, res) => {
   });
 });
 
+//Update deliveries - Factory Staff
+//In various steps
+//View all deliveries
+app.get('/factory/deliveries/all', (req, res) => {
+  const sql = `
+    SELECT 
+      d.delivery_id,
+      f.name AS farmer_name,
+      f.id_number,
+      s.name AS staff_name,
+      d.delivery_date,
+      d.quantity_kg,
+      d.quality_grade,
+      d.status
+    FROM deliveries d
+    JOIN users f ON d.farmer_id = f.user_id
+    JOIN users s ON d.staff_id = s.user_id
+    ORDER BY d.delivery_date DESC
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error('Error fetching deliveries:', err);
+      return res.status(500).json({ success: false, message: 'Server error' });
+    }
+
+    // Format date
+    results.forEach(delivery => {
+      delivery.delivery_date = new Date(delivery.delivery_date).toISOString().slice(0, 10);
+    });
+
+
+    res.json({
+      success: true,
+      deliveries: results
+    });
+  });
+});
+
+// GET deliveries by farmer ID number
+app.get('/factory/deliveries/by-id-number/:id_number', (req, res) => {
+  const { id_number } = req.params;
+
+  const sql = `
+    SELECT 
+      d.delivery_id,
+      f.name AS farmer_name,
+      f.id_number,
+      s.name AS staff_name,
+      d.delivery_date,
+      d.quantity_kg,
+      d.quality_grade,
+      d.status
+    FROM deliveries d
+    JOIN users f ON d.farmer_id = f.user_id
+    JOIN users s ON d.staff_id = s.user_id
+    WHERE f.id_number = ?
+    ORDER BY d.delivery_date DESC
+  `;
+
+  db.query(sql, [id_number], (err, results) => {
+    if (err) {
+      console.error('Error fetching delivery by ID number:', err);
+      return res.status(500).json({ success: false, message: 'Server error' });
+    }
+    // Format date
+    results.forEach(delivery => {
+      delivery.delivery_date = new Date(delivery.delivery_date).toISOString().slice(0, 10);
+    });
+
+
+    res.json({
+      success: true,
+      deliveries: results
+    });
+  });
+});
+//editing
+app.get('/factory/deliveries/:id', (req, res) => {
+  const deliveryId = req.params.id;
+  const sql = `
+    SELECT 
+      d.delivery_id,
+      f.name AS farmer_name,
+      f.id_number,
+      s.name AS staff_name,
+      d.delivery_date,
+      d.quantity_kg,
+      d.quality_grade,
+      d.status
+    FROM deliveries d
+    JOIN users f ON d.farmer_id = f.user_id
+    JOIN users s ON d.staff_id = s.user_id
+    WHERE d.delivery_id = ?
+  `;
+
+  db.query(sql, [deliveryId], (err, results) => {
+    if (err) return res.status(500).json({ success: false, message: 'Server error' });
+    if (results.length === 0) return res.status(404).json({ success: false, message: 'Delivery not found' });
+
+    res.json({ success: true, delivery: results[0] });
+  });
+});
+//updating for editing
+app.put('/factory/deliveries/:id', (req, res) => {
+  const deliveryId = req.params.id;
+  const { quantity_kg, quality_grade, status } = req.body;
+
+  const validStatuses = ['pending', 'graded', 'completed'];
+  if (!quantity_kg || !quality_grade || !status || !validStatuses.includes(status)) {
+    return res.status(400).json({ success: false, message: 'Invalid input' });
+  }
+
+  const sql = `
+    UPDATE deliveries
+    SET quantity_kg = ?, quality_grade = ?, status = ?
+    WHERE delivery_id = ?
+  `;
+
+  db.query(sql, [quantity_kg, quality_grade, status, deliveryId], (err, result) => {
+    if (err) return res.status(500).json({ success: false, message: 'Update failed' });
+    if (result.affectedRows === 0) return res.status(404).json({ success: false, message: 'Delivery not found' });
+
+    res.json({ success: true, message: 'Delivery updated successfully!' });
+  });
+});
+
+
+
+
+
+
 
 // Start server
 app.listen(port, () => {
