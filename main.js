@@ -19,7 +19,7 @@ app.use(session({
   cookie: { secure: false }
 }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
- 
+
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, 'uploads/'),
@@ -85,7 +85,7 @@ app.post('/register', upload.single('profilePicture'), async (req, res) => {
 
     db.query(userInsertQuery, userValues, (err, result) => {
       if (err) {
-      return res.send('Error inserting into users table');
+        return res.send('Error inserting into users table');
 
       }
 
@@ -156,32 +156,32 @@ app.post('/login', async (req, res) => {
 });
 
 function proceedWithLogin(req, res, user) {
-    logActivity(user.user_id, 'Login', `${user.role} logged in`);
+  logActivity(user.user_id, 'Login', `${user.role} logged in`);
 
-    //store UserID in session
-    req.session.userId = user.user_id;
-    req.session.role = user.role;
-    req.session.name = user.name;
+  //store UserID in session
+  req.session.userId = user.user_id;
+  req.session.role = user.role;
+  req.session.name = user.name;
 
-    // ✅ Check if must change password
-    if (user.must_change_password) {
-      return res.sendFile(path.join(__dirname, 'public/change_password.html'));
-    }
-
-    // Redirect to dashboard based on role
-    switch (user.role) {
-      case 'farmer':
-        return res.sendFile(path.join(__dirname, 'public/farmer_dashboard.html'));
-      case 'admin':
-        return res.sendFile(path.join(__dirname, 'public/admin_dashboard.html'));
-      case 'extension_officer':
-        return res.sendFile(path.join(__dirname, 'public/extension_officer_dashboard.html'));
-      case 'factory_staff':
-        return res.sendFile(path.join(__dirname, 'public/factory_staff_dashboard.html'));
-      default:
-        return res.send('Unknown role');
-    }
+  // ✅ Check if must change password
+  if (user.must_change_password) {
+    return res.sendFile(path.join(__dirname, 'public/change_password.html'));
   }
+
+  // Redirect to dashboard based on role
+  switch (user.role) {
+    case 'farmer':
+      return res.sendFile(path.join(__dirname, 'public/farmer_dashboard.html'));
+    case 'admin':
+      return res.sendFile(path.join(__dirname, 'public/admin_dashboard.html'));
+    case 'extension_officer':
+      return res.sendFile(path.join(__dirname, 'public/extension_officer_dashboard.html'));
+    case 'factory_staff':
+      return res.sendFile(path.join(__dirname, 'public/factory_staff_dashboard.html'));
+    default:
+      return res.send('Unknown role');
+  }
+}
 app.get('/manage_users.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/manage_users.html'));
 });
@@ -479,7 +479,7 @@ app.get('/admin/analytics', (req, res) => {
       db.query(feedbackQuery, (err3, feedbackRows) => {
         if (err3) return res.status(500).send(err3);
 
-        const todayByGrade = ['A','B','C'].map(g => {
+        const todayByGrade = ['A', 'B', 'C'].map(g => {
           const row = todayRows.find(r => r.quality_grade === g);
           return row ? parseFloat(row.total) : 0;
         });
@@ -756,7 +756,7 @@ app.post('/admin/suspend/:userId', (req, res) => {
   if (!adminId || req.session.role !== 'admin') {
     return res.status(403).json({ success: false, message: 'Unauthorized' });
   }
-  const dbConn=db;
+  const dbConn = db;
   dbConn.beginTransaction(err => {
     if (err) {
       console.error('Transaction error:', err);
@@ -861,6 +861,53 @@ app.delete('/admin/unflag/:userId', (req, res) => {
     res.json({ success: true, message: 'Farmer unflagged successfully' });
   });
 });
+
+// Factory Staff: View grading summary
+app.get('/factory/grading-summary', (req, res) => {
+  if (!req.session.userId || req.session.role !== 'factory_staff') {
+    return res.status(403).json({ success: false, message: 'Unauthorized' });
+  }
+
+  const sql = `
+    SELECT quality_grade, COUNT(*) AS total_deliveries, SUM(quantity_kg) AS total_weight
+    FROM deliveries
+    GROUP BY quality_grade
+    ORDER BY quality_grade
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error('Grading summary error:', err);
+      return res.status(500).json({ success: false, message: 'Database error' });
+    }
+    res.json({ success: true, summary: results });
+  });
+});
+
+//Delivery patterns
+app.get('/factory/delivery-patterns', (req, res) => {
+  const sql = `
+    SELECT 
+      DATE(delivery_date) AS day,
+      COUNT(*) AS total_deliveries,
+      SUM(quantity_kg) AS total_kg
+    FROM deliveries
+    WHERE status IN ('graded', 'completed')
+    GROUP BY day
+    ORDER BY day DESC
+    LIMIT 7
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error('Error fetching delivery patterns:', err);
+      return res.status(500).json({ success: false, message: 'Database error' });
+    }
+    res.json({ success: true, data: results });
+  });
+});
+
+
 
 
 

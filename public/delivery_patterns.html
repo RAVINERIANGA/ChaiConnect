@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Delivery Trends | ChaiConnect</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --primary: #34495e;
+      --accent: #2ecc71;
+      --blue: #3498db;
+      --bg: #f4f6f8;
+      --white: #fff;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: var(--bg);
+      color: var(--primary);
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 30px auto;
+      background: var(--white);
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+    }
+
+    h2 {
+      margin: 0 0 15px;
+      text-align: center;
+      font-size: 1.4rem;
+      color: var(--primary);
+    }
+
+    canvas {
+      max-height: 320px;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 10px;
+      font-size: 0.9rem;
+      color: #7f8c8d;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>📈 Tea Delivery Trends (Last 7 Days)</h2>
+    <canvas id="deliveryChart"></canvas>
+    <div class="footer">Auto-generated based on completed or graded deliveries</div>
+  </div>
+
+  <script>
+    async function loadDeliveryPatterns() {
+      try {
+        const res = await fetch('/factory/delivery-patterns');
+        const data = await res.json();
+
+        if (!data.success || !data.data.length) {
+          document.querySelector('.footer').textContent = 'No delivery trends available.';
+          return;
+        }
+
+        const labels = data.data.map(entry => new Date(entry.day).toLocaleDateString('en-KE', {
+          month: 'short', day: 'numeric'
+        })).reverse();
+
+        const quantities = data.data.map(entry => entry.total_kg).reverse();
+        const counts = data.data.map(entry => entry.total_deliveries).reverse();
+
+        new Chart(document.getElementById('deliveryChart').getContext('2d'), {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [
+              {
+                label: 'Quantity (KG)',
+                data: quantities,
+                borderColor: '#2ecc71',
+                backgroundColor: 'rgba(46, 204, 113, 0.2)',
+                tension: 0.3,
+                fill: true,
+                pointRadius: 4,
+              },
+              {
+                label: 'Delivery Count',
+                data: counts,
+                borderColor: '#3498db',
+                backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                tension: 0.3,
+                fill: true,
+                pointRadius: 4,
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            animation: false,
+            plugins: {
+              legend: {
+                position: 'top',
+                labels: { font: { size: 13 } }
+              },
+              tooltip: {
+                callbacks: {
+                  label: ctx => `${ctx.dataset.label}: ${ctx.raw}`
+                }
+              }
+            },
+            scales: {
+              x: {
+                title: { display: true, text: 'Date', font: { weight: 'bold' } }
+              },
+              y: {
+                beginAtZero: true,
+                title: { display: true, text: 'KG / Count', font: { weight: 'bold' } }
+              }
+            }
+          }
+        });
+
+      } catch (err) {
+        console.error(err);
+        document.querySelector('.footer').textContent = 'Failed to load chart.';
+      }
+    }
+
+    window.onload = loadDeliveryPatterns;
+  </script>
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Grading Summary | ChaiConnect</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 800px;
+      margin: 40px auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+    h2 {
+      text-align: center;
+      color: #2c3e50;
+    }
+    table {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 12px;
+      text-align: center;
+      border: 1px solid #ccc;
+    }
+    thead {
+      background-color: #34495e;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Grading Summary</h2>
+    <p style="text-align: center; color: #7f8c8d;">View reports of graded tea by quality level.</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Quality Grade</th>
+          <th>Total Deliveries</th>
+          <th>Total Weight (kg)</th>
+        </tr>
+      </thead>
+      <tbody id="summaryBody"></tbody>
+    </table>
+  </div>
+
+  <script>
+    async function loadGradingSummary() {
+      const res = await fetch('/factory/grading-summary');
+      const data = await res.json();
+      const tbody = document.getElementById('summaryBody');
+      tbody.innerHTML = '';
+
+      if (data.success && data.summary.length > 0) {
+        data.summary.forEach(row => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${row.quality_grade}</td>
+            <td>${row.total_deliveries}</td>
+            <td>${row.total_weight?.toFixed(2) || 0}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } else {
+        tbody.innerHTML = '<tr><td colspan="3">No grading data found.</td></tr>';
+      }
+    }
+
+    window.onload = loadGradingSummary;
+  </script>
+</body>
+</html>
