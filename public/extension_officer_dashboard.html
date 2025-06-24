@@ -1,57 +1,94 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Extension Officer Dashboard | ChaiConnect</title>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/extension_style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Extension Officer Dashboard</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f6f8; }
+    .sidebar { width: 220px; background: #004d40; color: #fff; height: 100vh; position: fixed; padding: 20px 15px; }
+    .sidebar h2 { font-size: 20px; margin-bottom: 20px; }
+    .sidebar ul { list-style: none; padding: 0; }
+    .sidebar ul li { margin: 15px 0; cursor: pointer; }
+    .main-content { margin-left: 240px; padding: 30px; }
+    header h1 { margin-bottom: 5px; }
+    .card-grid { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 30px; }
+    .card { background: #fff; padding: 20px; border-radius: 8px; flex: 1 1 300px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05); }
+    .card h3 { margin-top: 0; }
+    button { margin-top: 10px; padding: 8px 12px; background: #00796b; color: #fff; border: none; border-radius: 5px; cursor: pointer; }
+    button:hover { background: #00695c; }
+  </style>
 </head>
+
 <body>
-  <div class="dashboard-container">
-    <aside class="sidebar">
-      <div class="sidebar-header">
-        <h2>ChaiConnect</h2>
-      </div>
-      <nav class="sidebar-nav">
-        <a href="/extension_officer_dashboard" class="active">Dashboard</a>
-        <a href="/view-farmers">View Farmers</a>
-        <a href="/training-records">Training Records</a>
-        <a href="/feedback">Farmer Feedback</a>
-        <a href="/support-requests">Support Requests</a>
-        <a href="/logout">Logout</a>
-      </nav>
-    </aside>
-
-    <main class="main-content">
-      <header class="main-header">
-        <h1>Welcome, Extension Officer</h1>
-        <p>Manage farmer support, training, and feedback efficiently.</p>
-      </header>
-
-      <section class="cards">
-        <div class="card">
-          <h3>Farmers</h3>
-          <p>View and assist registered farmers in your region.</p>
-          <a href="/view-farmers" class="btn">Go</a>
-        </div>
-        <div class="card">
-          <h3>Training Records</h3>
-          <p>Add or review training activities.</p>
-          <a href="/training-records" class="btn">Go</a>
-        </div>
-        <div class="card">
-          <h3>Feedback</h3>
-          <p>Check feedback provided by farmers and respond.</p>
-          <a href="/feedback" class="btn">Go</a>
-        </div>
-        <div class="card">
-          <h3>Support Requests</h3>
-          <p>View and manage support requests from farmers.</p>
-          <a href="/support-requests" class="btn">Go</a>
-        </div>
-      </section>
-    </main>
+  <div class="sidebar">
+    <h2>Extension Dashboard</h2>
+    <ul>
+      <li class="active">Home</li>
+      <li>Assigned Farmers</li>
+      <li>Schedule Farm Visit</li>
+      <li>Upload Training Materials</li>
+      <li>Respond to Complaints</li>
+      <li>Logout</li>
+    </ul>
   </div>
+
+  <div class="main-content">
+    <header>
+      <h1>Welcome, <span id="officerName">Officer</span></h1>
+      <p>Manage your assigned farmers, schedule visits, and provide feedback.</p>
+    </header>
+
+    <section class="card-grid">
+      <div class="card">
+        <h3>Assigned Farmers</h3>
+        <p>You have <strong id="farmerCount">0</strong> farmers assigned.</p>
+        <button onclick="viewFarmers()">View List</button>
+      </div>
+
+      <div class="card">
+        <h3>Schedule Farm Visit</h3>
+        <p>Plan and record upcoming visits.</p>
+        <button onclick="scheduleVisit()">Schedule</button>
+      </div>
+
+      <div class="card">
+        <h3>Upload Training Material</h3>
+        <p>Provide learning materials to farmers.</p>
+        <button onclick="uploadMaterial()">Upload</button>
+      </div>
+
+      <div class="card">
+        <h3>Respond to Complaints</h3>
+        <p>Resolve reported issues from your region.</p>
+        <button onclick="respondToComplaints()">Respond</button>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // Replace this with dynamic data in production
+    document.getElementById('officerName').textContent = 'Mary John';
+    document.getElementById('farmerCount').textContent = 5;
+
+    function viewFarmers() {
+      alert("Redirecting to farmer list page...");
+    }
+
+    function scheduleVisit() {
+      alert("Redirecting to schedule visit page...");
+    }
+
+    function uploadMaterial() {
+      alert("Redirecting to upload training material page...");
+    }
+
+    function respondToComplaints() {
+      alert("Redirecting to complaints page...");
+    }
+  </script>
 </body>
+
 </html>
