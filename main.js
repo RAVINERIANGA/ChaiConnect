@@ -907,6 +907,125 @@ app.get('/factory/delivery-patterns', (req, res) => {
   });
 });
 
+//Admin - create an alert
+app.post('/admin/create-alert', (req, res) => {
+  const { title, message, role } = req.body;
+  const query = `INSERT INTO system_alerts (title, message, role) VALUES (?, ?, ?)`;
+  db.query(query, [title, message, role], (err) => {
+    if (err) {
+      console.error('Alert creation error:', err);
+      return res.status(500).json({ success: false, message: 'Failed to create alert.' });
+    }
+    res.json({ success: true, message: 'Alert created successfully!' });
+  });
+});
+
+//User fetches alerts
+app.get('/alerts', (req, res) => {
+  const role = req.session.role;
+  const user_id = req.session.userId;
+
+  if (!role || !user_id) {
+    return res.status(401).json({ success: false, message: 'Not authenticated' });
+  }
+  const query = `
+    SELECT sa.*, ur.alert_id AS read_by_user
+    FROM system_alerts sa
+    LEFT JOIN user_alerts_read ur ON sa.alert_id = ur.alert_id AND ur.user_id = ?
+    WHERE sa.role = ? OR sa.role = 'all'
+    ORDER BY sa.created_at DESC
+  `;
+  db.query(query, [user_id, role], (err, results) => {
+    if (err) {
+      console.error('Alert fetch error:', err);
+      return res.status(500).json({ success: false });
+    }
+    res.json({ success: true, alerts: results });
+  });
+});
+
+
+//Mark Alerts As Read Route
+app.post('/alerts/mark-read', (req, res) => {
+  const user_id = req.session.userId; 
+  const alert_id = req.body.alert_id;
+
+  if (!user_id || !alert_id) {
+    return res.status(400).json({ success: false, message: 'Missing user ID or alert ID' });
+  }
+
+  const query = `
+    INSERT IGNORE INTO user_alerts_read (user_id, alert_id)
+    VALUES (?, ?)
+  `;
+  
+  db.query(query, [user_id, alert_id], (err) => {
+    if (err) {
+      console.error('Error marking alert as read:', err);
+      return res.status(500).json({ success: false, message: 'Database error' });
+    }
+    res.json({ success: true, message: 'Alert marked as read' });
+  });
+});
+
+//Alerts Count route
+app.get('/alerts/count', (req, res) => {
+  const role = req.session.role;
+  const user_id = req.session.userId; 
+  
+  if (!role || !user_id) {
+    return res.status(401).json({ success: false, message: 'Not authenticated' });
+  }
+
+  const query = `
+    SELECT COUNT(*) AS count
+    FROM system_alerts sa
+    LEFT JOIN user_alerts_read ur ON sa.alert_id = ur.alert_id AND ur.user_id = ?
+    WHERE (sa.role = ? OR sa.role = 'all') AND ur.alert_id IS NULL
+  `;
+  
+  db.query(query, [user_id, role], (err, results) => {
+    if (err) {
+      console.error('Alert count error:', err);
+      return res.status(500).json({ success: false, message: 'Database error' });
+    }
+    res.json({ success: true, count: results[0].count });
+  });
+});
+
+//Alerts count
+app.get('/alerts/count', (req, res) => {
+  const role = req.session.role;
+  if (!role) return res.status(401).json({ success: false });
+
+  const query = `
+    SELECT COUNT(*) AS count
+    FROM system_alerts
+    WHERE role = ? OR role = 'all'
+  `;
+  db.query(query, [role], (err, results) => {
+    if (err) {
+      console.error('Alert count error:', err);
+      return res.status(500).json({ success: false });
+    }
+    res.json({ success: true, count: results[0].count });
+  });
+});
+
+
+//Logout
+app.post('/logout', (req, res) => {
+  req.session.destroy(err => {
+    if (err) {
+      console.error('Logout error:', err);
+      return res.status(500).json({ success: false });
+    }
+    res.clearCookie('connect.sid'); // Clear session cookie
+    res.json({ success: true });
+  });
+});
+
+
 
 
 
