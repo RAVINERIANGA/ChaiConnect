@@ -2,114 +2,138 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
   <title>Farmer Dashboard</title>
-  <link rel="stylesheet" href="/css/farmer_style.css" />
-  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/admin_style.css">
 </head>
 
 <body>
-  <div class="container">
-    <aside class="sidebar">
-      <h2>🌿 Farmer Dashboard</h2>
-      <ul>
-        <li class="active">Dashboard (home)</li>
-        <li>Request Tea Pickup / Delivery</li>
-        <li>View Delivery History</li>
-        <li>View Payment Records</li>
-        <li>Messages / Notifications</li>
-        <li>Profile</li>
-      </ul>
-    </aside>
+  <div class="sidebar">
+    <h2>ChaiConnect</h2>
+    <h3>Farmer Dashboard</h3>
+    <ul>
+      <li><a href="#" class="active">Home</a></li>
+      <li><a href="/profile.html">My Profile</a></li>
+      <li><a href="/delivery_history.html">Delivery History</a></li>
+      <li><a href="/payment_summary.html">Payment Summary</a></li>
+      <li><a href="/quality_feedback.html">Tea Quality</a></li>
+      <li><a href="/extension_services.html">Extension Services</a></li>
+      <li><a href="/support.html">Support</a></li>
+    </ul>
+  </div>
 
-    <main class="main-content">
-      <header>
-        <h1>Welcome, <span id="farmerName">Farmer</span></h1>
-        <p id="firstTimeMessage" class="highlight"></p>
-        <button id="logoutBtn">Logout</button>
-      </header>
+  <div class="main-content">
+    <section id="overview">
+      <h1 id="welcomeMessage">Welcome, Farmer</h1>
+      <p>Access your account, deliveries, earnings, and tea updates.</p>
+    </section>
 
-      <!-- Summary Cards -->
-      <section class="cards">
-        <div class="card">
-          <h3>Delivery Summary</h3>
-          <p>Last delivery status: <strong id="lastDelivery">Loading...</strong></p>
-          <p>Total tea delivered this month: <strong id="totalDelivery">Loading...</strong></p>
-        </div>
+    <div class="dashboard-cards">
+      <div class="stat-card">
+        <p>Last Delivery</p>
+        <h2 id="lastDelivery">Loading...</h2>
+      </div>
+      <div class="stat-card">
+        <p>Monthly Total Delivered</p>
+        <h2 id="totalDelivery">Loading...</h2>
+      </div>
+      <div class="stat-card">
+        <p>Pending Payment</p>
+        <h2 id="pendingPayment">Loading...</h2>
+      </div>
+      <div class="stat-card">
+        <p>Account Status</p>
+        <h2 id="accountStatus">Loading...</h2>
+      </div>
+    </div>
 
-        <div class="card">
-          <h3>Pending Payment</h3>
-          <p>Amount: <strong id="pendingPayment">Loading...</strong></p>
-          <p>Due date: <strong>30th June 2025</strong></p> <!-- You may make this dynamic -->
-        </div>
-      </section>
+    <div class="card-actions">
+      <div class="card">
+        <h3>Delivery History</h3>
+        <p>View and download your full delivery history.</p>
+        <button onclick="location.href='/delivery_history.html'">View</button>
+      </div>
 
-      <!-- Notifications -->
-      <section class="card wide-card">
-        <h3>Latest Notifications</h3>
-        <ul id="notifications">
-          <li>Loading...</li>
-        </ul>
-      </section>
-    </main>
+      <div class="card">
+        <h3>View Payments</h3>
+        <p>See earnings, rates per kg, and past payments.</p>
+        <button onclick="location.href='/payment_summary.html'">Payments</button>
+      </div>
+
+      <div class="card">
+        <h3>Tea Grading</h3>
+        <p>See moisture level, rejection feedback, and grade status.</p>
+        <button onclick="location.href='/quality_feedback.html'">Quality</button>
+      </div>
+
+      <div class="card">
+        <h3>Extension Visits</h3>
+        <p>Book agronomist visits and upcoming trainings.</p>
+        <button onclick="location.href='/extension_services.html'">Book</button>
+      </div>
+
+      <div class="card">
+        <h3>Submit Complaint</h3>
+        <p>Raise complaints or ask questions.</p>
+        <button onclick="location.href='/support.html'">Support</button>
+      </div>
+
+      <div class="card">
+        <h3>View Profile</h3>
+        <p>See your personal details, location and farm info.</p>
+        <button onclick="location.href='/profile.html'">Profile</button>
+      </div>
+
+      <div class="card">
+        <h3>Training & Resources</h3>
+        <p>Watch videos and download tea farming manuals.</p>
+        <button onclick="location.href='/training_resources.html'">Access</button>
+      </div>
+
+      <div class="card">
+        <h3>Delivery Request</h3>
+        <p>Request a delivery collection.</p>
+        <button onclick="location.href='/request_delivery.html'">Request</button>
+      </div>
+    </div>
   </div>
 
   <script>
-    const farmerId = 1; // Replace this with session-based ID
+    document.addEventListener('DOMContentLoaded', () => {
+      fetch('/api/me')
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById('welcomeMessage').textContent = `Welcome, ${data.name}`;
+          const farmerId = data.userId;
 
-    // Get farmer profile
-    fetch(`/api/farmer/${farmerId}/profile`)
-      .then(res => res.json())
-      .then(data => {
-        document.getElementById('farmerName').textContent = data.name;
-        if (data.must_change_password) {
-          document.getElementById('firstTimeMessage').textContent =
-            'Welcome! As a first-time user, please complete your profile and check SMS for OTP verification.';
-        }
-      });
+          fetch(`/api/farmer/${farmerId}/profile`)
+            .then(res => res.json())
+            .then(data => {
+              document.getElementById('accountStatus').textContent = data.active ? 'Active' : 'Inactive';
+            });
 
-    // Get deliveries
-    fetch(`/api/farmer/${farmerId}/deliveries`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.length > 0) {
-          const last = data[data.length - 1];
-          document.getElementById('lastDelivery').textContent = `${last.date} - ${last.quality_grade}`;
-          const total = data.reduce((sum, d) => sum + parseFloat(d.quantity_kg), 0);
-          document.getElementById('totalDelivery').textContent = `${total} kg`;
-        } else {
-          document.getElementById('lastDelivery').textContent = 'No deliveries';
-          document.getElementById('totalDelivery').textContent = '0 kg';
-        }
-      });
+          fetch(`/api/farmer/${farmerId}/deliveries`)
+            .then(res => res.json())
+            .then(data => {
+              if (data.length > 0) {
+                const last = data[data.length - 1];
+                document.getElementById('lastDelivery').textContent = `${last.date} - ${last.quality_grade}`;
+                const total = data.reduce((sum, d) => sum + parseFloat(d.quantity_kg), 0);
+                document.getElementById('totalDelivery').textContent = `${total} kg`;
+              } else {
+                document.getElementById('lastDelivery').textContent = 'No deliveries';
+                document.getElementById('totalDelivery').textContent = '0 kg';
+              }
+            });
 
-    // Get payments
-    fetch(`/api/farmer/${farmerId}/payments`)
-      .then(res => res.json())
-      .then(data => {
-        let total = 0;
-        data.forEach(p => total += parseFloat(p.amount_paid));
-        document.getElementById('pendingPayment').textContent = `KES ${total.toFixed(2)}`;
-      });
-
-    // Notifications (can be improved to pull from DB later)
-    const notif = [
-      "Meeting with extension officer on 25th June 2025",
-      "New tea quality grading guidelines available",
-      "Factory system upgrade scheduled for 1st July 2025"
-    ];
-    const notifList = document.getElementById('notifications');
-    notifList.innerHTML = '';
-    notif.forEach(n => {
-      const li = document.createElement('li');
-      li.textContent = n;
-      notifList.appendChild(li);
-    });
-
-    document.getElementById("logoutBtn").addEventListener("click", () => {
-      alert("You have been logged out.");
-      window.location.href = '/login.html';
+          fetch(`/api/farmer/${farmerId}/payments`)
+            .then(res => res.json())
+            .then(data => {
+              let total = 0;
+              data.forEach(p => total += parseFloat(p.amount_paid));
+              document.getElementById('pendingPayment').textContent = `KES ${total.toFixed(2)}`;
+            });
+        });
     });
   </script>
 </body>
