@@ -18,6 +18,7 @@ app.use(session({
   saveUninitialized: false,
   cookie: { secure: false }
 }));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
  
 
 const storage = multer.diskStorage({
@@ -48,8 +49,7 @@ const db = mysql.createConnection({
   host: 'localhost',
   user: 'root',
   password: 'DBSB3272',
-  database: 'chaiconnect',
-  port:3307
+  database: 'chaiconnect'
 });
 
 db.connect(err => {
@@ -389,7 +389,6 @@ app.get('/api/me', (req, res) => {
   res.json({
     name: req.session.name,
     role: req.session.role,
-    firstTimeUser: req.session.mustChangePassword || false
   });
 });
 
@@ -494,6 +493,422 @@ app.get('/admin/analytics', (req, res) => {
     });
   });
 });
+
+//Deliveries route - Factory Staff
+app.post('/factory/deliveries', upload.single('photo'), (req, res) => {
+  const { id_number, quantity_kg, quality_grade, status } = req.body;
+  const staff_id = req.session.userId;
+  const photoFile = req.file;
+
+  const validStatuses = ['pending', 'graded', 'completed'];
+  if (!id_number || !quantity_kg || !quality_grade || !status || !staff_id) {
+    return res.status(400).json({ success: false, message: 'Missing required fields' });
+  }
+
+  if (!validStatuses.includes(status)) {
+    return res.status(400).json({ success: false, message: 'Invalid status value' });
+  }
+
+  const findFarmer = 'SELECT user_id FROM users WHERE id_number = ? AND role = "farmer"';
+
+  db.query(findFarmer, [id_number], (err, results) => {
+    if (err) {
+      console.error('Error finding farmer:', err);
+      return res.status(500).json({ success: false, message: 'Server error during farmer lookup' });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ success: false, message: 'Farmer not found' });
+    }
+
+    const farmer_id = results[0].user_id;
+    const photo_url = photoFile ? `/uploads/deliveries/${photoFile.filename}` : null;
+
+    const insertDelivery = `
+      INSERT INTO deliveries (farmer_id, staff_id, quantity_kg, quality_grade, delivery_date, photo_url, status)
+      VALUES (?, ?, ?, ?, CURDATE(), ?, ?)
+    `;
+
+    db.query(
+      insertDelivery,
+      [farmer_id, staff_id, quantity_kg, quality_grade, photo_url, status],
+      (err2) => {
+        if (err2) {
+          console.error('Error inserting delivery:', err2);
+          return res.status(500).json({ success: false, message: 'Failed to record delivery' });
+        }
+
+        res.json({ success: true, message: 'Delivery recorded successfully!' });
+      }
+    );
+  });
+});
+
+//Update deliveries - Factory Staff
+//In various steps
+//View all deliveries
+app.get('/factory/deliveries/all', (req, res) => {
+  const sql = `
+    SELECT 
+      d.delivery_id,
+      f.name AS farmer_name,
+      f.id_number,
+      s.name AS staff_name,
+      d.delivery_date,
+      d.quantity_kg,
+      d.quality_grade,
+      d.status
+    FROM deliveries d
+    JOIN users f ON d.farmer_id = f.user_id
+    JOIN users s ON d.staff_id = s.user_id
+    ORDER BY d.delivery_date DESC
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error('Error fetching deliveries:', err);
+      return res.status(500).json({ success: false, message: 'Server error' });
+    }
+
+    // Format date
+    results.forEach(delivery => {
+      delivery.delivery_date = new Date(delivery.delivery_date).toISOString().slice(0, 10);
+    });
+
+
+    res.json({
+      success: true,
+      deliveries: results
+    });
+  });
+});
+
+// GET deliveries by farmer ID number
+app.get('/factory/deliveries/by-id-number/:id_number', (req, res) => {
+  const { id_number } = req.params;
+
+  const sql = `
+    SELECT 
+      d.delivery_id,
+      f.name AS farmer_name,
+      f.id_number,
+      s.name AS staff_name,
+      d.delivery_date,
+      d.quantity_kg,
+      d.quality_grade,
+      d.status
+    FROM deliveries d
+    JOIN users f ON d.farmer_id = f.user_id
+    JOIN users s ON d.staff_id = s.user_id
+    WHERE f.id_number = ?
+    ORDER BY d.delivery_date DESC
+  `;
+
+  db.query(sql, [id_number], (err, results) => {
+    if (err) {
+      console.error('Error fetching delivery by ID number:', err);
+      return res.status(500).json({ success: false, message: 'Server error' });
+    }
+    // Format date
+    results.forEach(delivery => {
+      delivery.delivery_date = new Date(delivery.delivery_date).toISOString().slice(0, 10);
+    });
+
+
+    res.json({
+      success: true,
+      deliveries: results
+    });
+  });
+});
+//editing
+app.get('/factory/deliveries/:id', (req, res) => {
+  const deliveryId = req.params.id;
+  const sql = `
+    SELECT 
+      d.delivery_id,
+      f.name AS farmer_name,
+      f.id_number,
+      s.name AS staff_name,
+      d.delivery_date,
+      d.quantity_kg,
+      d.quality_grade,
+      d.status
+    FROM deliveries d
+    JOIN users f ON d.farmer_id = f.user_id
+    JOIN users s ON d.staff_id = s.user_id
+    WHERE d.delivery_id = ?
+  `;
+
+  db.query(sql, [deliveryId], (err, results) => {
+    if (err) return res.status(500).json({ success: false, message: 'Server error' });
+    if (results.length === 0) return res.status(404).json({ success: false, message: 'Delivery not found' });
+
+    res.json({ success: true, delivery: results[0] });
+  });
+});
+//updating for editing
+app.put('/factory/deliveries/:id', (req, res) => {
+  const deliveryId = req.params.id;
+  const { quantity_kg, quality_grade, status } = req.body;
+
+  const validStatuses = ['pending', 'graded', 'completed'];
+  if (!quantity_kg || !quality_grade || !status || !validStatuses.includes(status)) {
+    return res.status(400).json({ success: false, message: 'Invalid input' });
+  }
+
+  const sql = `
+    UPDATE deliveries
+    SET quantity_kg = ?, quality_grade = ?, status = ?
+    WHERE delivery_id = ?
+  `;
+
+  db.query(sql, [quantity_kg, quality_grade, status, deliveryId], (err, result) => {
+    if (err) return res.status(500).json({ success: false, message: 'Update failed' });
+    if (result.affectedRows === 0) return res.status(404).json({ success: false, message: 'Delivery not found' });
+
+    res.json({ success: true, message: 'Delivery updated successfully!' });
+  });
+});
+
+// GET all farmers - for validate farmers for Factory Staff
+app.get('/factory/farmers/all', (req, res) => {
+  const sql = `
+    SELECT 
+      u.user_id, u.name, u.id_number, u.phone, u.email, u.created_at,
+      fp.location, fp.profile_picture
+    FROM users u
+    LEFT JOIN farmer_profile fp ON u.user_id = fp.farmer_id
+    WHERE u.role = 'farmer'
+    ORDER BY u.created_at DESC
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error('Error fetching farmers:', err);
+      return res.status(500).json({ success: false, message: 'Server error' });
+    }
+
+    results.forEach(farmer => {
+      farmer.created_at = new Date(farmer.created_at).toISOString().slice(0, 10);
+    });
+
+    res.json({ success: true, farmers: results });
+  });
+});
+
+//Flag mismatch - Validating farmers by FS(Factory Staff)
+app.post('/factory/farmers/flag-mismatch', (req, res) => {
+  const { user_id, reason } = req.body;
+  const staff_id = req.session.userId;
+
+  if (!staff_id || !user_id || !reason) {
+    return res.status(400).json({ success: false, message: 'Missing info' });
+  }
+
+  const sql = `
+    INSERT INTO farmer_mismatch_flags (farmer_id, staff_id, reason)
+    VALUES (?, ?, ?)
+  `;
+  db.query(sql, [user_id, staff_id, reason], (err) => {
+    if (err) {
+      console.error('Error logging mismatch:', err);
+      return res.status(500).json({ success: false });
+    }
+    res.json({ success: true });
+  });
+});
+
+// Admin: View all mismatch reports
+app.get('/admin/farmer-mismatches', (req, res) => {
+  const sql = `
+    SELECT 
+      fmf.flag_id,
+      farmers.user_id,
+      farmers.name AS name,
+      farmers.id_number,
+      fp.profile_picture,
+      staff.name AS flagged_by,
+      fmf.reason,
+      fmf.flagged_at
+    FROM farmer_mismatch_flags fmf
+    JOIN users farmers ON fmf.farmer_id = farmers.user_id
+    LEFT JOIN farmer_profile fp ON farmers.user_id = fp.farmer_id
+    JOIN users staff ON fmf.staff_id = staff.user_id
+    ORDER BY fmf.flagged_at DESC
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error('Error fetching mismatches:', err);
+      return res.status(500).json({ success: false });
+    }
+    res.json({ success: true, mismatches: results });
+  });
+});
+
+//Admin Route to Suspend a Farmer and remove mismatch flag
+app.post('/admin/suspend/:userId', (req, res) => {
+  const userId = req.params.userId;
+  const adminId = req.session.userId;
+  const { reason } = req.body;
+
+  if (!adminId || req.session.role !== 'admin') {
+    return res.status(403).json({ success: false, message: 'Unauthorized' });
+  }
+  const dbConn = db;
+  dbConn.beginTransaction(err => {
+    if (err) {
+      console.error('Transaction error:', err);
+      return res.status(500).json({ success: false, message: 'Transaction start failed' });
+    }
+    // Step 1: Insert into suspended_accounts
+    const insertSuspension = `
+      INSERT INTO suspended_accounts (user_id, suspended_by, reason)
+      VALUES (?, ?, ?)
+      ON DUPLICATE KEY UPDATE reason = VALUES(reason), suspended_at = CURRENT_TIMESTAMP
+    `;
+
+    dbConn.query(insertSuspension, [userId, adminId, reason || 'No reason provided'], (suspendErr) => {
+      if (suspendErr) {
+        return dbConn.rollback(() => {
+          console.error('Suspension error:', suspendErr);
+          res.status(500).json({ success: false, message: 'Failed to suspend user' });
+        });
+      }
+      // Step 2: Delete from mismatch flags
+      const deleteMismatch = `DELETE FROM farmer_mismatch_flags WHERE farmer_id = ?`;
+
+      dbConn.query(deleteMismatch, [userId], (deleteErr) => {
+        if (deleteErr) {
+          return dbConn.rollback(() => {
+            console.error('Delete mismatch error:', deleteErr);
+            res.status(500).json({ success: false, message: 'Failed to remove mismatch flag' });
+          });
+        }
+
+        // Step 3: Commit transaction
+        dbConn.commit(commitErr => {
+          if (commitErr) {
+            return dbConn.rollback(() => {
+              console.error('Commit error:', commitErr);
+              res.status(500).json({ success: false, message: 'Failed to complete suspension' });
+            });
+          }
+
+          res.json({ success: true, message: 'User suspended and removed from mismatches' });
+        });
+      });
+    });
+  });
+});
+//Admin Route to Unsuspend
+app.delete('/admin/unsuspend/:userId', (req, res) => {
+  const userId = req.params.userId;
+
+  if (!req.session.userId || req.session.role !== 'admin') {
+    return res.status(403).json({ success: false, message: 'Unauthorized' });
+  }
+
+  db.query('DELETE FROM suspended_accounts WHERE user_id = ?', [userId], (err) => {
+    if (err) {
+      console.error('Unsuspension error:', err);
+      return res.status(500).json({ success: false });
+    }
+    res.json({ success: true, message: 'User unsuspended' });
+  });
+});
+
+//List all suspended accounts for Admin
+app.get('/admin/suspended-users', (req, res) => {
+  if (req.session.role !== 'admin') return res.status(403).json({ success: false });
+
+  const query = `
+    SELECT 
+      u.user_id, u.name, u.email, u.id_number, u.role,
+      s.reason, s.suspended_at
+    FROM suspended_accounts s
+    JOIN users u ON s.user_id = u.user_id
+    ORDER BY s.suspended_at DESC
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) return res.status(500).json({ success: false });
+    res.json({ success: true, users: results });
+  });
+});
+
+//unflag user - Admin
+app.delete('/admin/unflag/:userId', (req, res) => {
+  const { userId } = req.params;
+
+  if (!req.session.userId || req.session.role !== 'admin') {
+    return res.status(403).json({ success: false, message: 'Unauthorized' });
+  }
+
+  const deleteQuery = `DELETE FROM farmer_mismatch_flags WHERE farmer_id = ?`;
+
+  db.query(deleteQuery, [userId], (err, result) => {
+    if (err) {
+      console.error('Unflag error:', err);
+      return res.status(500).json({ success: false, message: 'Database error' });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'No flag found for this user' });
+    }
+
+    res.json({ success: true, message: 'Farmer unflagged successfully' });
+  });
+});
+
+// Factory Staff: View grading summary
+app.get('/factory/grading-summary', (req, res) => {
+  if (!req.session.userId || req.session.role !== 'factory_staff') {
+    return res.status(403).json({ success: false, message: 'Unauthorized' });
+  }
+
+  const sql = `
+    SELECT quality_grade, COUNT(*) AS total_deliveries, SUM(quantity_kg) AS total_weight
+    FROM deliveries
+    GROUP BY quality_grade
+    ORDER BY quality_grade
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error('Grading summary error:', err);
+      return res.status(500).json({ success: false, message: 'Database error' });
+    }
+    res.json({ success: true, summary: results });
+  });
+});
+
+//Delivery patterns
+app.get('/factory/delivery-patterns', (req, res) => {
+  const sql = `
+    SELECT 
+      DATE(delivery_date) AS day,
+      COUNT(*) AS total_deliveries,
+      SUM(quantity_kg) AS total_kg
+    FROM deliveries
+    WHERE status IN ('graded', 'completed')
+    GROUP BY day
+    ORDER BY day DESC
+    LIMIT 7
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error('Error fetching delivery patterns:', err);
+      return res.status(500).json({ success: false, message: 'Database error' });
+    }
+    res.json({ success: true, data: results });
+  });
+});
+
+
+
 
 
 
