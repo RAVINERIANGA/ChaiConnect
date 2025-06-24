@@ -184,3 +184,11 @@ body {
     align-items: center;
   }
 }
+
+.sidebar {
+  margin-top: 50px; 
+}
+
+.main-content {
+  margin-top: 60px; 
+}

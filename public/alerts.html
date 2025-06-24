@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>System Alerts | ChaiConnect</title>
+    <link rel="stylesheet" href="/css/common_style.css" />
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            background: #fff;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+        }
+
+        h2 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        .alert {
+            border-left: 5px solid #c0392b;
+            background: #fafafa;
+            margin: 10px 0;
+            padding: 15px 20px;
+            border-radius: 6px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+        }
+
+        .alert h4 {
+            margin: 0 0 5px;
+            color: #c0392b;
+        }
+
+        .alert p {
+            margin: 5px 0;
+            color: #555;
+        }
+
+        .alert small {
+            color: #999;
+            font-style: italic;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>System Alerts</h2>
+        <div id="alertsContainer"></div>
+    </div>
+
+    <script>
+        async function loadAlerts() {
+            const res = await fetch('/alerts');
+            const data = await res.json();
+
+            const container = document.getElementById('alertsContainer');
+            container.innerHTML = '';
+
+            if (data.success && data.alerts.length > 0) {
+                data.alerts.forEach(alert => {
+                    const div = document.createElement('div');
+                    div.className = 'alert';
+                    div.innerHTML = `
+            <h4>${alert.title}</h4>
+            <p>${alert.message}</p>
+            <small>${new Date(alert.created_at).toLocaleString('en-KE', {
+                        dateStyle: 'medium',
+                        timeStyle: 'short'
+                    })}
+</small>
+          `;
+                    container.appendChild(div);
+                });
+            } else {
+                container.innerHTML = '<p>No alerts available.</p>';
+            }
+        }
+        /*async function markAsRead(alertId, btn) {
+            const res = await fetch('/alerts/mark-read', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ alert_id: alertId })
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                btn.outerHTML = '<span style="color:green;">✔ Read</span>';
+                localStorage.setItem('alertsViewed', 'true');
+            }
+        }*/
+
+        window.onload = loadAlerts;
+    </script>
+
+
+
+</body>
+
+</html>

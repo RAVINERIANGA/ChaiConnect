@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Create System Alert | Admin - ChaiConnect</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="/css/admin_style.css" />
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 40px auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.08);
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #2c3e50;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        label {
+            font-weight: 600;
+            color: #34495e;
+        }
+
+        input[type="text"],
+        select,
+        textarea {
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1rem;
+            width: 100%;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        button {
+            background-color: #c0392b;
+            color: white;
+            padding: 12px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #a93226;
+        }
+
+        .message {
+            margin-top: 15px;
+            font-weight: 500;
+            color: green;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>Create System Alert</h2>
+        <form id="alertForm">
+            <div>
+                <label for="title">Alert Title:</label>
+                <input type="text" id="title" name="title" placeholder="e.g. System Downtime Notice" required />
+            </div>
+
+            <div>
+                <label for="message">Alert Message:</label>
+                <textarea id="message" name="message" placeholder="Enter detailed alert message..." required></textarea>
+            </div>
+
+            <div>
+                <label for="role">Target Role:</label>
+                <select id="role" name="role" required>
+                    <option value="all">All</option>
+                    <option value="admin">Admin</option>
+                    <option value="farmer">Farmer</option>
+                    <option value="extension_officer">Extension Officer</option>
+                    <option value="factory_staff">Factory Staff</option>
+                </select>
+            </div>
+
+            <button type="submit">Create Alert</button>
+            <div class="message" id="responseMsg"></div>
+        </form>
+    </div>
+
+    <script>
+        const form = document.getElementById('alertForm');
+        const responseMsg = document.getElementById('responseMsg');
+
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const formData = {
+                title: form.title.value.trim(),
+                message: form.message.value.trim(),
+                role: form.role.value
+            };
+
+            const res = await fetch('/admin/create-alert', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                responseMsg.textContent = '✅ Alert created successfully!';
+                form.reset();
+                setTimeout(() => {
+                    window.location.href = '/admin_dashboard';
+                }, 2000);
+            } else {
+                responseMsg.textContent = '❌ Failed to create alert.';
+                responseMsg.style.color = 'red';
+            }
+        });
+    </script>
+</body>
+
+</html>
