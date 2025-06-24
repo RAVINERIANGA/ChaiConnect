@@ -27,11 +27,11 @@
     <h2>Extension Dashboard</h2>
     <ul>
       <li class="active">Home</li>
-      <li>Assigned Farmers</li>
-      <li>Schedule Farm Visit</li>
-      <li>Upload Training Materials</li>
-      <li>Respond to Complaints</li>
-      <li>Logout</li>
+      <li onclick="viewFarmers()">Assigned Farmers</li>
+      <li onclick="scheduleVisit()">Schedule Farm Visit</li>
+      <li onclick="uploadMaterial()">Upload Training Materials</li>
+      <li onclick="respondToComplaints()">Respond to Complaints</li>
+      <li onclick="logout()">Logout</li>
     </ul>
   </div>
 
@@ -69,24 +69,38 @@
   </div>
 
   <script>
-    // Replace this with dynamic data in production
-    document.getElementById('officerName').textContent = 'Mary John';
-    document.getElementById('farmerCount').textContent = 5;
+    // Fetch logged in officer details
+    fetch('/api/me')
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById('officerName').textContent = data.name;
+        // Fetch assigned farmer count
+        fetch('/api/officer/farmers')
+          .then(res => res.json())
+          .then(farmers => {
+            document.getElementById('farmerCount').textContent = farmers.length;
+          });
+      });
 
     function viewFarmers() {
-      alert("Redirecting to farmer list page...");
+      window.location.href = '/extension_farmers.html';
     }
 
     function scheduleVisit() {
-      alert("Redirecting to schedule visit page...");
+      window.location.href = '/schedule_visit.html';
     }
 
     function uploadMaterial() {
-      alert("Redirecting to upload training material page...");
+      window.location.href = '/upload_training.html';
     }
 
     function respondToComplaints() {
-      alert("Redirecting to complaints page...");
+      window.location.href = '/extension_complaints.html';
+    }
+
+    function logout() {
+      fetch('/logout', { method: 'POST' })
+        .then(() => window.location.href = '/login.html');
     }
   </script>
 </body>
