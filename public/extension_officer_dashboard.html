@@ -69,21 +69,22 @@
   </div>
 
   <script>
-    // Fetch logged in officer details
     fetch('/api/me')
       .then(res => res.json())
       .then(data => {
         document.getElementById('officerName').textContent = data.name;
-        // Fetch assigned farmer count
         fetch('/api/officer/farmers')
           .then(res => res.json())
           .then(farmers => {
             document.getElementById('farmerCount').textContent = farmers.length;
+          })
+          .catch(() => {
+            document.getElementById('farmerCount').textContent = '0';
           });
       });
 
     function viewFarmers() {
-      window.location.href = '/extension_farmers.html';
+      window.location.href = '/farmer_dashboard.html';
     }
 
     function scheduleVisit() {
