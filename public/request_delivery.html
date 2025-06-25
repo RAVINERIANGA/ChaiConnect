@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Request Delivery | ChaiConnect</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <style>
+    body {
+      background-color: #f7f9fb;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    .card {
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+      border-radius: 10px;
+      border: none;
+    }
+    textarea {
+      resize: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container py-4">
+    <h2 class="text-center mb-4 text-success">Request a Delivery Collection</h2>
+
+    <div class="card">
+      <div class="card-body">
+        <form id="deliveryRequestForm">
+          <div class="mb-3">
+            <label for="pickupDate" class="form-label">Preferred Pickup Date</label>
+            <input type="date" class="form-control" id="pickupDate" required>
+          </div>
+          <div class="mb-3">
+            <label for="pickupTime" class="form-label">Preferred Pickup Time</label>
+            <input type="time" class="form-control" id="pickupTime" required>
+          </div>
+          <div class="mb-3">
+            <label for="notes" class="form-label">Additional Notes</label>
+            <textarea class="form-control" id="notes" rows="3" placeholder="e.g. Please come early morning..."></textarea>
+          </div>
+          <button type="submit" class="btn btn-success w-100">Submit Request</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('deliveryRequestForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const date = document.getElementById('pickupDate').value;
+      const time = document.getElementById('pickupTime').value;
+      const notes = document.getElementById('notes').value;
+
+      // Optional: Send data to backend (not yet implemented in server.js)
+      // fetch('/farmer/delivery-request', { method: 'POST', body: JSON.stringify(...) })
+
+      alert(`Your delivery request for ${date} at ${time} has been submitted!`);
+      this.reset();
+    });
+  </script>
+</body>
+</html>
