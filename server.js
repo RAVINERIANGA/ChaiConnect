@@ -495,6 +495,59 @@ app.get('/admin/analytics', (req, res) => {
   });
 });
 
+app.get('/farmer/paymentsummary', (req, res) => {
+  const farmerId = req.session.userId;
+
+  if (!farmerId || req.session.role !== 'farmer') {
+    return res.status(403).json({ success: false, message: 'Access denied' });
+  }
+
+  const query = `
+    SELECT p.amount, p.payment_date, d.quantity_kg, d.quality_grade, 
+           p.payment_method, p.status
+    FROM payments p
+    LEFT JOIN deliveries d ON p.delivery_id = d.delivery_id
+    WHERE p.farmer_id = ?
+    ORDER BY p.payment_date DESC
+  `;
+
+  db.query(query, [farmerId], (err, results) => {
+    if (err) {
+      console.error('Payment summary query failed:', err);
+      return res.status(500).json({ success: false, message: 'Database error' });
+    }
+
+    const totalEarnings = results.reduce((sum, row) => sum + parseFloat(row.amount || 0), 0);
+    const lastPayment = results[0] || {};
+    const lastPaymentAmount = lastPayment.amount || 0;
+    const lastPaymentDate = lastPayment.payment_date || null;
+    const quantity = lastPayment.quantity_kg || 1;
+    const currentRate = lastPaymentAmount && quantity ? (lastPaymentAmount / quantity).toFixed(2) : 0;
+
+    res.json({
+      success: true,
+      summary: {
+        totalEarnings: totalEarnings.toFixed(2),
+        lastPaymentAmount,
+        lastPaymentDate,
+        currentRate
+      },
+      payments: results
+    });
+  });
+});
+app.get('/farmer/payment_summary.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/payment_summary.html'));
+});
+const farmerId = req.session.userId;
+
+if (!farmerId || req.session.role !== 'farmer') {
+  return res.status(403).send('Access denied');
+}
+.catch(err => {
+  console.error('Error loading payments:', err);
+  alert('Something went wrong.');
+});
 
 
 // Start server
