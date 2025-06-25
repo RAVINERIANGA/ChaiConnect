@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Payment Summary | ChaiConnect</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <style>
+    body {
+      background-color: #f7f9fb;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    .card {
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+      border: none;
+      border-radius: 10px;
+    }
+    .table thead {
+      background-color: #0d6efd;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <div class="container py-4">
+    <h2 class="mb-4 text-center text-success">Farmer Payment Summary</h2>
+
+    <!-- Summary Cards -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-4">
+        <div class="card text-center">
+          <div class="card-body">
+            <h5 class="card-title">Total Earnings</h5>
+            <p class="card-text fs-4 text-success" id="totalEarnings">Loading...</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card text-center">
+          <div class="card-body">
+            <h5 class="card-title">Current Rate</h5>
+            <p class="card-text fs-4 text-primary" id="currentRate">Loading...</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card text-center">
+          <div class="card-body">
+            <h5 class="card-title">Last Payment</h5>
+            <p class="card-text fs-4 text-warning" id="lastPayment">Loading...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment Table -->
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title mb-3">Payment History</h5>
+        <div class="table-responsive">
+          <table class="table table-bordered">
+            <thead>
+              <tr>
+                <th>Payment Date</th>
+                <th>Quality Grade</th>
+                <th>Quantity (kg)</th>
+                <th>Amount (KSh)</th>
+                <th>Method</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="paymentTableBody">
+              <!-- Filled by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    fetch('/farmer/paymentsummary')
+      .then(res => res.json())
+      .then(data => {
+        if (!data.success) {
+          alert('Failed to load payment data.');
+          return;
+        }
+
+        document.getElementById('totalEarnings').textContent = `KSh ${data.summary.totalEarnings}`;
+        document.getElementById('currentRate').textContent = `KSh ${data.summary.currentRate}/kg`;
+        const lastPaymentText = data.summary.lastPaymentAmount && data.summary.lastPaymentDate
+          ? `KSh ${data.summary.lastPaymentAmount} on ${new Date(data.summary.lastPaymentDate).toLocaleDateString()}`
+          : 'N/A';
+        document.getElementById('lastPayment').textContent = lastPaymentText;
+
+        const tbody = document.getElementById('paymentTableBody');
+        tbody.innerHTML = '';
+
+        data.payments.forEach(p => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${new Date(p.payment_date).toLocaleDateString()}</td>
+            <td>${p.quality_grade || 'N/A'}</td>
+            <td>${p.quantity_kg || '0'} kg</td>
+            <td>KSh ${p.amount}</td>
+            <td>${p.payment_method || 'N/A'}</td>
+            <td>${p.status}</td>
+          `;
+          tbody.appendChild(row);
+        });
+      })
+      .catch(err => {
+        console.error('Error loading payments:', err);
+        alert('Something went wrong.');
+      });
+  </script>
+</body>
+</html>
