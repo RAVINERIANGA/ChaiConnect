@@ -142,6 +142,14 @@
         <p>Tea Delivered Today</p>
         <h2 id="teaDeliveredToday">Loading...</h2>
       </div>
+      <div class="stat-card">
+        <p>Tea Delivered This Month</p>
+        <h2 id="teaDeliveredThisMonth">Loading...</h2>
+      </div>
+      <div class="stat-card">
+        <p>Tea Delivered Overall</p>
+        <h2 id="teaDeliveredOverall">Loading...</h2>
+      </div>
     </div>
 
 
@@ -242,6 +250,8 @@
         document.getElementById('totalFactoryStaff').textContent = data.totalFactoryStaff;
         document.getElementById('totalExtensionOfficers').textContent = data.totalExtensionOfficers;
         document.getElementById('teaDeliveredToday').textContent = `${data.teaDeliveredToday} kg`;
+        document.getElementById('teaDeliveredThisMonth').textContent = `${data.teaDeliveredThisMonth} kg`;
+        document.getElementById('teaDeliveredOverall').textContent = `${data.teaDeliveredOverall} kg`;
       })
       .catch(err => {
         console.error('Failed to load dashboard stats', err);

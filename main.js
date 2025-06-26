@@ -346,13 +346,17 @@ app.get('/api/dashboard-stats', (req, res) => {
     totalFarmers: 0,
     totalFactoryStaff: 0,
     totalExtensionOfficers: 0,
-    teaDeliveredToday: 0
+    teaDeliveredToday: 0,
+    teaDeliveredThisMonth: 0,
+    teaDeliveredOverall: 0
   };
 
   const farmerQuery = `SELECT COUNT(*) AS count FROM users WHERE role = 'farmer'`;
   const staffQuery = `SELECT COUNT(*) AS count FROM users WHERE role = 'factory_staff'`;
   const officerQuery = `SELECT COUNT(*) AS count FROM users WHERE role = 'extension_officer'`;
   const teaQuery = `SELECT IFNULL(SUM(quantity_kg), 0) AS total FROM deliveries WHERE delivery_date = CURDATE()`;
+  const teaMonthQuery = `SELECT IFNULL(SUM(quantity_kg), 0) AS total FROM deliveries WHERE MONTH(delivery_date) = MONTH(CURDATE()) AND YEAR(delivery_date) = YEAR(CURDATE())`;
+  const teaOverallQuery = `SELECT IFNULL(SUM(quantity_kg), 0) AS total FROM deliveries`;
 
   db.query(farmerQuery, (err, farmerResult) => {
     if (err) return res.status(500).json({ error: 'DB error (farmers)' });
@@ -373,7 +377,19 @@ app.get('/api/dashboard-stats', (req, res) => {
           if (err4) return res.status(500).json({ error: 'DB error (tea)' });
 
           stats.teaDeliveredToday = teaResult[0].total;
+          db.query(teaMonthQuery, (err5, teaMonthResult) => {
+            if (err5) return res.status(500).json({ error: 'DB error (tea month)' });
+
+            stats.teaDeliveredThisMonth = teaMonthResult[0].total;
+
+            db.query(teaOverallQuery, (err6, teaOverallResult) => {
+              if (err6) return res.status(500).json({ error: 'DB error (tea overall)' });
+
+              stats.teaDeliveredOverall = teaOverallResult[0].total;
+
           res.json(stats);
+            });
+          });
         });
       });
     });
