@@ -1025,6 +1025,122 @@ app.post('/logout', (req, res) => {
   });
 });
 
+//Farmer Payment Summary 
+app.get('/farmer/paymentsummary', (req, res) => {
+  const farmerId = req.session.userId;
+
+  if (!farmerId || req.session.role !== 'farmer') {
+    return res.status(403).json({ success: false, message: 'Access denied' });
+  }
+
+  const query = `
+    SELECT p.amount, p.payment_date, d.quantity_kg, d.quality_grade, 
+           p.payment_method, p.status
+    FROM payments p
+    LEFT JOIN deliveries d ON p.delivery_id = d.delivery_id
+    WHERE p.farmer_id = ?
+    ORDER BY p.payment_date DESC
+  `;
+
+  db.query(query, [farmerId], (err, results) => {
+    if (err) {
+      console.error('Payment summary query failed:', err);
+      return res.status(500).json({ success: false, message: 'Database error' });
+    }
+
+    const totalEarnings = results.reduce((sum, row) => sum + parseFloat(row.amount || 0), 0);
+    const lastPayment = results[0] || {};
+    const lastPaymentAmount = lastPayment.amount || 0;
+    const lastPaymentDate = lastPayment.payment_date || null;
+    const quantity = lastPayment.quantity_kg || 1;
+    const currentRate = lastPaymentAmount && quantity ? (lastPaymentAmount / quantity).toFixed(2) : 0;
+
+    res.json({
+      success: true,
+      summary: {
+        totalEarnings: totalEarnings.toFixed(2),
+        lastPaymentAmount,
+        lastPaymentDate,
+        currentRate
+      },
+      payments: results
+    });
+  });
+});
+
+//Issue Payment Route - Admin 
+// Issue Payment Route - Admin (for mysql)
+app.post('/admin/issue-payment', (req, res) => {
+  const { farmer_id, delivery_id, amount, payment_method } = req.body;
+
+  if (!farmer_id || !delivery_id || !amount || !payment_method) {
+    return res.status(400).json({ success: false, message: 'Missing required fields' });
+  }
+
+  // Step 1: Check if payment already exists
+  const checkQuery = `SELECT * FROM payments WHERE delivery_id = ? AND status = 'completed'`;
+  db.query(checkQuery, [delivery_id], (err, results) => {
+    if (err) {
+      console.error('Error checking existing payment:', err);
+      return res.status(500).json({ success: false, message: 'Server error' });
+    }
+
+    if (results.length > 0) {
+      return res.status(409).json({ success: false, message: 'Payment already completed for this delivery' });
+    }
+
+    // Step 2: Insert new payment
+    const insertQuery = `
+      INSERT INTO payments (farmer_id, delivery_id, amount, payment_date, payment_method, status)
+      VALUES (?, ?, ?, CURDATE(), ?, 'completed')
+    `;
+    db.query(insertQuery, [farmer_id, delivery_id, amount, payment_method], (err2, result) => {
+      if (err2) {
+        console.error('Error inserting payment:', err2);
+        return res.status(500).json({ success: false, message: 'Server error' });
+      }
+
+      // Step 3: Optionally update delivery status
+      const updateQuery = `UPDATE deliveries SET status = 'completed' WHERE delivery_id = ?`;
+      db.query(updateQuery, [delivery_id], (err3) => {
+        if (err3) {
+          console.error('Error updating delivery status:', err3);
+          return res.status(500).json({ success: false, message: 'Server error after payment' });
+        }
+
+        res.json({ success: true, payment_id: result.insertId });
+      });
+    });
+  });
+});
+
+//Default deliveries before they are issued. 
+app.get('/admin/unpaid-deliveries', (req, res) => {
+  const sql = `
+    SELECT d.delivery_id, d.farmer_id, d.quantity_kg, d.delivery_date, d.quality_grade,
+           u.name AS farmer_name, pr.price_per_kg
+    FROM deliveries d
+    JOIN users u ON d.farmer_id = u.user_id
+    JOIN payment_rates pr ON d.quality_grade = pr.quality_grade
+    LEFT JOIN payments p ON d.delivery_id = p.delivery_id AND p.status = 'completed'
+    WHERE d.status = 'completed' AND p.payment_id IS NULL
+    ORDER BY d.delivery_date DESC
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error('Error fetching unpaid deliveries:', err);
+      return res.status(500).json({ message: 'Server error' });
+    }
+
+    res.json(results);
+  });
+});
+
+
+
+
+
 
 
 
