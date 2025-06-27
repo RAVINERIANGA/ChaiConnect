@@ -1227,6 +1227,24 @@ app.post('/admin/upload-policy', upload.single('policyFile'), (req, res) => {
   });
 });
 
+//View policies 
+app.get('/policies', (req, res) => {
+  const query = `
+    SELECT title, description, file_path, uploaded_at
+    FROM policy_documents
+    ORDER BY uploaded_at DESC
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching policies:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    res.json(results);
+  });
+});
+
+
 
 
 

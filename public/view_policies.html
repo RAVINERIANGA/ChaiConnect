@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>View Policy Documents</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Segoe+UI&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f6f8;
+      padding: 40px;
+      margin: 0;
+    }
+
+    .container {
+      max-width: 900px;
+      background: #fff;
+      margin: auto;
+      padding: 30px 40px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 30px;
+    }
+
+    .policy {
+      padding: 20px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .policy h3 {
+      margin: 0;
+      color: #2c3e50;
+    }
+
+    .policy p {
+      color: #555;
+      margin: 8px 0;
+    }
+
+    .policy small {
+      color: #888;
+    }
+
+    .policy a {
+      display: inline-block;
+      margin-top: 10px;
+      color: #4CAF50;
+      text-decoration: none;
+    }
+
+    .policy a:hover {
+      text-decoration: underline;
+    }
+
+    .back-btn {
+      display: block;
+      margin: 30px auto 0;
+      padding: 10px 20px;
+      background-color: #607d8b;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .back-btn:hover {
+      background-color: #455a64;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>📚 Policy Documents</h2>
+    <div id="policies"></div>
+
+    <button class="back-btn" onclick="history.back()">← Back</button>
+  </div>
+
+  <script>
+    async function fetchPolicies() {
+      const res = await fetch('/policies');
+      const data = await res.json();
+      const container = document.getElementById('policies');
+
+      if (data.length === 0) {
+        container.innerHTML = "<p>No policies uploaded yet.</p>";
+        return;
+      }
+
+      data.forEach(doc => {
+        const div = document.createElement('div');
+        div.className = 'policy';
+        div.innerHTML = `
+          <h3>${doc.title}</h3>
+          <p>${doc.description || 'No description provided.'}</p>
+          <small>Uploaded on ${new Date(doc.uploaded_at).toLocaleString()}</small><br>
+          <a href="${doc.file_path}" target="_blank">📄 View / Download</a>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    fetchPolicies();
+  </script>
+</body>
+</html>
