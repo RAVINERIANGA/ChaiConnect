@@ -1201,6 +1201,33 @@ app.get('/admin/unpaid-deliveries', (req, res) => {
   });
 });
 
+//upload policy documents - admin
+app.post('/admin/upload-policy', upload.single('policyFile'), (req, res) => {
+  const { title, description} = req.body;
+  const file = req.file;
+  const uploaded_by = req.session.userId;
+
+  if (!title || !file || !uploaded_by) {
+    return res.status(400).send('Missing required fields');
+  }
+
+  const filePath = `/uploads/policies/${file.filename}`;
+  const insertQuery = `
+    INSERT INTO policy_documents (title, description, file_path, uploaded_by)
+    VALUES (?, ?, ?, ?)
+  `;
+
+  db.query(insertQuery, [title, description || '', filePath, uploaded_by], (err) => {
+    if (err) {
+      console.error('DB error:', err);
+      return res.status(500).send('Database error');
+    }
+
+    return res.status(200).json({ success: true, message: 'Policy uploaded successfully' });
+  });
+});
+
+
 
 
 
