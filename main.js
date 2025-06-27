@@ -465,46 +465,94 @@ app.put('/admin/complaints/:id', (req, res) => {
 });
 
 // Analytics data
+
 app.get('/admin/analytics', (req, res) => {
   const todayQuery = `
-    SELECT quality_grade, IFNULL(SUM(quantity_kg),0) AS total
+    SELECT quality_grade, IFNULL(SUM(quantity_kg), 0) AS total
     FROM deliveries
     WHERE delivery_date = CURDATE()
-    GROUP BY quality_grade;
+    GROUP BY quality_grade
   `;
+
   const weekQuery = `
-    SELECT delivery_date, IFNULL(SUM(quantity_kg),0) AS total
+    SELECT delivery_date, IFNULL(SUM(quantity_kg), 0) AS total
     FROM deliveries
     WHERE delivery_date >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
     GROUP BY delivery_date
-    ORDER BY delivery_date;
+    ORDER BY delivery_date
   `;
+
   const feedbackQuery = `
     SELECT u.name AS officer, AVG(f.rating) AS avg_rating
     FROM feedback f
     JOIN training_records t ON f.training_id = t.training_id
     JOIN users u ON t.officer_id = u.user_id
     GROUP BY officer
-    HAVING COUNT(*) >= 1;
+  `;
+
+  const statusCountQuery = `
+    SELECT status, COUNT(*) AS count
+    FROM deliveries
+    GROUP BY status
+  `;
+
+  const topFarmersQuery = `
+    SELECT u.name, SUM(d.quantity_kg) AS total
+    FROM deliveries d
+    JOIN users u ON d.farmer_id = u.user_id
+    GROUP BY d.farmer_id
+    ORDER BY total DESC
+    LIMIT 5
   `;
 
   db.query(todayQuery, (err, todayRows) => {
-    if (err) return res.status(500).send(err);
+    if (err) return res.status(500).json({ error: err });
+
     db.query(weekQuery, (err2, weekRows) => {
-      if (err2) return res.status(500).send(err2);
+      if (err2) return res.status(500).json({ error: err2 });
+
       db.query(feedbackQuery, (err3, feedbackRows) => {
-        if (err3) return res.status(500).send(err3);
+        if (err3) return res.status(500).json({ error: err3 });
 
-        const todayByGrade = ['A', 'B', 'C'].map(g => {
-          const row = todayRows.find(r => r.quality_grade === g);
-          return row ? parseFloat(row.total) : 0;
+        db.query(statusCountQuery, (err4, statusRows) => {
+          if (err4) return res.status(500).json({ error: err4 });
+
+          db.query(topFarmersQuery, (err5, topFarmersRows) => {
+            if (err5) return res.status(500).json({ error: err5 });
+
+            // Format the output
+            const todayByGrade = ['A', 'B', 'C'].map(grade => {
+              const row = todayRows.find(r => r.quality_grade === grade);
+              return row ? parseFloat(row.total) : 0;
+            });
+
+            const weekDates = weekRows.map(r => r.delivery_date.toISOString().slice(5)); // MM-DD
+            const weekDeliveryAmounts = weekRows.map(r => parseFloat(r.total));
+
+            const officerNames = feedbackRows.map(r => r.officer);
+            const officerAvgRatings = feedbackRows.map(r => parseFloat(r.avg_rating).toFixed(2));
+
+            const deliveryStatusCounts = ['pending', 'graded', 'completed'].map(status => {
+              const row = statusRows.find(r => r.status === status);
+              return row ? parseInt(row.count) : 0;
+            });
+
+            const topFarmers = topFarmersRows.map(row => ({
+              name: row.name,
+              total: parseFloat(row.total)
+            }));
+
+            res.json({
+              todayByGrade,
+              weekDates,
+              weekDeliveryAmounts,
+              officerNames,
+              officerAvgRatings,
+              deliveryStatusCounts,
+              topFarmers
+            });
+          });
         });
-        const weekDates = weekRows.map(r => r.delivery_date.toISOString().slice(5));
-        const weekDeliveryAmounts = weekRows.map(r => parseFloat(r.total));
-        const officerNames = feedbackRows.map(r => r.officer);
-        const officerAvgRatings = feedbackRows.map(r => parseFloat(r.avg_rating).toFixed(2));
-
-        res.json({ todayByGrade, weekDates, weekDeliveryAmounts, officerNames, officerAvgRatings });
       });
     });
   });
