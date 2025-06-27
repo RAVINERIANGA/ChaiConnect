@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin | Reports</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Segoe+UI&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f6f8;
+      margin: 0;
+      padding: 0;
+    }
+
+    .header {
+      background-color: #2c3e50;
+      padding: 20px;
+      text-align: center;
+      color: white;
+      font-size: 24px;
+    }
+
+    .container {
+      max-width: 1100px;
+      background: #fff;
+      margin: 40px auto;
+      padding: 30px 40px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    select, button {
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    .export-btns button {
+      background-color: #607d8b;
+    }
+
+    .export-btns button:hover {
+      background-color: #455a64;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 12px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #2c3e50;
+      color: white;
+    }
+
+    .back-btn {
+      margin-top: 30px;
+      padding: 10px 20px;
+      background-color: #607d8b;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .back-btn:hover {
+      background-color: #455a64;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">ChaiConnect Admin - Reports</div>
+  <div class="container">
+    <h2>📊 Generate and Export System Reports</h2>
+    <div class="controls">
+      <select id="reportType">
+        <option value="">Select Report Type</option>
+        <option value="finance">Finance Report</option>
+        <option value="training">Training Report</option>
+        <option value="productivity">Productivity Report</option>
+      </select>
+
+      <div class="export-btns">
+        <button onclick="exportToCSV()">⬇ Export CSV</button>
+        <button onclick="window.print()">🖨 Print Report</button>
+      </div>
+    </div>
+
+    <div id="reportTable"></div>
+
+    <button class="back-btn" onclick="location.href='/admin_dashboard.html'">← Back to Dashboard</button>
+  </div>
+
+  <script>
+    let currentData = [];
+
+    async function fetchReport() {
+      const type = document.getElementById('reportType').value;
+      const tableDiv = document.getElementById('reportTable');
+      if (!type) return alert("Please select a report type.");
+
+      const res = await fetch(`/admin/report/${type}`);
+      const data = await res.json();
+      currentData = data;
+
+      if (!Array.isArray(data) || data.length === 0) {
+        tableDiv.innerHTML = '<p>No data found for the selected report.</p>';
+        return;
+      }
+
+      const headers = Object.keys(data[0]);
+      let tableHTML = '<table><thead><tr>';
+      headers.forEach(h => tableHTML += `<th>${h}</th>`);
+      tableHTML += '</tr></thead><tbody>';
+      data.forEach(row => {
+        tableHTML += '<tr>';
+        headers.forEach(h => tableHTML += `<td>${row[h]}</td>`);
+        tableHTML += '</tr>';
+      });
+      tableHTML += '</tbody></table>';
+      tableDiv.innerHTML = tableHTML;
+    }
+
+    function exportToCSV() {
+      if (!currentData.length) return alert("No data to export.");
+
+      const headers = Object.keys(currentData[0]);
+      const csvRows = [headers.join(',')];
+      currentData.forEach(row => {
+        const values = headers.map(h => JSON.stringify(row[h]));
+        csvRows.push(values.join(','));
+      });
+      const csvData = csvRows.join('\n');
+
+      const blob = new Blob([csvData], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'report.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    document.getElementById('reportType').addEventListener('change', fetchReport);
+  </script>
+</body>
+</html>

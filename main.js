@@ -1244,6 +1244,53 @@ app.get('/policies', (req, res) => {
   });
 });
 
+// Finance Report: total payments per farmer
+app.get('/admin/report/finance', (req, res) => {
+  const query = `
+    SELECT u.name AS farmer_name, SUM(p.amount) AS total_earned, COUNT(p.payment_id) AS total_payments
+    FROM payments p
+    JOIN users u ON p.farmer_id = u.user_id
+    GROUP BY p.farmer_id
+    ORDER BY total_earned DESC
+  `;
+  db.query(query, (err, results) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    res.json(results);
+  });
+});
+
+// Training Report: training sessions and officer names
+app.get('/admin/report/training', (req, res) => {
+  const query = `
+    SELECT tr.training_topic, tr.training_date, u.name AS officer_name, tr.summary
+    FROM training_records tr
+    JOIN users u ON tr.officer_id = u.user_id
+    ORDER BY tr.training_date DESC
+  `;
+  db.query(query, (err, results) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    res.json(results);
+  });
+});
+
+// Productivity Report: quantity delivered per farmer
+app.get('/admin/report/productivity', (req, res) => {
+  const query = `
+    SELECT u.name AS farmer_name, COUNT(d.delivery_id) AS deliveries, 
+           SUM(d.quantity_kg) AS total_kg, 
+           ROUND(SUM(d.quantity_kg)/COUNT(d.delivery_id), 2) AS avg_kg
+    FROM deliveries d
+    JOIN users u ON d.farmer_id = u.user_id
+    GROUP BY d.farmer_id
+    ORDER BY total_kg DESC
+  `;
+  db.query(query, (err, results) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    res.json(results);
+  });
+});
+
+
 
 
 
