@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Factory Staff Dashboard - Assign Farmers</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background-color: #f8f9fa;
+        }
+        .dashboard-header {
+            background-color: #0d6efd;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">
+                                <i class="bi bi-house"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#">
+                                <i class="bi bi-person-plus"></i> Assign Farmers
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">
+                                <i class="bi bi-people"></i> All Farmers
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">
+                                <i class="bi bi-gear"></i> Settings
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom dashboard-header">
+                    <h1 class="h2">Assign Farmers to Extension Officers</h1>
+                </div>
+
+                <!-- Assignment Form -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <form id="assignmentForm">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="farmerSelect" class="form-label">Select Farmer</label>
+                                    <select class="form-select" id="farmerSelect" required>
+                                        <option value="" selected disabled>Choose a farmer...</option>
+                                        <!-- Options will be loaded via JavaScript -->
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="officerSelect" class="form-label">Select Extension Officer</label>
+                                    <select class="form-select" id="officerSelect" required>
+                                        <option value="" selected disabled>Choose an officer...</option>
+                                        <!-- Options will be loaded via JavaScript -->
+                                    </select>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Assign Farmer</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Current Assignments Table -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">Current Assignments</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped" id="assignmentsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Farmer ID</th>
+                                        <th>Farmer Name</th>
+                                        <th>Extension Officer</th>
+                                        <th>Assigned Since</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data will be loaded via JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- JavaScript Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Custom JavaScript -->
+    <script>
+        $(document).ready(function() {
+            // Load farmers and officers dropdowns
+            $.get('/api/unassigned-farmers', function(farmers) {
+                const farmerSelect = $('#farmerSelect');
+                farmers.forEach(farmer => {
+                    farmerSelect.append(`<option value="${farmer.user_id}">${farmer.name} (ID: ${farmer.user_id})</option>`);
+                });
+            });
+
+            $.get('/api/extension-officers', function(officers) {
+                const officerSelect = $('#officerSelect');
+                officers.forEach(officer => {
+                    officerSelect.append(`<option value="${officer.user_id}">${officer.name} (ID: ${officer.user_id})</option>`);
+                });
+            });
+
+            // Load current assignments
+            function loadAssignments() {
+                $.get('/api/current-assignments', function(assignments) {
+                    const tableBody = $('#assignmentsTable tbody');
+                    tableBody.empty();
+                    
+                    assignments.forEach(assignment => {
+                        tableBody.append(`
+                            <tr>
+                                <td>${assignment.farmer_id}</td>
+                                <td>${assignment.farmer_name}</td>
+                                <td>${assignment.officer_name}</td>
+                                <td>${assignment.assigned_since}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-danger unassign-btn" data-farmer-id="${assignment.farmer_id}">
+                                        Unassign
+                                    </button>
+                                </td>
+                            </tr>
+                        `);
+                    });
+                });
+            }
+
+            loadAssignments();
+
+            // Handle form submission
+            $('#assignmentForm').submit(function(e) {
+                e.preventDefault();
+                
+                const farmerId = $('#farmerSelect').val();
+                const officerId = $('#officerSelect').val();
+                
+                $.post('/api/assign-farmer', { farmerId, officerId }, function(response) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Assignment Successful',
+                        text: 'The farmer has been assigned to the extension officer.'
+                    });
+                    
+                    // Reload data
+                    loadAssignments();
+                    $('#assignmentForm')[0].reset();
+                }).fail(function() {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Assignment Failed',
+                        text: 'There was an error assigning the farmer.'
+                    });
+                });
+            });
+
+            // Handle unassign
+            $('#assignmentsTable').on('click', '.unassign-btn', function() {
+                const farmerId = $(this).data('farmer-id');
+                
+                Swal.fire({
+                    title: 'Confirm Unassignment',
+                    text: 'Are you sure you want to unassign this farmer?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, unassign',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.post('/api/unassign-farmer', { farmerId }, function(response) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Unassignment Successful',
+                                text: 'The farmer has been unassigned.'
+                            });
+                            loadAssignments();
+                        }).fail(function() {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Unassignment Failed',
+                                text: 'There was an error unassigning the farmer.'
+                            });
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

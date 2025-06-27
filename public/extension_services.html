@@ -48,28 +48,29 @@
       </div>
     </div>
   </div>
-
-  <script>
-    // Simulated training sessions
-    const trainings = [
-      { title: "Pest Management", date: "2025-07-01", location: "Zone A" },
-      { title: "Soil Fertility & Nutrition", date: "2025-07-08", location: "Zone B" },
-      { title: "Post-Harvest Practices", date: "2025-07-15", location: "Zone C" }
-    ];
-
-    const list = document.getElementById('trainingList');
-    trainings.forEach(t => {
-      const item = document.createElement('li');
-      item.className = "list-group-item";
-      item.innerHTML = `<strong>${t.title}</strong> - ${t.date} @ ${t.location}`;
-      list.appendChild(item);
+<script>
+  fetch('/api/trainings')
+    .then(res => res.json())
+    .then(trainings => {
+      const list = document.getElementById('trainingList');
+      trainings.forEach(t => {
+        const item = document.createElement('li');
+        item.className = "list-group-item";
+        item.innerHTML = `<strong>${t.title}</strong> - ${t.date} @ ${t.location}`;
+        list.appendChild(item);
+      });
+    })
+    .catch(err => {
+      console.error(err);
+      alert('Failed to load training sessions.');
     });
 
-    document.getElementById('visitForm').addEventListener('submit', e => {
-      e.preventDefault();
-      alert("Visit booked successfully. (Simulated)");
-      e.target.reset();
-    });
-  </script>
+  document.getElementById('visitForm').addEventListener('submit', e => {
+    e.preventDefault();
+    alert("Visit booked successfully. (Simulated)");
+    e.target.reset();
+  });
+</script>
+
 </body>
 </html>

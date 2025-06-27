@@ -11,70 +11,53 @@
       font-family: 'Segoe UI', sans-serif;
     }
     .card {
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+      border-radius: 10px;
+      border: none;
     }
-    .profile-img {
-      width: 120px;
-      height: 120px;
-      object-fit: cover;
-      border-radius: 50%;
+    .profile-label {
+      font-weight: 600;
     }
   </style>
 </head>
 <body>
   <div class="container py-4">
-    <h2 class="text-center mb-4 text-success">My Profile</h2>
+    <h2 class="mb-4 text-center text-success">My Profile</h2>
 
-    <div class="card p-4">
-      <div class="text-center mb-4">
-        <img src="/uploads/default_avatar.png" alt="Profile Picture" class="profile-img" id="profilePic">
-      </div>
-      <div class="row mb-3">
-        <div class="col-md-6">
-          <strong>Name:</strong> <span id="fullName">Loading...</span>
-        </div>
-        <div class="col-md-6">
-          <strong>ID Number:</strong> <span id="idNumber">Loading...</span>
-        </div>
-      </div>
-      <div class="row mb-3">
-        <div class="col-md-6">
-          <strong>Email:</strong> <span id="email">Loading...</span>
-        </div>
-        <div class="col-md-6">
-          <strong>Phone:</strong> <span id="phone">Loading...</span>
-        </div>
-      </div>
-      <div class="row mb-3">
-        <div class="col-md-6">
-          <strong>Gender:</strong> <span id="gender">Loading...</span>
-        </div>
-        <div class="col-md-6">
-          <strong>Location:</strong> <span id="location">Loading...</span>
+    <div class="card">
+      <div class="card-body">
+        <div id="profileDetails">
+          <p><span class="profile-label">Full Name:</span> <span id="name">Loading...</span></p>
+          <p><span class="profile-label">Email:</span> <span id="email">Loading...</span></p>
+          <p><span class="profile-label">Phone:</span> <span id="phone">Loading...</span></p>
+          <p><span class="profile-label">Gender:</span> <span id="gender">Loading...</span></p>
+          <p><span class="profile-label">ID Number:</span> <span id="idNumber">Loading...</span></p>
+          <p><span class="profile-label">Account Created:</span> <span id="createdAt">Loading...</span></p>
         </div>
       </div>
     </div>
   </div>
 
   <script>
-    // Simulated profile fetch - replace with actual fetch from server
-    fetch('/api/me')
+    fetch('/farmer/profile-info')
       .then(res => res.json())
       .then(data => {
-        document.getElementById('fullName').textContent = data.name || 'N/A';
-        document.getElementById('email').textContent = data.email || 'N/A';
-        document.getElementById('phone').textContent = data.phone || 'N/A';
-        document.getElementById('idNumber').textContent = data.id_number || 'N/A';
-        document.getElementById('gender').textContent = data.gender || 'N/A';
-        document.getElementById('location').textContent = data.location || 'N/A';
-        document.getElementById('profilePic').src = data.profile_picture 
-          ? `/uploads/${data.profile_picture}` 
-          : '/uploads/default_avatar.png';
+        if (!data.success) {
+          alert('Failed to load profile.');
+          return;
+        }
+
+        const profile = data.profile;
+        document.getElementById('name').textContent = profile.name;
+        document.getElementById('email').textContent = profile.email;
+        document.getElementById('phone').textContent = profile.phone;
+        document.getElementById('gender').textContent = profile.gender;
+        document.getElementById('idNumber').textContent = profile.id_number;
+        document.getElementById('createdAt').textContent = new Date(profile.created_at).toLocaleDateString();
       })
       .catch(err => {
-        console.error('Error loading profile:', err);
-        alert('Failed to load profile data.');
+        console.error(err);
+        alert('Something went wrong.');
       });
   </script>
 </body>

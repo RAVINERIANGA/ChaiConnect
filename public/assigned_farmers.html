@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extension Officer Dashboard - Assigned Farmers</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background-color: #f8f9fa;
+        }
+        .dashboard-header {
+            background-color: #198754;
+            color: white;
+        }
+        .farmer-card {
+            transition: transform 0.2s;
+        }
+        .farmer-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#">
+                                <i class="bi bi-people-fill"></i> Assigned Farmers
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">
+                                <i class="bi bi-calendar-check"></i> Farmer Visits
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">
+                                <i class="bi bi-file-earmark-text"></i> Reports
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">
+                                <i class="bi bi-gear"></i> Settings
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom dashboard-header">
+                    <h1 class="h2">Assigned Farmers</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <button type="button" class="btn btn-sm btn-outline-light">
+                                <i class="bi bi-download"></i> Export
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search and Filter Section -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <input type="text" class="form-control" placeholder="Search farmers..." id="searchInput">
+                            <button class="btn btn-outline-secondary" type="button" id="searchButton">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <select class="form-select" id="filterRegion">
+                            <option selected>Filter by Region</option>
+                            <option>North</option>
+                            <option>South</option>
+                            <option>East</option>
+                            <option>West</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Farmers Table -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table id="farmersTable" class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Name</th>
+                                        <th>Contact</th>
+                                        <th>Location</th>
+                                        <th>Farm Size</th>
+                                        <th>Last Visit</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data will be loaded via JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Farmer Details Modal -->
+                <div class="modal fade" id="farmerModal" tabindex="-1" aria-labelledby="farmerModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="farmerModalLabel">Farmer Details</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body" id="farmerDetails">
+                                <!-- Details will be loaded via JavaScript -->
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                <button type="button" class="btn btn-primary">Schedule Visit</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- JavaScript Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Custom JavaScript -->
+    <script>
+        $(document).ready(function() {
+            // Initialize DataTable
+            const table = $('#farmersTable').DataTable({
+                ajax: {
+                    url: '/api/assigned-farmers',
+                    dataSrc: ''
+                },
+                columns: [
+                    { data: 'user_id' },
+                    { data: 'name' },
+                    { 
+                        data: null,
+                        render: function(data) {
+                            return `${data.phone}<br>${data.email}`;
+                        }
+                    },
+                    { data: 'location' },
+                    { data: 'farm_size' },
+                    { data: 'last_visit' },
+                    {
+                        data: null,
+                        render: function(data) {
+                            return `
+                                <button class="btn btn-sm btn-primary view-farmer" data-id="${data.user_id}">
+                                    <i class="bi bi-eye"></i> View
+                                </button>
+                                <button class="btn btn-sm btn-success schedule-visit" data-id="${data.user_id}">
+                                    <i class="bi bi-calendar-plus"></i> Visit
+                                </button>
+                            `;
+                        }
+                    }
+                ]
+            });
+
+            // Search functionality
+            $('#searchButton').click(function() {
+                table.search($('#searchInput').val()).draw();
+            });
+
+            $('#searchInput').keyup(function(event) {
+                if (event.keyCode === 13) {
+                    table.search($(this).val()).draw();
+                }
+            });
+
+            // Filter by region
+            $('#filterRegion').change(function() {
+                table.column(3).search($(this).val()).draw();
+            });
+
+            // View farmer details
+            $('#farmersTable').on('click', '.view-farmer', function() {
+                const farmerId = $(this).data('id');
+                $.get(`/api/farmer-details/${farmerId}`, function(data) {
+                    $('#farmerDetails').html(`
+                        <div class="row">
+                            <div class="col-md-4">
+                                <h6>Basic Information</h6>
+                                <p><strong>Name:</strong> ${data.name}</p>
+                                <p><strong>ID Number:</strong> ${data.id_number}</p>
+                                <p><strong>Gender:</strong> ${data.gender}</p>
+                            </div>
+                            <div class="col-md-4">
+                                <h6>Contact Information</h6>
+                                <p><strong>Phone:</strong> ${data.phone}</p>
+                                <p><strong>Email:</strong> ${data.email}</p>
+                                <p><strong>Location:</strong> ${data.location}</p>
+                            </div>
+                            <div class="col-md-4">
+                                <h6>Farm Information</h6>
+                                <p><strong>Farm Size:</strong> ${data.farm_size} acres</p>
+                                <p><strong>Crop Type:</strong> ${data.crop_type}</p>
+                                <p><strong>Last Visit:</strong> ${data.last_visit}</p>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <h6>Notes</h6>
+                                <textarea class="form-control" rows="3">${data.notes || 'No notes available'}</textarea>
+                            </div>
+                        </div>
+                    `);
+                    $('#farmerModal').modal('show');
+                });
+            });
+
+            // Schedule visit
+            $('#farmersTable').on('click', '.schedule-visit', function() {
+                const farmerId = $(this).data('id');
+                Swal.fire({
+                    title: 'Schedule Farm Visit',
+                    html: `
+                        <div class="mb-3">
+                            <label for="visitDate" class="form-label">Visit Date</label>
+                            <input type="date" class="form-control" id="visitDate">
+                        </div>
+                        <div class="mb-3">
+                            <label for="visitPurpose" class="form-label">Purpose</label>
+                            <select class="form-select" id="visitPurpose">
+                                <option>Routine Check</option>
+                                <option>Problem Resolution</option>
+                                <option>Training</option>
+                                <option>Harvest Assessment</option>
+                            </select>
+                        </div>
+                    `,
+                    showCancelButton: true,
+                    confirmButtonText: 'Schedule',
+                    preConfirm: () => {
+                        const date = $('#visitDate').val();
+                        const purpose = $('#visitPurpose').val();
+                        if (!date) {
+                            Swal.showValidationMessage('Please select a date');
+                            return false;
+                        }
+                        return { date, purpose, farmerId };
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.post('/api/schedule-visit', result.value, function(response) {
+                            Swal.fire('Scheduled!', 'Farm visit has been scheduled.', 'success');
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

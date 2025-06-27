@@ -536,20 +536,215 @@ app.get('/farmer/paymentsummary', (req, res) => {
     });
   });
 });
-app.get('/farmer/payment_summary.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/payment_summary.html'));
+
+// API endpoint to get assigned farmers for the logged-in extension officer
+app.get('/api/assigned-farmers', async (req, res) => {
+    try {
+        // In a real app, you would get the officer ID from the authenticated user's session
+        const officerId = req.query.officerId || 1; // Default to 1 for demo
+        
+        const [farmers] = await pool.query(`
+            SELECT 
+                u.user_id, 
+                u.name, 
+                u.email, 
+                u.phone, 
+                u.gender, 
+                u.id_number,
+                fp.location,
+                fp.farm_size,
+                fp.crop_type,
+                MAX(fv.visit_date) as last_visit
+            FROM 
+                users u
+            JOIN 
+                farmer_profile fp ON u.user_id = fp.user_id
+            LEFT JOIN 
+                farmer_visits fv ON u.user_id = fv.farmer_id
+            WHERE 
+                u.extension_officer_id = ?
+            GROUP BY 
+                u.user_id
+            ORDER BY 
+                u.name
+        `, [officerId]);
+        
+        res.json(farmers);
+    } catch (error) {
+        console.error('Error fetching assigned farmers:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
 });
-const farmerId = req.session.userId;
 
-if (!farmerId || req.session.role !== 'farmer') {
-  return res.status(403).send('Access denied');
-}
-.catch(err => {
-  console.error('Error loading payments:', err);
-  alert('Something went wrong.');
+// API endpoint to get detailed farmer information
+app.get('/api/farmer-details/:id', async (req, res) => {
+    try {
+        const farmerId = req.params.id;
+        
+        const [farmer] = await pool.query(`
+            SELECT 
+                u.*, 
+                fp.*,
+                (SELECT MAX(visit_date) FROM farmer_visits WHERE farmer_id = ?) as last_visit
+            FROM 
+                users u
+            JOIN 
+                farmer_profile fp ON u.user_id = fp.user_id
+            WHERE 
+                u.user_id = ?
+        `, [farmerId, farmerId]);
+        
+        if (farmer.length === 0) {
+            return res.status(404).json({ error: 'Farmer not found' });
+        }
+        
+        res.json(farmer[0]);
+    } catch (error) {
+        console.error('Error fetching farmer details:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
 });
 
+// API endpoint to schedule a visit
+app.post('/api/schedule-visit', async (req, res) => {
+    try {
+        const { farmerId, date, purpose } = req.body;
+        // In a real app, you would get the officer ID from the authenticated user's session
+        const officerId = 1; // Default to 1 for demo
+        
+        await pool.query(`
+            INSERT INTO farmer_visits 
+                (farmer_id, officer_id, visit_date, purpose, status) 
+            VALUES 
+                (?, ?, ?, ?, 'scheduled')
+        `, [farmerId, officerId, date, purpose]);
+        
+        res.json({ success: true, message: 'Visit scheduled successfully' });
+    } catch (error) {
+        console.error('Error scheduling visit:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
 
+// Start server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
+// Add these endpoints to your existing server.js
+
+// API endpoint to get unassigned farmers
+app.get('/api/unassigned-farmers', async (req, res) => {
+    try {
+        const [farmers] = await pool.query(`
+            SELECT 
+                u.user_id, 
+                u.name, 
+                u.email, 
+                u.phone
+            FROM 
+                users u
+            WHERE 
+                u.role = 'farmer' AND 
+                u.extension_officer_id IS NULL
+            ORDER BY 
+                u.name
+        `);
+        
+        res.json(farmers);
+    } catch (error) {
+        console.error('Error fetching unassigned farmers:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// API endpoint to get all extension officers
+app.get('/api/extension-officers', async (req, res) => {
+    try {
+        const [officers] = await pool.query(`
+            SELECT 
+                user_id, 
+                name, 
+                email, 
+                phone
+            FROM 
+                users
+            WHERE 
+                role = 'extension_officer'
+            ORDER BY 
+                name
+        `);
+        
+        res.json(officers);
+    } catch (error) {
+        console.error('Error fetching extension officers:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// API endpoint to get current assignments
+app.get('/api/current-assignments', async (req, res) => {
+    try {
+        const [assignments] = await pool.query(`
+            SELECT 
+                f.user_id as farmer_id,
+                f.name as farmer_name,
+                e.user_id as officer_id,
+                e.name as officer_name,
+                DATE_FORMAT(f.created_at, '%Y-%m-%d') as assigned_since
+            FROM 
+                users f
+            JOIN 
+                users e ON f.extension_officer_id = e.user_id
+            WHERE 
+                f.role = 'farmer' AND 
+                f.extension_officer_id IS NOT NULL
+            ORDER BY 
+                f.name
+        `);
+        
+        res.json(assignments);
+    } catch (error) {
+        console.error('Error fetching current assignments:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// API endpoint to assign a farmer to an officer
+app.post('/api/assign-farmer', async (req, res) => {
+    try {
+        const { farmerId, officerId } = req.body;
+        
+        await pool.query(`
+            UPDATE users 
+            SET extension_officer_id = ? 
+            WHERE user_id = ? AND role = 'farmer'
+        `, [officerId, farmerId]);
+        
+        res.json({ success: true, message: 'Farmer assigned successfully' });
+    } catch (error) {
+        console.error('Error assigning farmer:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// API endpoint to unassign a farmer
+app.post('/api/unassign-farmer', async (req, res) => {
+    try {
+        const { farmerId } = req.body;
+        
+        await pool.query(`
+            UPDATE users 
+            SET extension_officer_id = NULL 
+            WHERE user_id = ? AND role = 'farmer'
+        `, [farmerId]);
+        
+        res.json({ success: true, message: 'Farmer unassigned successfully' });
+    } catch (error) {
+        console.error('Error unassigning farmer:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
 // Start server
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
