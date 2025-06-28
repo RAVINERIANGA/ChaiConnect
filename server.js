@@ -242,7 +242,6 @@ app.delete('/admin/users/:id', (req, res) => {
 //Assign role page
 app.post('/admin/assign-role', (req, res) => {
   const { name, id_number, email, phone, gender, role, position, region, specialization } = req.body;
-
   if (!name || !id_number || !email || !phone || !gender || !role) {
     return res.status(400).json({ success: false, message: 'All fields required' });
   }
