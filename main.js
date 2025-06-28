@@ -1526,6 +1526,214 @@ app.get('/admin/system-logs', (req, res) => {
 });
 
 
+// API endpoint to get assigned farmers for the logged-in extension officer
+app.get('/api/assigned-farmers', (req, res) => {
+    const officerId = req.session.userId;
+
+    if (!officerId) {
+        return res.status(401).json({ error: 'Not logged in' });
+    }
+
+    const query = `
+        SELECT 
+            u.user_id, 
+            u.name, 
+            u.email, 
+            u.phone, 
+            u.gender, 
+            u.id_number,
+            fp.location
+        FROM 
+            users u
+        JOIN 
+            farmer_profile fp ON u.user_id = fp.farmer_id
+        JOIN 
+            farmer_assignments fa ON u.user_id = fa.farmer_id
+        JOIN 
+            extension_officers eo ON fa.officer_id = eo.officer_id
+        WHERE 
+            eo.user_id = ? AND
+            u.role = 'farmer'
+        ORDER BY 
+            u.name
+    `;
+
+    db.query(query, [officerId], (error, farmers) => {
+        if (error) {
+            console.error('Error fetching assigned farmers:', error);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+        res.json(farmers);
+    });
+});
+
+// API endpoint to get unassigned farmers
+app.get('/api/unassigned-farmers', (req, res) => {
+    const query = `
+    SELECT 
+        u.user_id, 
+        u.name, 
+        u.email, 
+        u.phone,
+        fp.location AS region
+    FROM 
+        users u
+    JOIN 
+        farmer_profile fp ON u.user_id = fp.farmer_id
+    LEFT JOIN 
+        farmer_assignments fa ON u.user_id = fa.farmer_id
+    WHERE 
+        u.role = 'farmer' AND 
+        fa.farmer_id IS NULL
+    ORDER BY 
+        u.name
+`;
+
+
+    db.query(query, (error, farmers) => {
+        if (error) {
+            console.error('Error fetching unassigned farmers:', error);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+        res.json(farmers);
+    });
+});
+
+// API endpoint to get all extension officers
+app.get('/api/extension-officers', (req, res) => {
+    const query = `
+        SELECT 
+            eo.officer_id,
+            u.user_id, 
+            u.name, 
+            u.email, 
+            u.phone, 
+            eo.region,
+            eo.specialization
+        FROM 
+            users u
+        JOIN 
+            extension_officers eo ON u.user_id = eo.user_id
+        WHERE 
+            u.role = 'extension_officer'
+        ORDER BY 
+            u.name
+    `;
+
+    db.query(query, (error, officers) => {
+        if (error) {
+            console.error('Error fetching extension officers:', error);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+        res.json(officers);
+    });
+});
+
+// API endpoint to get current assignments
+app.get('/api/current-assignments', (req, res) => {
+    const query = `
+        SELECT 
+            f.user_id as farmer_id,
+            f.name as farmer_name,
+            u.user_id as officer_user_id,
+            u.name as officer_name,
+            eo.officer_id,
+            DATE_FORMAT(fa.assigned_at, '%Y-%m-%d') as assigned_since
+        FROM 
+            users f
+        JOIN 
+            farmer_assignments fa ON f.user_id = fa.farmer_id
+        JOIN 
+            extension_officers eo ON fa.officer_id = eo.officer_id
+        JOIN 
+            users u ON eo.user_id = u.user_id
+        WHERE 
+            f.role = 'farmer'
+        ORDER BY 
+            f.name
+    `;
+
+    db.query(query, (error, assignments) => {
+        if (error) {
+            console.error('Error fetching current assignments:', error);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+        res.json(assignments);
+    });
+});
+
+// API endpoint to assign a farmer to an officer
+app.post('/api/assign-farmer', (req, res) => {
+    const { farmerId, officerId } = req.body; // officerId here is the officer_id from extension_officers table
+
+    const query = `
+        INSERT INTO farmer_assignments 
+            (farmer_id, officer_id) 
+        VALUES 
+            (?, ?)
+        ON DUPLICATE KEY UPDATE 
+            officer_id = VALUES(officer_id),
+            assigned_at = CURRENT_TIMESTAMP
+    `;
+
+    db.query(query, [farmerId, officerId], (error, result) => {
+        if (error) {
+            console.error('Error assigning farmer:', error);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+        res.json({ success: true, message: 'Farmer assigned successfully' });
+    });
+});
+
+// API endpoint to unassign a farmer
+app.post('/api/unassign-farmer', (req, res) => {
+    const { farmerId } = req.body;
+
+    const query = `
+        DELETE FROM farmer_assignments 
+        WHERE farmer_id = ?
+    `;
+
+    db.query(query, [farmerId], (error, result) => {
+        if (error) {
+            console.error('Error unassigning farmer:', error);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+        res.json({ success: true, message: 'Farmer unassigned successfully' });
+    });
+});
+
+// API endpoint to get detailed farmer information
+app.get('/api/farmer-details/:id', (req, res) => {
+    const farmerId = req.params.id;
+
+    const query = `
+        SELECT 
+            u.*, 
+            fp.*
+        FROM 
+            users u
+        JOIN 
+            farmer_profile fp ON u.user_id = fp.farmer_id
+        WHERE 
+            u.user_id = ?
+    `;
+
+    db.query(query, [farmerId], (error, farmer) => {
+        if (error) {
+            console.error('Error fetching farmer details:', error);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+
+        if (farmer.length === 0) {
+            return res.status(404).json({ error: 'Farmer not found' });
+        }
+
+        res.json(farmer[0]);
+    });
+});
+
+
 
 
 
