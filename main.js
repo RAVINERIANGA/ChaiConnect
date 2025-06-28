@@ -1348,6 +1348,65 @@ app.post('/my-profile/change-password', async (req, res) => {
   });
 });
 
+// GET /payments - View all completed payments with optional filters/search
+app.get('/admin/payments', (req, res) => {
+  const { search, paymentMethod, startDate, endDate, region } = req.query;
+
+  let baseQuery = `
+    SELECT 
+      p.payment_id,
+      p.amount,
+      p.payment_date,
+      p.payment_method,
+      u.name AS farmer_name,
+      u.id_number,
+      fp.location AS farmer_region
+    FROM payments p
+    JOIN users u ON p.farmer_id = u.user_id
+    LEFT JOIN farmer_profile fp ON u.user_id = fp.farmer_id
+    WHERE p.status = 'completed'
+  `;
+
+  const params = [];
+
+  if (search) {
+    baseQuery += ` AND (u.name LIKE ? OR u.id_number LIKE ?)`;
+    params.push(`%${search}%`, `%${search}%`);
+  }
+
+  if (paymentMethod) {
+    baseQuery += ` AND p.payment_method = ?`;
+    params.push(paymentMethod);
+  }
+
+  if (startDate) {
+    baseQuery += ` AND p.payment_date >= ?`;
+    params.push(startDate);
+  }
+
+  if (endDate) {
+    baseQuery += ` AND p.payment_date <= ?`;
+    params.push(endDate);
+  }
+
+  if (region) {
+    baseQuery += ` AND fp.location LIKE ?`;
+    params.push(`%${region}%`);
+  }
+
+  baseQuery += ' ORDER BY p.payment_date DESC';
+
+  db.query(baseQuery, params, (err, results) => {
+    if (err) {
+      console.error('Error fetching payments:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    res.json(results);
+  });
+});
+
+
+
 
 
 
