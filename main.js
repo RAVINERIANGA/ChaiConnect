@@ -1458,6 +1458,77 @@ app.get('/admin/payments', (req, res) => {
   });
 });
 
+//System Logs - Admin side
+app.get('/admin/system-logs', (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const offset = (page - 1) * limit;
+
+  const search = req.query.search || '';
+  const role = req.query.role || '';
+  const action = req.query.action || '';
+
+  let countQuery = `SELECT COUNT(*) as total FROM activity_logs al LEFT JOIN users u ON al.user_id = u.user_id WHERE 1=1`;
+  let dataQuery = `
+    SELECT al.*, u.name AS user, u.role
+    FROM activity_logs al
+    LEFT JOIN users u ON al.user_id = u.user_id
+    WHERE 1=1
+  `;
+
+  const filters = [];
+  if (search) {
+    countQuery += ` AND u.name LIKE ?`;
+    dataQuery += ` AND u.name LIKE ?`;
+    filters.push(`%${search}%`);
+  }
+  if (role) {
+    countQuery += ` AND u.role = ?`;
+    dataQuery += ` AND u.role = ?`;
+    filters.push(role);
+  }
+  if (action) {
+    countQuery += ` AND al.action = ?`;
+    dataQuery += ` AND al.action = ?`;
+    filters.push(action);
+  }
+
+  dataQuery += ` ORDER BY al.created_at DESC LIMIT ? OFFSET ?`;
+  const dataFilters = [...filters, limit, offset];
+
+  db.query(countQuery, filters, (err, countResult) => {
+    if (err) {
+      console.error('Error counting logs:', err);
+      return res.status(500).json({ success: false, message: 'Database error' });
+    }
+
+    const total = countResult[0].total;
+    const totalPages = Math.ceil(total / limit);
+
+    db.query(dataQuery, dataFilters, (err, logResults) => {
+      if (err) {
+        console.error('Error fetching logs:', err);
+        return res.status(500).json({ success: false, message: 'Database error' });
+      }
+
+      const actionQuery = `SELECT DISTINCT action FROM activity_logs ORDER BY action ASC`;
+      db.query(actionQuery, (err, actionResults) => {
+        const allActions = actionResults.map(a => a.action);
+        res.json({
+          page,
+          totalPages,
+          logs: logResults,
+          allActions
+        });
+      });
+    });
+  });
+});
+
+
+
+
+
 
 
 

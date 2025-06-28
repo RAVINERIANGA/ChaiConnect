@@ -1,135 +1,192 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>System Activity Logs</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>System Logs</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: 'Poppins', sans-serif;
-    }
-
     body {
-      background: linear-gradient(135deg, #36a2eb, #4c83ff);
-      color: #333;
-      min-height: 100vh;
-      padding: 20px;
+      background: #f9fafb;
+      font-family: 'Inter', sans-serif;
+      padding: 2rem;
+      color: #1f2937;
     }
-
     .container {
-      background: #fff;
-      padding: 30px;
-      border-radius: 15px;
       max-width: 1200px;
-      margin: 40px auto;
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+      margin: auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.05);
     }
-
     h2 {
       text-align: center;
-      color: #333;
-      margin-bottom: 20px;
+      margin-bottom: 1.5rem;
+      color: #1e3a8a;
     }
-
-    #filterInput {
-      width: 100%;
-      padding: 12px;
-      margin-bottom: 20px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1rem;
     }
-
+    .filters input, .filters select {
+      padding: 0.6rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
     table {
       width: 100%;
       border-collapse: collapse;
+      margin-top: 1rem;
     }
-
     th, td {
-      padding: 14px;
-      border-bottom: 1px solid #eee;
       text-align: left;
+      padding: 0.8rem;
+      border-bottom: 1px solid #e5e7eb;
     }
-
-    th {
-      background-color: #4c83ff;
-      color: #fff;
-    }
-
-    tr:hover {
-      background-color: #f5faff;
-    }
-
-    .back-button {
-      display: inline-block;
-      margin-top: 30px;
-      padding: 12px 20px;
-      background: #4c83ff;
+    thead {
+      background-color: #2563eb;
       color: white;
-      border-radius: 8px;
-      text-decoration: none;
-      transition: background 0.3s ease;
+    }
+    .pagination {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 1rem;
+    }
+    .btn {
+      padding: 0.5rem 1.2rem;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background: #1d4ed8;
+    }
+    .back-btn {
+      background-color: #607d8b;
+      margin-top: 15px;
     }
 
-    .back-button:hover {
-      background: #3b6fd8;
+    .back-btn:hover {
+      background-color: #455a64;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>📜 System Activity Logs</h2>
 
-    <input type="text" id="filterInput" placeholder="🔍 Filter by action or user...">
-
-    <table>
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>User</th>
-          <th>Action</th>
-          <th>Details</th>
-          <th>Date</th>
-        </tr>
-      </thead>
-      <tbody id="logTableBody"></tbody>
-    </table>
-
-    <a href="/admin_dashboard.html" class="back-button">← Back to Dashboard</a>
+<div class="container">
+  <h2>📊 System Logs</h2>
+  <div class="filters">
+    <input type="text" id="searchInput" placeholder="Search by user name...">
+    <select id="roleFilter">
+      <option value="">All Roles</option>
+      <option value="admin">Admin</option>
+      <option value="factory_staff">Factory Staff</option>
+      <option value="extension_officer">Extension Officer</option>
+      <option value="farmer">Farmer</option>
+    </select>
+    <select id="actionFilter">
+      <option value="">All Actions</option>
+    </select>
+    <button class="btn" onclick="downloadCSV()">⬇️ Export CSV</button>
   </div>
 
-  <script>
-    async function loadLogs() {
-      try {
-        const res = await fetch('/admin/system-logs');
-        const data = await res.json();
-        const tbody = document.getElementById('logTableBody');
-        tbody.innerHTML = data.map((log, i) => `
-          <tr>
-            <td>${i + 1}</td>
-            <td>${log.user}</td>
-            <td>${log.action}</td>
-            <td>${log.details}</td>
-            <td>${new Date(log.created_at).toLocaleString()}</td>
-          </tr>
-        `).join('');
-      } catch (err) {
-        console.error('Failed to fetch logs:', err);
-      }
-    }
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>User</th>
+        <th>Role</th>
+        <th>Action</th>
+        <th>Details</th>
+        <th>Time</th>
+      </tr>
+    </thead>
+    <tbody id="logTableBody">
+      <!-- Logs here -->
+    </tbody>
+  </table>
 
-    document.getElementById('filterInput').addEventListener('input', function () {
-      const filter = this.value.toLowerCase();
-      const rows = document.querySelectorAll('#logTableBody tr');
-      rows.forEach(row => {
-        const text = row.textContent.toLowerCase();
-        row.style.display = text.includes(filter) ? '' : 'none';
-      });
+  <div class="pagination">
+    <button class="btn" onclick="changePage(-1)">← Prev</button>
+    <span id="pageInfo">Page 1</span>
+    <button class="btn" onclick="changePage(1)">Next →</button>
+  </div>
+  <button type="button" class="btn back-btn" onclick="location.href='/admin_dashboard.html'">← Back to Dashboard</button>
+</div>
+
+<script>
+let currentPage = 1;
+const limit = 10;
+
+async function fetchLogs() {
+  const search = document.getElementById('searchInput').value;
+  const role = document.getElementById('roleFilter').value;
+  const action = document.getElementById('actionFilter').value;
+
+  const res = await fetch(`/admin/system-logs?page=${currentPage}&limit=${limit}&search=${search}&role=${role}&action=${action}`);
+  const data = await res.json();
+
+  const tbody = document.getElementById('logTableBody');
+  tbody.innerHTML = '';
+
+  data.logs.forEach((log, index) => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${(currentPage - 1) * limit + index + 1}</td>
+      <td>${log.user || 'Unknown'}</td>
+      <td>${log.role || '-'}</td>
+      <td>${log.action}</td>
+      <td>${log.details || '-'}</td>
+      <td>${new Date(log.created_at).toLocaleString()}</td>
+    `;
+    tbody.appendChild(row);
+  });
+
+  document.getElementById('pageInfo').textContent = `Page ${data.page} of ${data.totalPages}`;
+
+  // Populate actions (roles already prefilled)
+  const actionFilter = document.getElementById('actionFilter');
+  if (actionFilter.options.length === 1) {
+    data.allActions.forEach(action => {
+      const opt = document.createElement('option');
+      opt.value = action;
+      opt.textContent = action;
+      actionFilter.appendChild(opt);
     });
+  }
+}
 
-    loadLogs();
-  </script>
+function changePage(direction) {
+  if (direction === -1 && currentPage > 1) currentPage--;
+  else if (direction === 1) currentPage++;
+  fetchLogs();
+}
+
+function downloadCSV() {
+  const role = document.getElementById('roleFilter').value;
+  const action = document.getElementById('actionFilter').value;
+  const search = document.getElementById('searchInput').value;
+  const url = `/admin/system-logs/export?role=${role}&action=${action}&search=${search}`;
+  window.location.href = url;
+}
+
+// Event listeners
+['searchInput', 'roleFilter', 'actionFilter'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => {
+    currentPage = 1;
+    fetchLogs();
+  });
+});
+
+fetchLogs();
+</script>
+
 </body>
 </html>
