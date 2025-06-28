@@ -188,7 +188,12 @@ app.get('/manage_users.html', (req, res) => {
 
 // GET all users
 app.get('/admin/users', (req, res) => {
-  db.query('SELECT user_id, name, email, phone, role FROM users', (err, results) => {
+  const query = `
+    SELECT user_id, name, email, phone, role 
+    FROM users 
+    WHERE role != 'admin'
+  `;
+  db.query(query, (err, results) => {
     if (err) {
       console.error(err);
       return res.status(500).json({ success: false, message: 'Database error' });
@@ -199,43 +204,91 @@ app.get('/admin/users', (req, res) => {
 
 //UPDATE user
 app.put('/admin/users/:id', (req, res) => {
-  const userId = req.params.id;
+  const { id } = req.params;
   const { name, email, phone, role } = req.body;
-
 
   if (!name || !email || !phone || !role) {
     return res.status(400).json({ success: false, message: 'Missing fields' });
   }
 
   const query = `
-    UPDATE users
-    SET name = ?, email = ?, phone = ?, role = ?
-    WHERE user_id = ?
+    UPDATE users SET name = ?, email = ?, phone = ?, role = ? WHERE user_id = ?
   `;
-
-  db.query(query, [name, email, phone, role, userId], (err, result) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ success: false, message: 'Database error' });
-    }
-
-    if (result.affectedRows === 0) {
+  db.query(query, [name, email, phone, role, id], (err, result) => {
+    if (err) return res.status(500).json({ success: false, message: 'Database error' });
+    if (result.affectedRows === 0)
       return res.status(404).json({ success: false, message: 'User not found' });
-    }
 
-    res.json({ success: true, message: 'User updated successfully' });
+    res.json({ success: true });
   });
 });
 
 // DELETE user
+
 app.delete('/admin/users/:id', (req, res) => {
   const userId = req.params.id;
-  db.query('DELETE FROM users WHERE user_id = ?', [userId], (err, result) => {
+
+  const deleteQueries = [
+    { query: 'DELETE FROM activity_logs WHERE user_id = ?', params: [userId] },
+    { query: 'DELETE FROM factory_staff WHERE user_id = ?', params: [userId] },
+    { query: 'DELETE FROM extension_officers WHERE user_id = ?', params: [userId] },
+    { query: 'DELETE FROM admins WHERE user_id = ?', params: [userId] },
+    { query: 'DELETE FROM farmer_profile WHERE farmer_id = ?', params: [userId] },
+    { query: 'DELETE FROM deliveries WHERE farmer_id = ? OR staff_id = ?', params: [userId, userId] },
+    { query: 'DELETE FROM payments WHERE farmer_id = ?', params: [userId] },
+    { query: 'DELETE FROM complaints WHERE farmer_id = ?', params: [userId] },
+    { query: 'DELETE FROM training_records WHERE officer_id = ?', params: [userId] },
+    { query: 'DELETE FROM feedback WHERE farmer_id = ?', params: [userId] },
+    { query: 'DELETE FROM policy_documents WHERE uploaded_by = ?', params: [userId] },
+    { query: 'DELETE FROM farmer_mismatch_flags WHERE farmer_id = ? OR staff_id = ?', params: [userId, userId] },
+    { query: 'DELETE FROM suspended_accounts WHERE user_id = ?', params: [userId] },
+    { query: 'DELETE FROM user_alerts_read WHERE user_id = ?', params: [userId] }
+  ];
+
+  db.beginTransaction((err) => {
     if (err) {
-      console.error(err);
-      return res.status(500).json({ success: false });
+      console.error('Transaction start failed:', err);
+      return res.status(500).json({ success: false, message: 'Transaction start failed' });
     }
-    res.json({ success: true });
+
+    const runQuery = (index = 0) => {
+      if (index >= deleteQueries.length) {
+        // All related deletes done, now delete user
+        return db.query('DELETE FROM users WHERE user_id = ?', [userId], (err, result) => {
+          if (err) {
+            return db.rollback(() => {
+              console.error('Final delete failed:', err);
+              res.status(500).json({ success: false, message: 'User delete failed' });
+            });
+          }
+
+          db.commit((err) => {
+            if (err) {
+              return db.rollback(() => {
+                console.error('Commit failed:', err);
+                res.status(500).json({ success: false, message: 'Transaction commit failed' });
+              });
+            }
+
+            return res.json({ success: true, message: 'User deleted successfully' });
+          });
+        });
+      }
+
+      const { query, params } = deleteQueries[index];
+      db.query(query, params, (err) => {
+        if (err) {
+          return db.rollback(() => {
+            console.error(`Error on ${query}:`, err);
+            res.status(500).json({ success: false, message: 'Related deletion failed' });
+          });
+        }
+
+        runQuery(index + 1);
+      });
+    };
+
+    runQuery(); // Start sequential deletion
   });
 });
 
