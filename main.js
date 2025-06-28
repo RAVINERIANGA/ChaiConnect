@@ -1396,7 +1396,7 @@ app.post('/my-profile/change-password', async (req, res) => {
     const hashed = await bcrypt.hash(newPassword, 10);
     db.query('UPDATE users SET password = ?, must_change_password = FALSE WHERE user_id = ?', [hashed, userId], (err) => {
       if (err) return res.status(500).json({ error: 'Database error' });
-      res.json({ success: true });
+      res.json({ success: true, message: 'Password changed successfully!' });
     });
   });
 });
