@@ -1290,6 +1290,65 @@ app.get('/admin/report/productivity', (req, res) => {
   });
 });
 
+// GET user profile
+app.get('/my-profile', (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ error: 'Not logged in' });
+
+  const query = 'SELECT user_id, name, email, phone, gender, id_number, role FROM users WHERE user_id = ?';
+  db.query(query, [userId], (err, results) => {
+    if (err) {
+      console.error('Error fetching profile:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    if (results.length === 0) return res.status(404).json({ error: 'User not found' });
+    res.json(results[0]);
+  });
+});
+
+// POST to update user profile
+app.post('/my-profile/update', (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ error: 'Not logged in' });
+
+  const { name, email, phone } = req.body;
+  if (!name || !email || !phone) return res.status(400).json({ error: 'Missing fields' });
+
+  const query = 'UPDATE users SET name = ?, email = ?, phone = ? WHERE user_id = ?';
+  db.query(query, [name, email, phone, userId], (err) => {
+    if (err) {
+      console.error('Error updating profile:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    res.json({ success: true });
+  });
+});
+
+// POST to change password
+app.post('/my-profile/change-password', async (req, res) => {
+  const userId = req.session.userId;
+  const { currentPassword, newPassword } = req.body;
+
+  if (!userId || !currentPassword || !newPassword) {
+    return res.status(400).json({ error: 'Missing fields' });
+  }
+
+  db.query('SELECT password FROM users WHERE user_id = ?', [userId], async (err, results) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    if (results.length === 0) return res.status(404).json({ error: 'User not found' });
+
+    const match = await bcrypt.compare(currentPassword, results[0].password);
+    if (!match) return res.status(401).json({ error: 'Incorrect current password' });
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    db.query('UPDATE users SET password = ?, must_change_password = FALSE WHERE user_id = ?', [hashed, userId], (err) => {
+      if (err) return res.status(500).json({ error: 'Database error' });
+      res.json({ success: true });
+    });
+  });
+});
+
+
 
 
 
