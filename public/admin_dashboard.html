@@ -27,11 +27,12 @@
     <h3>Admin Dashboard</h3>
     <ul>
       <li><a href="#" class="active">Home</a></li>
+      <li><a href="admin_profile.html">View My Profile</a></li>
       <li><a href="assign_roles.html">Create New Users</a></li>
       <li><a href="manage_users.html">View All System Users</a></li>
-      <li><a href="#system-logs">View System Logs</a></li>
       <li><a href="/farmer_mismatches.html">Review Mismatches</a></li>
       <li><a href="/suspended_accounts.html">View suspended accounts</a></li>
+      <li><a href="/view_policies.html">View uploaded policies</a></li>
       <!--<li><a href="#logout" onclick="logout()">Logout</a></li>-->
     </ul>
   </div>
@@ -80,9 +81,9 @@
       </div>
 
       <div class="card">
-        <h3>Assign Roles</h3>
-        <p>Approve or assign roles to newly added system users.</p>
-        <button onclick="location.href='/assign_roles.html'">Assign</button>
+        <h3>Add new users</h3>
+        <p>Add new users(Factory Staff/Extension Officers) to the system to newly added system users.</p>
+        <button onclick="location.href='/assign_roles.html'">Add</button>
       </div>
       <div class="card">
         <h3>Create Alerts</h3>
@@ -106,6 +107,11 @@
         <p>Pay verified tea deliveries to farmers.</p>
         <button onclick="location.href='/issue_payments.html'">Issue</button>
       </div>
+      <div class="card">
+        <h3>View Issued Payments</h3>
+        <p>View payment that have already been issued.</p>
+        <button onclick="location.href='/admin_view_payments.html'">View</button>
+      </div>
 
       <div class="card">
         <h3>System Activity</h3>
@@ -128,7 +134,7 @@
       <div class="card">
         <h3>Upload Policy Documents</h3>
         <p>Create and upload documents for the system and upload for the users to view.</p>
-        <button onclick="location.href='/policies.html'">View</button>
+        <button onclick="location.href='/policies.html'">Upload</button>
       </div>
 
       <div class="card">

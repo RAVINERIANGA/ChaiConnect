@@ -1,217 +1,360 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Factory Staff Dashboard - Assign Farmers</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        .sidebar {
-            min-height: 100vh;
-            background-color: #f8f9fa;
-        }
-        .dashboard-header {
-            background-color: #0d6efd;
-            color: white;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <title>Assign Farmers</title>
+  <link href="https://fonts.googleapis.com/css2?family=Segoe+UI&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f6f9;
+      margin: 0;
+      padding: 40px;
+    }
+
+    .container {
+      max-width: 1300px;
+      margin: auto;
+      background: #ffffff;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+    }
+
+    h2 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 30px;
+      font-size: 26px;
+    }
+
+    .back-btn {
+      display: block;
+      margin: 0 auto 30px auto;
+      padding: 10px 16px;
+      background-color: #607d8b;
+      color: white;
+      border: none;
+      font-size: 15px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .back-btn:hover {
+      background-color: #455a64;
+    }
+
+    .section {
+      margin-bottom: 40px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      font-size: 15px;
+      margin-top: 6px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    th, td {
+      padding: 12px 15px;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f0f0f0;
+    }
+
+    tr.selected {
+      background-color: #c8e6c9;
+    }
+
+    .btn-confirm {
+      margin-top: 20px;
+      padding: 12px 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .btn-confirm:disabled {
+      background-color: #a5d6a7;
+      cursor: not-allowed;
+    }
+
+    .btn-danger {
+      background-color: #d9534f;
+      border: none;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .btn-danger:hover {
+      background-color: #c9302c;
+    }
+
+    .status {
+      margin-top: 20px;
+      text-align: center;
+      font-weight: 500;
+    }
+
+    .success {
+      color: #388e3c;
+    }
+
+    .error {
+      color: #d32f2f;
+    }
+
+    .filters {
+      display: flex;
+      gap: 20px;
+      margin-top: 10px;
+    }
+
+    .filters input {
+      flex: 1;
+    }
+  </style>
 </head>
 <body>
-    <div class="container-fluid">
-        <div class="row">
-            <!-- Sidebar -->
-            <div class="col-md-3 col-lg-2 d-md-block sidebar collapse">
-                <div class="position-sticky pt-3">
-                    <ul class="nav flex-column">
-                        <li class="nav-item">
-                            <a class="nav-link" href="#">
-                                <i class="bi bi-house"></i> Dashboard
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link active" href="#">
-                                <i class="bi bi-person-plus"></i> Assign Farmers
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#">
-                                <i class="bi bi-people"></i> All Farmers
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#">
-                                <i class="bi bi-gear"></i> Settings
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
+  <div class="container">
+    <h2>Assign Farmers to Extension Officers</h2>
+    <button class="back-btn" onclick="window.location.href='/factory_staff_dashboard.html'">← Back to Dashboard</button>
 
-            <!-- Main Content -->
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom dashboard-header">
-                    <h1 class="h2">Assign Farmers to Extension Officers</h1>
-                </div>
-
-                <!-- Assignment Form -->
-                <div class="card mb-4">
-                    <div class="card-body">
-                        <form id="assignmentForm">
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label for="farmerSelect" class="form-label">Select Farmer</label>
-                                    <select class="form-select" id="farmerSelect" required>
-                                        <option value="" selected disabled>Choose a farmer...</option>
-                                        <!-- Options will be loaded via JavaScript -->
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="officerSelect" class="form-label">Select Extension Officer</label>
-                                    <select class="form-select" id="officerSelect" required>
-                                        <option value="" selected disabled>Choose an officer...</option>
-                                        <!-- Options will be loaded via JavaScript -->
-                                    </select>
-                                </div>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Assign Farmer</button>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- Current Assignments Table -->
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title">Current Assignments</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-striped" id="assignmentsTable">
-                                <thead>
-                                    <tr>
-                                        <th>Farmer ID</th>
-                                        <th>Farmer Name</th>
-                                        <th>Extension Officer</th>
-                                        <th>Assigned Since</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Data will be loaded via JavaScript -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </main>
-        </div>
+    <div class="section">
+      <h3>Search Farmer</h3>
+      <input type="text" id="farmerSearch" placeholder="Search by name or region">
+      <table id="farmerTable">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Region</th>
+            <th>Email</th>
+            <th>Phone</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
     </div>
 
-    <!-- JavaScript Libraries -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
-    <!-- Custom JavaScript -->
-    <script>
-        $(document).ready(function() {
-            // Load farmers and officers dropdowns
-            $.get('/api/unassigned-farmers', function(farmers) {
-                const farmerSelect = $('#farmerSelect');
-                farmers.forEach(farmer => {
-                    farmerSelect.append(`<option value="${farmer.user_id}">${farmer.name} (ID: ${farmer.user_id})</option>`);
-                });
-            });
+    <div class="section">
+      <h3>Search Extension Officer</h3>
+      <div class="filters">
+        <input type="text" id="officerRegionSearch" placeholder="Filter by region">
+        <input type="text" id="officerSpecSearch" placeholder="Filter by specialization">
+      </div>
+      <table id="officerTable">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Region</th>
+            <th>Specialization</th>
+            <th>Email</th>
+            <th>Phone</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
 
-            $.get('/api/extension-officers', function(officers) {
-                const officerSelect = $('#officerSelect');
-                officers.forEach(officer => {
-                    officerSelect.append(`<option value="${officer.user_id}">${officer.name} (ID: ${officer.user_id})</option>`);
-                });
-            });
+    <button id="confirmAssign" class="btn-confirm" disabled>Confirm Assignment</button>
+    <div class="status" id="statusMessage"></div>
 
-            // Load current assignments
-            function loadAssignments() {
-                $.get('/api/current-assignments', function(assignments) {
-                    const tableBody = $('#assignmentsTable tbody');
-                    tableBody.empty();
-                    
-                    assignments.forEach(assignment => {
-                        tableBody.append(`
-                            <tr>
-                                <td>${assignment.farmer_id}</td>
-                                <td>${assignment.farmer_name}</td>
-                                <td>${assignment.officer_name}</td>
-                                <td>${assignment.assigned_since}</td>
-                                <td>
-                                    <button class="btn btn-sm btn-danger unassign-btn" data-farmer-id="${assignment.farmer_id}">
-                                        Unassign
-                                    </button>
-                                </td>
-                            </tr>
-                        `);
-                    });
-                });
-            }
+    <div class="section">
+      <h3>Current Assignments</h3>
+      <table id="assignmentsTable">
+        <thead>
+          <tr>
+            <th>Farmer ID</th>
+            <th>Farmer Name</th>
+            <th>Extension Officer</th>
+            <th>Assigned Since</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
 
-            loadAssignments();
+  <script>
+    let selectedFarmerId = null;
+    let selectedOfficerId = null;
+    let allFarmers = [];
+    let allOfficers = [];
 
-            // Handle form submission
-            $('#assignmentForm').submit(function(e) {
-                e.preventDefault();
-                
-                const farmerId = $('#farmerSelect').val();
-                const officerId = $('#officerSelect').val();
-                
-                $.post('/api/assign-farmer', { farmerId, officerId }, function(response) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Assignment Successful',
-                        text: 'The farmer has been assigned to the extension officer.'
-                    });
-                    
-                    // Reload data
-                    loadAssignments();
-                    $('#assignmentForm')[0].reset();
-                }).fail(function() {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Assignment Failed',
-                        text: 'There was an error assigning the farmer.'
-                    });
-                });
-            });
+    const farmerTableBody = document.querySelector('#farmerTable tbody');
+    const officerTableBody = document.querySelector('#officerTable tbody');
+    const assignmentsTableBody = document.querySelector('#assignmentsTable tbody');
+    const confirmBtn = document.getElementById('confirmAssign');
+    const statusMessage = document.getElementById('statusMessage');
 
-            // Handle unassign
-            $('#assignmentsTable').on('click', '.unassign-btn', function() {
-                const farmerId = $(this).data('farmer-id');
-                
-                Swal.fire({
-                    title: 'Confirm Unassignment',
-                    text: 'Are you sure you want to unassign this farmer?',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'Yes, unassign',
-                    cancelButtonText: 'Cancel'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        $.post('/api/unassign-farmer', { farmerId }, function(response) {
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Unassignment Successful',
-                                text: 'The farmer has been unassigned.'
-                            });
-                            loadAssignments();
-                        }).fail(function() {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Unassignment Failed',
-                                text: 'There was an error unassigning the farmer.'
-                            });
-                        });
-                    }
-                });
-            });
+    function updateConfirmButton() {
+      confirmBtn.disabled = !(selectedFarmerId && selectedOfficerId);
+    }
+
+    async function loadFarmers() {
+      const res = await fetch('/api/unassigned-farmers');
+      allFarmers = await res.json();
+      renderFarmerTable(allFarmers);
+    }
+
+    async function loadOfficers() {
+      const res = await fetch('/api/extension-officers');
+      allOfficers = await res.json();
+      renderOfficerTable(allOfficers);
+    }
+
+    function renderFarmerTable(data) {
+      farmerTableBody.innerHTML = '';
+      data.forEach(farmer => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${farmer.name}</td>
+          <td>${farmer.region || farmer.location || '—'}</td>
+          <td>${farmer.email}</td>
+          <td>${farmer.phone}</td>
+        `;
+        row.addEventListener('click', () => {
+          farmerTableBody.querySelectorAll('tr').forEach(r => r.classList.remove('selected'));
+          row.classList.add('selected');
+          selectedFarmerId = farmer.user_id;
+          updateConfirmButton();
         });
-    </script>
+        farmerTableBody.appendChild(row);
+      });
+    }
+
+    function renderOfficerTable(data) {
+      officerTableBody.innerHTML = '';
+      data.forEach(officer => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${officer.name}</td>
+          <td>${officer.region || '—'}</td>
+          <td>${officer.specialization || '—'}</td>
+          <td>${officer.email}</td>
+          <td>${officer.phone}</td>
+        `;
+        row.addEventListener('click', () => {
+          officerTableBody.querySelectorAll('tr').forEach(r => r.classList.remove('selected'));
+          row.classList.add('selected');
+          selectedOfficerId = officer.officer_id;
+          updateConfirmButton();
+        });
+        officerTableBody.appendChild(row);
+      });
+    }
+
+    document.getElementById('farmerSearch').addEventListener('input', function () {
+      const term = this.value.toLowerCase();
+      const filtered = allFarmers.filter(f =>
+        f.name.toLowerCase().includes(term) || 
+        (f.region && f.region.toLowerCase().includes(term)) ||
+        (f.location && f.location.toLowerCase().includes(term))
+      );
+      renderFarmerTable(filtered);
+    });
+
+    const officerRegionInput = document.getElementById('officerRegionSearch');
+    const officerSpecInput = document.getElementById('officerSpecSearch');
+
+    function filterOfficers() {
+      const regionTerm = officerRegionInput.value.toLowerCase();
+      const specTerm = officerSpecInput.value.toLowerCase();
+      const filtered = allOfficers.filter(o =>
+        (!regionTerm || (o.region && o.region.toLowerCase().includes(regionTerm))) &&
+        (!specTerm || (o.specialization && o.specialization.toLowerCase().includes(specTerm)))
+      );
+      renderOfficerTable(filtered);
+    }
+
+    officerRegionInput.addEventListener('input', filterOfficers);
+    officerSpecInput.addEventListener('input', filterOfficers);
+
+    confirmBtn.addEventListener('click', async () => {
+      const res = await fetch('/api/assign-farmer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ farmerId: selectedFarmerId, officerId: selectedOfficerId })
+      });
+
+      const result = await res.json();
+      if (result.success) {
+        statusMessage.textContent = '✅ Farmer assigned successfully.';
+        statusMessage.className = 'status success';
+        selectedFarmerId = null;
+        selectedOfficerId = null;
+        updateConfirmButton();
+        loadFarmers();
+        loadAssignments();
+        farmerTableBody.querySelectorAll('tr').forEach(r => r.classList.remove('selected'));
+        officerTableBody.querySelectorAll('tr').forEach(r => r.classList.remove('selected'));
+      } else {
+        statusMessage.textContent = result.message || '❌ Assignment failed.';
+        statusMessage.className = 'status error';
+      }
+    });
+
+    async function loadAssignments() {
+      const res = await fetch('/api/current-assignments');
+      const assignments = await res.json();
+      assignmentsTableBody.innerHTML = '';
+
+      assignments.forEach(assignment => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${assignment.farmer_id}</td>
+          <td>${assignment.farmer_name}</td>
+          <td>${assignment.officer_name}</td>
+          <td>${assignment.assigned_since}</td>
+          <td><button class="btn-danger" onclick="unassign(${assignment.farmer_id})">Unassign</button></td>
+        `;
+        assignmentsTableBody.appendChild(row);
+      });
+    }
+
+    async function unassign(farmerId) {
+      if (!confirm('Are you sure you want to unassign this farmer?')) return;
+
+      const res = await fetch('/api/unassign-farmer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ farmerId })
+      });
+
+      const result = await res.json();
+      if (result.success) {
+        statusMessage.textContent = '✅ Farmer unassigned successfully.';
+        statusMessage.className = 'status success';
+        loadFarmers();
+        loadAssignments();
+      } else {
+        statusMessage.textContent = '❌ Failed to unassign farmer.';
+        statusMessage.className = 'status error';
+      }
+    }
+
+    // Init
+    loadFarmers();
+    loadOfficers();
+    loadAssignments();
+  </script>
 </body>
 </html>

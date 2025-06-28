@@ -188,7 +188,12 @@ app.get('/manage_users.html', (req, res) => {
 
 // GET all users
 app.get('/admin/users', (req, res) => {
-  db.query('SELECT user_id, name, email, phone, role FROM users', (err, results) => {
+  const query = `
+    SELECT user_id, name, email, phone, role 
+    FROM users 
+    WHERE role != 'admin'
+  `;
+  db.query(query, (err, results) => {
     if (err) {
       console.error(err);
       return res.status(500).json({ success: false, message: 'Database error' });
@@ -199,43 +204,91 @@ app.get('/admin/users', (req, res) => {
 
 //UPDATE user
 app.put('/admin/users/:id', (req, res) => {
-  const userId = req.params.id;
+  const { id } = req.params;
   const { name, email, phone, role } = req.body;
-
 
   if (!name || !email || !phone || !role) {
     return res.status(400).json({ success: false, message: 'Missing fields' });
   }
 
   const query = `
-    UPDATE users
-    SET name = ?, email = ?, phone = ?, role = ?
-    WHERE user_id = ?
+    UPDATE users SET name = ?, email = ?, phone = ?, role = ? WHERE user_id = ?
   `;
-
-  db.query(query, [name, email, phone, role, userId], (err, result) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ success: false, message: 'Database error' });
-    }
-
-    if (result.affectedRows === 0) {
+  db.query(query, [name, email, phone, role, id], (err, result) => {
+    if (err) return res.status(500).json({ success: false, message: 'Database error' });
+    if (result.affectedRows === 0)
       return res.status(404).json({ success: false, message: 'User not found' });
-    }
 
-    res.json({ success: true, message: 'User updated successfully' });
+    res.json({ success: true });
   });
 });
 
 // DELETE user
+
 app.delete('/admin/users/:id', (req, res) => {
   const userId = req.params.id;
-  db.query('DELETE FROM users WHERE user_id = ?', [userId], (err, result) => {
+
+  const deleteQueries = [
+    { query: 'DELETE FROM activity_logs WHERE user_id = ?', params: [userId] },
+    { query: 'DELETE FROM factory_staff WHERE user_id = ?', params: [userId] },
+    { query: 'DELETE FROM extension_officers WHERE user_id = ?', params: [userId] },
+    { query: 'DELETE FROM admins WHERE user_id = ?', params: [userId] },
+    { query: 'DELETE FROM farmer_profile WHERE farmer_id = ?', params: [userId] },
+    { query: 'DELETE FROM deliveries WHERE farmer_id = ? OR staff_id = ?', params: [userId, userId] },
+    { query: 'DELETE FROM payments WHERE farmer_id = ?', params: [userId] },
+    { query: 'DELETE FROM complaints WHERE farmer_id = ?', params: [userId] },
+    { query: 'DELETE FROM training_records WHERE officer_id = ?', params: [userId] },
+    { query: 'DELETE FROM feedback WHERE farmer_id = ?', params: [userId] },
+    { query: 'DELETE FROM policy_documents WHERE uploaded_by = ?', params: [userId] },
+    { query: 'DELETE FROM farmer_mismatch_flags WHERE farmer_id = ? OR staff_id = ?', params: [userId, userId] },
+    { query: 'DELETE FROM suspended_accounts WHERE user_id = ?', params: [userId] },
+    { query: 'DELETE FROM user_alerts_read WHERE user_id = ?', params: [userId] }
+  ];
+
+  db.beginTransaction((err) => {
     if (err) {
-      console.error(err);
-      return res.status(500).json({ success: false });
+      console.error('Transaction start failed:', err);
+      return res.status(500).json({ success: false, message: 'Transaction start failed' });
     }
-    res.json({ success: true });
+
+    const runQuery = (index = 0) => {
+      if (index >= deleteQueries.length) {
+        // All related deletes done, now delete user
+        return db.query('DELETE FROM users WHERE user_id = ?', [userId], (err, result) => {
+          if (err) {
+            return db.rollback(() => {
+              console.error('Final delete failed:', err);
+              res.status(500).json({ success: false, message: 'User delete failed' });
+            });
+          }
+
+          db.commit((err) => {
+            if (err) {
+              return db.rollback(() => {
+                console.error('Commit failed:', err);
+                res.status(500).json({ success: false, message: 'Transaction commit failed' });
+              });
+            }
+
+            return res.json({ success: true, message: 'User deleted successfully' });
+          });
+        });
+      }
+
+      const { query, params } = deleteQueries[index];
+      db.query(query, params, (err) => {
+        if (err) {
+          return db.rollback(() => {
+            console.error(`Error on ${query}:`, err);
+            res.status(500).json({ success: false, message: 'Related deletion failed' });
+          });
+        }
+
+        runQuery(index + 1);
+      });
+    };
+
+    runQuery(); // Start sequential deletion
   });
 });
 
@@ -318,23 +371,23 @@ app.post('/change-password', (req, res) => {
 
         switch (role) {
           case 'farmer':
-            dashboardPath = '/farmer_dashboard';
+            dashboardPath = '/farmer_dashboard.html';
             break;
           case 'admin':
-            dashboardPath = '/admin_dashboard';
+            dashboardPath = '/admin_dashboard.html';
             break;
           case 'extension_officer':
-            dashboardPath = '/extension_dashboard';
+            dashboardPath = '/extension_officer_dashboard.html';
             break;
           case 'factory_staff':
-            dashboardPath = '/factory_staff_dashboard';
+            dashboardPath = '/factory_staff_dashboard.html';
             break;
           default:
             dashboardPath = '/';
         }
 
 
-        res.redirect(dashboardPath);
+        res.json({ success: true, redirectTo: dashboardPath });
       }
     );
   });
@@ -1226,6 +1279,468 @@ app.post('/admin/upload-policy', upload.single('policyFile'), (req, res) => {
     return res.status(200).json({ success: true, message: 'Policy uploaded successfully' });
   });
 });
+
+//View policies 
+app.get('/policies', (req, res) => {
+  const query = `
+    SELECT title, description, file_path, uploaded_at
+    FROM policy_documents
+    ORDER BY uploaded_at DESC
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching policies:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    res.json(results);
+  });
+});
+
+// Finance Report: total payments per farmer
+app.get('/admin/report/finance', (req, res) => {
+  const query = `
+    SELECT u.name AS farmer_name, SUM(p.amount) AS total_earned, COUNT(p.payment_id) AS total_payments
+    FROM payments p
+    JOIN users u ON p.farmer_id = u.user_id
+    GROUP BY p.farmer_id
+    ORDER BY total_earned DESC
+  `;
+  db.query(query, (err, results) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    res.json(results);
+  });
+});
+
+// Training Report: training sessions and officer names
+app.get('/admin/report/training', (req, res) => {
+  const query = `
+    SELECT tr.training_topic, tr.training_date, u.name AS officer_name, tr.summary
+    FROM training_records tr
+    JOIN users u ON tr.officer_id = u.user_id
+    ORDER BY tr.training_date DESC
+  `;
+  db.query(query, (err, results) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    res.json(results);
+  });
+});
+
+// Productivity Report: quantity delivered per farmer
+app.get('/admin/report/productivity', (req, res) => {
+  const query = `
+    SELECT u.name AS farmer_name, COUNT(d.delivery_id) AS deliveries, 
+           SUM(d.quantity_kg) AS total_kg, 
+           ROUND(SUM(d.quantity_kg)/COUNT(d.delivery_id), 2) AS avg_kg
+    FROM deliveries d
+    JOIN users u ON d.farmer_id = u.user_id
+    GROUP BY d.farmer_id
+    ORDER BY total_kg DESC
+  `;
+  db.query(query, (err, results) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    res.json(results);
+  });
+});
+
+// GET user profile
+app.get('/my-profile', (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ error: 'Not logged in' });
+
+  const query = 'SELECT user_id, name, email, phone, gender, id_number, role FROM users WHERE user_id = ?';
+  db.query(query, [userId], (err, results) => {
+    if (err) {
+      console.error('Error fetching profile:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    if (results.length === 0) return res.status(404).json({ error: 'User not found' });
+    res.json(results[0]);
+  });
+});
+
+// POST to update user profile
+app.post('/my-profile/update', (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ error: 'Not logged in' });
+
+  const { name, email, phone } = req.body;
+  if (!name || !email || !phone) return res.status(400).json({ error: 'Missing fields' });
+
+  const query = 'UPDATE users SET name = ?, email = ?, phone = ? WHERE user_id = ?';
+  db.query(query, [name, email, phone, userId], (err) => {
+    if (err) {
+      console.error('Error updating profile:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    res.json({ success: true });
+  });
+});
+
+// POST to change password
+app.post('/my-profile/change-password', async (req, res) => {
+  const userId = req.session.userId;
+  const { currentPassword, newPassword } = req.body;
+
+  if (!userId || !currentPassword || !newPassword) {
+    return res.status(400).json({ error: 'Missing fields' });
+  }
+
+  db.query('SELECT password FROM users WHERE user_id = ?', [userId], async (err, results) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    if (results.length === 0) return res.status(404).json({ error: 'User not found' });
+
+    const match = await bcrypt.compare(currentPassword, results[0].password);
+    if (!match) return res.status(401).json({ error: 'Incorrect current password' });
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    db.query('UPDATE users SET password = ?, must_change_password = FALSE WHERE user_id = ?', [hashed, userId], (err) => {
+      if (err) return res.status(500).json({ error: 'Database error' });
+      res.json({ success: true, message: 'Password changed successfully!' });
+    });
+  });
+});
+
+// GET /payments - View all completed payments with optional filters/search
+app.get('/admin/payments', (req, res) => {
+  const { search, paymentMethod, startDate, endDate, region } = req.query;
+
+  let baseQuery = `
+    SELECT 
+      p.payment_id,
+      p.amount,
+      p.payment_date,
+      p.payment_method,
+      u.name AS farmer_name,
+      u.id_number,
+      fp.location AS farmer_region
+    FROM payments p
+    JOIN users u ON p.farmer_id = u.user_id
+    LEFT JOIN farmer_profile fp ON u.user_id = fp.farmer_id
+    WHERE p.status = 'completed'
+  `;
+
+  const params = [];
+
+  if (search) {
+    baseQuery += ` AND (u.name LIKE ? OR u.id_number LIKE ?)`;
+    params.push(`%${search}%`, `%${search}%`);
+  }
+
+  if (paymentMethod) {
+    baseQuery += ` AND p.payment_method = ?`;
+    params.push(paymentMethod);
+  }
+
+  if (startDate) {
+    baseQuery += ` AND p.payment_date >= ?`;
+    params.push(startDate);
+  }
+
+  if (endDate) {
+    baseQuery += ` AND p.payment_date <= ?`;
+    params.push(endDate);
+  }
+
+  if (region) {
+    baseQuery += ` AND fp.location LIKE ?`;
+    params.push(`%${region}%`);
+  }
+
+  baseQuery += ' ORDER BY p.payment_date DESC';
+
+  db.query(baseQuery, params, (err, results) => {
+    if (err) {
+      console.error('Error fetching payments:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    res.json(results);
+  });
+});
+
+//System Logs - Admin side
+app.get('/admin/system-logs', (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const offset = (page - 1) * limit;
+
+  const search = req.query.search || '';
+  const role = req.query.role || '';
+  const action = req.query.action || '';
+
+  let countQuery = `SELECT COUNT(*) as total FROM activity_logs al LEFT JOIN users u ON al.user_id = u.user_id WHERE 1=1`;
+  let dataQuery = `
+    SELECT al.*, u.name AS user, u.role
+    FROM activity_logs al
+    LEFT JOIN users u ON al.user_id = u.user_id
+    WHERE 1=1
+  `;
+
+  const filters = [];
+  if (search) {
+    countQuery += ` AND u.name LIKE ?`;
+    dataQuery += ` AND u.name LIKE ?`;
+    filters.push(`%${search}%`);
+  }
+  if (role) {
+    countQuery += ` AND u.role = ?`;
+    dataQuery += ` AND u.role = ?`;
+    filters.push(role);
+  }
+  if (action) {
+    countQuery += ` AND al.action = ?`;
+    dataQuery += ` AND al.action = ?`;
+    filters.push(action);
+  }
+
+  dataQuery += ` ORDER BY al.created_at DESC LIMIT ? OFFSET ?`;
+  const dataFilters = [...filters, limit, offset];
+
+  db.query(countQuery, filters, (err, countResult) => {
+    if (err) {
+      console.error('Error counting logs:', err);
+      return res.status(500).json({ success: false, message: 'Database error' });
+    }
+
+    const total = countResult[0].total;
+    const totalPages = Math.ceil(total / limit);
+
+    db.query(dataQuery, dataFilters, (err, logResults) => {
+      if (err) {
+        console.error('Error fetching logs:', err);
+        return res.status(500).json({ success: false, message: 'Database error' });
+      }
+
+      const actionQuery = `SELECT DISTINCT action FROM activity_logs ORDER BY action ASC`;
+      db.query(actionQuery, (err, actionResults) => {
+        const allActions = actionResults.map(a => a.action);
+        res.json({
+          page,
+          totalPages,
+          logs: logResults,
+          allActions
+        });
+      });
+    });
+  });
+});
+
+
+// API endpoint to get assigned farmers for the logged-in extension officer
+app.get('/api/assigned-farmers', (req, res) => {
+    const officerId = req.session.userId;
+
+    if (!officerId) {
+        return res.status(401).json({ error: 'Not logged in' });
+    }
+
+    const query = `
+        SELECT 
+            u.user_id, 
+            u.name, 
+            u.email, 
+            u.phone, 
+            u.gender, 
+            u.id_number,
+            fp.location
+        FROM 
+            users u
+        JOIN 
+            farmer_profile fp ON u.user_id = fp.farmer_id
+        JOIN 
+            farmer_assignments fa ON u.user_id = fa.farmer_id
+        JOIN 
+            extension_officers eo ON fa.officer_id = eo.officer_id
+        WHERE 
+            eo.user_id = ? AND
+            u.role = 'farmer'
+        ORDER BY 
+            u.name
+    `;
+
+    db.query(query, [officerId], (error, farmers) => {
+        if (error) {
+            console.error('Error fetching assigned farmers:', error);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+        res.json(farmers);
+    });
+});
+
+// API endpoint to get unassigned farmers
+app.get('/api/unassigned-farmers', (req, res) => {
+    const query = `
+    SELECT 
+        u.user_id, 
+        u.name, 
+        u.email, 
+        u.phone,
+        fp.location AS region
+    FROM 
+        users u
+    JOIN 
+        farmer_profile fp ON u.user_id = fp.farmer_id
+    LEFT JOIN 
+        farmer_assignments fa ON u.user_id = fa.farmer_id
+    WHERE 
+        u.role = 'farmer' AND 
+        fa.farmer_id IS NULL
+    ORDER BY 
+        u.name
+`;
+
+
+    db.query(query, (error, farmers) => {
+        if (error) {
+            console.error('Error fetching unassigned farmers:', error);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+        res.json(farmers);
+    });
+});
+
+// API endpoint to get all extension officers
+app.get('/api/extension-officers', (req, res) => {
+    const query = `
+        SELECT 
+            eo.officer_id,
+            u.user_id, 
+            u.name, 
+            u.email, 
+            u.phone, 
+            eo.region,
+            eo.specialization
+        FROM 
+            users u
+        JOIN 
+            extension_officers eo ON u.user_id = eo.user_id
+        WHERE 
+            u.role = 'extension_officer'
+        ORDER BY 
+            u.name
+    `;
+
+    db.query(query, (error, officers) => {
+        if (error) {
+            console.error('Error fetching extension officers:', error);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+        res.json(officers);
+    });
+});
+
+// API endpoint to get current assignments
+app.get('/api/current-assignments', (req, res) => {
+    const query = `
+        SELECT 
+            f.user_id as farmer_id,
+            f.name as farmer_name,
+            u.user_id as officer_user_id,
+            u.name as officer_name,
+            eo.officer_id,
+            DATE_FORMAT(fa.assigned_at, '%Y-%m-%d') as assigned_since
+        FROM 
+            users f
+        JOIN 
+            farmer_assignments fa ON f.user_id = fa.farmer_id
+        JOIN 
+            extension_officers eo ON fa.officer_id = eo.officer_id
+        JOIN 
+            users u ON eo.user_id = u.user_id
+        WHERE 
+            f.role = 'farmer'
+        ORDER BY 
+            f.name
+    `;
+
+    db.query(query, (error, assignments) => {
+        if (error) {
+            console.error('Error fetching current assignments:', error);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+        res.json(assignments);
+    });
+});
+
+// API endpoint to assign a farmer to an officer
+app.post('/api/assign-farmer', (req, res) => {
+    const { farmerId, officerId } = req.body; // officerId here is the officer_id from extension_officers table
+
+    const query = `
+        INSERT INTO farmer_assignments 
+            (farmer_id, officer_id) 
+        VALUES 
+            (?, ?)
+        ON DUPLICATE KEY UPDATE 
+            officer_id = VALUES(officer_id),
+            assigned_at = CURRENT_TIMESTAMP
+    `;
+
+    db.query(query, [farmerId, officerId], (error, result) => {
+        if (error) {
+            console.error('Error assigning farmer:', error);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+        res.json({ success: true, message: 'Farmer assigned successfully' });
+    });
+});
+
+// API endpoint to unassign a farmer
+app.post('/api/unassign-farmer', (req, res) => {
+    const { farmerId } = req.body;
+
+    const query = `
+        DELETE FROM farmer_assignments 
+        WHERE farmer_id = ?
+    `;
+
+    db.query(query, [farmerId], (error, result) => {
+        if (error) {
+            console.error('Error unassigning farmer:', error);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+        res.json({ success: true, message: 'Farmer unassigned successfully' });
+    });
+});
+
+// API endpoint to get detailed farmer information
+app.get('/api/farmer-details/:id', (req, res) => {
+    const farmerId = req.params.id;
+
+    const query = `
+        SELECT 
+            u.*, 
+            fp.*
+        FROM 
+            users u
+        JOIN 
+            farmer_profile fp ON u.user_id = fp.farmer_id
+        WHERE 
+            u.user_id = ?
+    `;
+
+    db.query(query, [farmerId], (error, farmer) => {
+        if (error) {
+            console.error('Error fetching farmer details:', error);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+
+        if (farmer.length === 0) {
+            return res.status(404).json({ error: 'Farmer not found' });
+        }
+
+        res.json(farmer[0]);
+    });
+});
+
+
+
+
+
+
+
+
+
 
 
 
