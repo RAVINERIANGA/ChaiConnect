@@ -371,23 +371,23 @@ app.post('/change-password', (req, res) => {
 
         switch (role) {
           case 'farmer':
-            dashboardPath = '/farmer_dashboard';
+            dashboardPath = '/farmer_dashboard.html';
             break;
           case 'admin':
-            dashboardPath = '/admin_dashboard';
+            dashboardPath = '/admin_dashboard.html';
             break;
           case 'extension_officer':
-            dashboardPath = '/extension_dashboard';
+            dashboardPath = '/extension_officer_dashboard.html';
             break;
           case 'factory_staff':
-            dashboardPath = '/factory_staff_dashboard';
+            dashboardPath = '/factory_staff_dashboard.html';
             break;
           default:
             dashboardPath = '/';
         }
 
 
-        res.redirect(dashboardPath);
+        res.json({ success: true, redirectTo: dashboardPath });
       }
     );
   });
