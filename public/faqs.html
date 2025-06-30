@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FAQs - ChaiConnect</title>
+  <link rel="stylesheet" href="./css/style.css"/>
+</head>
+<body>
+
+  <header>
+    <nav class="navbar">
+      <div class="logo">ChaiConnect</div>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="aboutus.html">About Us</a></li>
+        <li><a href="#">FAQs</a></li>
+        <li><a href="contactus.html">Contact Us</a></li>
+        <li><a href="login.html">Login</a></li>
+        <li><a href="register.html" class="btn">Register</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <section class="faq-section">
+    <h2>Frequently Asked Questions</h2>
+
+    <div class="faq-item">
+      <div class="faq-question">
+        What is ChaiConnect?
+        <span class="faq-toggle">▼</span>
+      </div>
+      <div class="faq-answer">
+        ChaiConnect is a digital platform that connects tea farmers, factory staff, and agricultural extension officers in Kenya, enabling efficient management of tea farming, production, delivery, and quality tracking.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">
+        Is ChaiConnect a mobile app?
+        <span class="faq-toggle">▼</span>
+      </div>
+      <div class="faq-answer">
+        Currently, ChaiConnect is web-based and accessible via browsers. However, a USSD version is under development to support users without smartphones.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">
+        Who can use ChaiConnect?
+        <span class="faq-toggle">▼</span>
+      </div>
+      <div class="faq-answer">
+        ChaiConnect can be used by registered tea farmers, factory staff, and extension officers. Each user has a personalized dashboard tailored to their role.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">
+        How do I register as a farmer or officer?
+        <span class="faq-toggle">▼</span>
+      </div>
+      <div class="faq-answer">
+        Click on the "Register" button in the navigation bar and fill out the registration form. Your details will be reviewed and approved by the system administrator.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">
+        What happens if I forget my password?
+        <span class="faq-toggle">▼</span>
+      </div>
+      <div class="faq-answer">
+        Use the “Forgot Password” link on the login page to reset your password. You’ll receive instructions via your registered email or phone number.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">
+        Can I update my delivery information?
+        <span class="faq-toggle">▼</span>
+      </div>
+      <div class="faq-answer">
+        Yes. Factory staff can view and update delivery records, and all delivery history is tracked within the system for transparency.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">
+        How secure is my data on ChaiConnect?
+        <span class="faq-toggle">▼</span>
+      </div>
+      <div class="faq-answer">
+        Data security is a top priority. ChaiConnect uses secure authentication, role-based access, and encrypted storage to protect your data.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">
+        How can I give feedback or report issues?
+        <span class="faq-toggle">▼</span>
+      </div>
+      <div class="faq-answer">
+        Use the “Contact Us” page or speak to your nearest extension officer. We’re committed to improving your experience with ChaiConnect.
+      </div>
+    </div>
+
+  </section>
+
+  <footer class="footer">
+    <div class="footer-content">
+      <div class="footer-section">
+        <h3>About ChaiConnect</h3>
+        <p>Revolutionizing Kenya's tea supply chain through innovative technology solutions that connect farmers, factories, and agricultural officers in a seamless digital ecosystem.</p>
+        <div class="social-links">
+          <a href="#" class="social-link">📘</a>
+          <a href="#" class="social-link">🐦</a>
+          <a href="#" class="social-link">📧</a>
+          <a href="#" class="social-link">📱</a>
+        </div>
+      </div>
+      
+      <div class="footer-section">
+        <h3>Quick Links</h3>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="features.html">Features</a></li>
+          <li><a href="aboutus.html">About Us</a></li>
+          <li><a href="register.html">Register</a></li>
+          <li><a href="contactus.html">Contact Us</a></li>
+        </ul>
+      </div>
+      
+      <div class="footer-section">
+        <h3>Services</h3>
+        <ul>
+          <li><a href="#">Farmer Portal</a></li>
+          <li><a href="#">Factory Management</a></li>
+          <li><a href="#">Extension Services</a></li>
+          <li><a href="#">USSD Integration</a></li>
+        </ul>
+      </div>
+      
+      <div class="footer-section">
+        <h3>Contact Info</h3>
+        <p>📍 Nairobi, Kenya</p>
+        <p>📞 +254 700 000 000</p>
+        <p>✉️ info@chaiconnect.co.ke</p>
+        <p>🕒 Mon-Fri: 8AM-6PM</p>
+      </div>
+    </div>
+    
+    <div class="footer-bottom">
+      <p>&copy; 2025 ChaiConnect. All rights reserved. | Privacy Policy | Terms of Service</p>
+    </div>
+  </footer>
+
+  <script>
+    const faqItems = document.querySelectorAll(".faq-item");
+
+    faqItems.forEach(item => {
+      item.addEventListener("click", () => {
+        item.classList.toggle("active");
+      });
+    });
+  </script>
+</body>
+</html>
