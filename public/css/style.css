@@ -118,6 +118,7 @@ h3 {
 /*Register Page*/
 .register-page {
   background-image: url('../images/registration.jpeg');
+  /*background-color:#248812;*/
   background-size: cover;
   background-position: center;
   min-height: 100vh;

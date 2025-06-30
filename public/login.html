@@ -6,30 +6,116 @@
     <title>Login Page</title>
     <link rel="stylesheet" href="./css/style.css">
     <style>
-    body {
-      font-family: 'Times New Roman', Times, serif;
+      body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #5bae66;
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      flex-direction: column;
+      justify-content: center;
       min-height: 100vh;
-      justify-content: space-between;
     }
-  </style>
+
+    .login-container {
+      background: #ffffffdd;
+      padding: 30px 40px;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .login-container h2 {
+      text-align: center;
+      margin-bottom: 1.5rem;
+      color: #004d40;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 5px;
+      color: #333;
+    }
+
+    .form-group input[type="text"],
+    .form-group input[type="password"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 15px;
+      background-color: #f9f9f9;
+      transition: border-color 0.3s ease;
+    }
+
+    .form-group input:focus {
+      border-color: #5bae66;
+      outline: none;
+    }
+
+    input[type="submit"] {
+      width: 100%;
+      padding: 12px;
+      background-color: #004d40;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    input[type="submit"]:hover {
+      background-color: #00796b;
+    }
+
+    .toggle-link {
+      text-align: center;
+      margin-top: 1rem;
+      font-size: 14px;
+    }
+
+    .toggle-link a {
+      color: #1a73e8;
+    }
+
+    .back-to-home {
+      display: block;
+      width: 100%;
+      margin-top: 1rem;
+      background-color: #424242;
+      color: #fff;
+      border: none;
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .back-to-home:hover {
+      background-color: #333;
+    }
+    </style>
 </head>
 <body class="register-page">
-  <div class="container">
-    <h2>Login</h2>
+  <div class="login-container">
+    <h2>Login to ChaiConnect</h2>
     <form action="/login" method="POST">
       <div class="form-group">
-        <label>ID Number or Email</label>
-        <input type="text" name="identifier" required>
+        <label for="identifier">ID Number or Email</label>
+        <input type="text" name="identifier" id="identifier" required>
       </div>
       <div class="form-group">
         <label>Password</label>
-        <input type="password" name="password" required>
+        <input type="password" name="password" id="password" required>
       </div>
-      <input type="submit" value="Login" id="submitBtn">
+      <input type="submit" value="Login"/>
     </form>
     <p class="toggle-link">Don't have an account? <a href="register.html">Register</a></p>
     <button class="back-to-home" onclick="window.location.href='index.html'">Back to Home</button>
