@@ -164,7 +164,7 @@
       rows.forEach(row => {
         const cols = row.querySelectorAll("td");
         if (cols.length) {
-          const rowData = Array.from(cols).map(col => `"${col.textContent.trim()}"`).join(",");
+          const rowData = Array.from(cols).map(col => "${col.textContent.trim()}").join(",");
           csv += rowData + "\n";
         }
       });

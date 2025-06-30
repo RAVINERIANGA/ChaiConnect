@@ -18,6 +18,7 @@ app.use(session({
   saveUninitialized: false,
   cookie: { secure: false }
 }));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
  
 
 const storage = multer.diskStorage({
@@ -76,7 +77,7 @@ app.post('/register', upload.single('profilePicture'), async (req, res) => {
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Step 1: Insert into `users` table
+    // Step 1: Insert into users table
     const userInsertQuery = `
       INSERT INTO users (name, id_number, email, password, phone, gender, role, must_change_password)
       VALUES (?, ?, ?, ?, ?, ?, 'farmer', false)
@@ -91,7 +92,7 @@ app.post('/register', upload.single('profilePicture'), async (req, res) => {
 
       const userId = result.insertId;
 
-      // Step 2: Insert into `farmer_profile` table
+      // Step 2: Insert into farmer_profile table
       const profileInsertQuery = `
         INSERT INTO farmer_profile (farmer_id, location, profile_picture)
         VALUES (?, ?, ?)
@@ -188,7 +189,12 @@ app.get('/manage_users.html', (req, res) => {
 
 // GET all users
 app.get('/admin/users', (req, res) => {
-  db.query('SELECT user_id, name, email, phone, role FROM users', (err, results) => {
+  const query = `
+    SELECT user_id, name, email, phone, role 
+    FROM users 
+    WHERE role != 'admin'
+  `;
+  db.query(query, (err, results) => {
     if (err) {
       console.error(err);
       return res.status(500).json({ success: false, message: 'Database error' });
@@ -208,9 +214,7 @@ app.put('/admin/users/:id', (req, res) => {
   }
 
   const query = `
-    UPDATE users
-    SET name = ?, email = ?, phone = ?, role = ?
-    WHERE user_id = ?
+    UPDATE users SET name = ?, email = ?, phone = ?, role = ? WHERE user_id = ?
   `;
 
   db.query(query, [name, email, phone, role, userId], (err, result) => {
@@ -242,6 +246,7 @@ app.delete('/admin/users/:id', (req, res) => {
 //Assign role page
 app.post('/admin/assign-role', (req, res) => {
   const { name, id_number, email, phone, gender, role, position, region, specialization } = req.body;
+
   if (!name || !id_number || !email || !phone || !gender || !role) {
     return res.status(400).json({ success: false, message: 'All fields required' });
   }
@@ -317,23 +322,23 @@ app.post('/change-password', (req, res) => {
 
         switch (role) {
           case 'farmer':
-            dashboardPath = '/farmer_dashboard';
+            dashboardPath = '/farmer_dashboard.html';
             break;
           case 'admin':
-            dashboardPath = '/admin_dashboard';
+            dashboardPath = '/admin_dashboard.html';
             break;
           case 'extension_officer':
-            dashboardPath = '/extension_dashboard';
+            dashboardPath = '/extension_officer_dashboard.html';
             break;
           case 'factory_staff':
-            dashboardPath = '/factory_staff_dashboard';
+            dashboardPath = '/factory_staff_dashboard.html';
             break;
           default:
             dashboardPath = '/';
         }
 
 
-        res.redirect(dashboardPath);
+        res.json({ success: true, redirectTo: dashboardPath });
       }
     );
   });
@@ -345,7 +350,9 @@ app.get('/api/dashboard-stats', (req, res) => {
     totalFarmers: 0,
     totalFactoryStaff: 0,
     totalExtensionOfficers: 0,
-    teaDeliveredToday: 0
+    teaDeliveredToday: 0,
+    teaDeliveredThisMonth: 0,
+    teaDeliveredOverall: 0
   };
 
   const farmerQuery = `SELECT COUNT(*) AS count FROM users WHERE role = 'farmer'`;
@@ -372,7 +379,19 @@ app.get('/api/dashboard-stats', (req, res) => {
           if (err4) return res.status(500).json({ error: 'DB error (tea)' });
 
           stats.teaDeliveredToday = teaResult[0].total;
+          db.query(teaMonthQuery, (err5, teaMonthResult) => {
+            if (err5) return res.status(500).json({ error: 'DB error (tea month)' });
+
+            stats.teaDeliveredThisMonth = teaMonthResult[0].total;
+
+            db.query(teaOverallQuery, (err6, teaOverallResult) => {
+              if (err6) return res.status(500).json({ error: 'DB error (tea overall)' });
+
+              stats.teaDeliveredOverall = teaOverallResult[0].total;
+
           res.json(stats);
+            });
+          });
         });
       });
     });
@@ -449,46 +468,94 @@ app.put('/admin/complaints/:id', (req, res) => {
 });
 
 // Analytics data
+
 app.get('/admin/analytics', (req, res) => {
   const todayQuery = `
-    SELECT quality_grade, IFNULL(SUM(quantity_kg),0) AS total
+    SELECT quality_grade, IFNULL(SUM(quantity_kg), 0) AS total
     FROM deliveries
     WHERE delivery_date = CURDATE()
-    GROUP BY quality_grade;
+    GROUP BY quality_grade
   `;
+
   const weekQuery = `
-    SELECT delivery_date, IFNULL(SUM(quantity_kg),0) AS total
+    SELECT delivery_date, IFNULL(SUM(quantity_kg), 0) AS total
     FROM deliveries
     WHERE delivery_date >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
     GROUP BY delivery_date
-    ORDER BY delivery_date;
+    ORDER BY delivery_date
   `;
+
   const feedbackQuery = `
     SELECT u.name AS officer, AVG(f.rating) AS avg_rating
     FROM feedback f
     JOIN training_records t ON f.training_id = t.training_id
     JOIN users u ON t.officer_id = u.user_id
     GROUP BY officer
-    HAVING COUNT(*) >= 1;
+  `;
+
+  const statusCountQuery = `
+    SELECT status, COUNT(*) AS count
+    FROM deliveries
+    GROUP BY status
+  `;
+
+  const topFarmersQuery = `
+    SELECT u.name, SUM(d.quantity_kg) AS total
+    FROM deliveries d
+    JOIN users u ON d.farmer_id = u.user_id
+    GROUP BY d.farmer_id
+    ORDER BY total DESC
+    LIMIT 5
   `;
 
   db.query(todayQuery, (err, todayRows) => {
-    if (err) return res.status(500).send(err);
+    if (err) return res.status(500).json({ error: err });
+
     db.query(weekQuery, (err2, weekRows) => {
-      if (err2) return res.status(500).send(err2);
+      if (err2) return res.status(500).json({ error: err2 });
+
       db.query(feedbackQuery, (err3, feedbackRows) => {
-        if (err3) return res.status(500).send(err3);
+        if (err3) return res.status(500).json({ error: err3 });
 
-        const todayByGrade = ['A', 'B', 'C'].map(g => {
-          const row = todayRows.find(r => r.quality_grade === g);
-          return row ? parseFloat(row.total) : 0;
+        db.query(statusCountQuery, (err4, statusRows) => {
+          if (err4) return res.status(500).json({ error: err4 });
+
+          db.query(topFarmersQuery, (err5, topFarmersRows) => {
+            if (err5) return res.status(500).json({ error: err5 });
+
+            // Format the output
+            const todayByGrade = ['A', 'B', 'C'].map(grade => {
+              const row = todayRows.find(r => r.quality_grade === grade);
+              return row ? parseFloat(row.total) : 0;
+            });
+
+            const weekDates = weekRows.map(r => r.delivery_date.toISOString().slice(5)); // MM-DD
+            const weekDeliveryAmounts = weekRows.map(r => parseFloat(r.total));
+
+            const officerNames = feedbackRows.map(r => r.officer);
+            const officerAvgRatings = feedbackRows.map(r => parseFloat(r.avg_rating).toFixed(2));
+
+            const deliveryStatusCounts = ['pending', 'graded', 'completed'].map(status => {
+              const row = statusRows.find(r => r.status === status);
+              return row ? parseInt(row.count) : 0;
+            });
+
+            const topFarmers = topFarmersRows.map(row => ({
+              name: row.name,
+              total: parseFloat(row.total)
+            }));
+
+            res.json({
+              todayByGrade,
+              weekDates,
+              weekDeliveryAmounts,
+              officerNames,
+              officerAvgRatings,
+              deliveryStatusCounts,
+              topFarmers
+            });
+          });
         });
-        const weekDates = weekRows.map(r => r.delivery_date.toISOString().slice(5));
-        const weekDeliveryAmounts = weekRows.map(r => parseFloat(r.total));
-        const officerNames = feedbackRows.map(r => r.officer);
-        const officerAvgRatings = feedbackRows.map(r => parseFloat(r.avg_rating).toFixed(2));
-
-        res.json({ todayByGrade, weekDates, weekDeliveryAmounts, officerNames, officerAvgRatings });
       });
     });
   });
@@ -537,213 +604,213 @@ app.get('/farmer/paymentsummary', (req, res) => {
 });
 
 // API endpoint to get assigned farmers for the logged-in extension officer
-app.get('/api/assigned-farmers', async (req, res) => {
-    try {
-        // In a real app, you would get the officer ID from the authenticated user's session
-        const officerId = req.query.officerId || 1; // Default to 1 for demo
-        
-        const [farmers] = await pool.query(`
-            SELECT 
-                u.user_id, 
-                u.name, 
-                u.email, 
-                u.phone, 
-                u.gender, 
-                u.id_number,
-                fp.location,
-                fp.farm_size,
-                fp.crop_type,
-                MAX(fv.visit_date) as last_visit
-            FROM 
-                users u
-            JOIN 
-                farmer_profile fp ON u.user_id = fp.user_id
-            LEFT JOIN 
-                farmer_visits fv ON u.user_id = fv.farmer_id
-            WHERE 
-                u.extension_officer_id = ?
-            GROUP BY 
-                u.user_id
-            ORDER BY 
-                u.name
-        `, [officerId]);
-        
-        res.json(farmers);
-    } catch (error) {
-        console.error('Error fetching assigned farmers:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
+app.get('/api/assigned-farmers', (req, res) => {
+    const officerId = req.session.userId;
 
-// API endpoint to get detailed farmer information
-app.get('/api/farmer-details/:id', async (req, res) => {
-    try {
-        const farmerId = req.params.id;
-        
-        const [farmer] = await pool.query(`
-            SELECT 
-                u.*, 
-                fp.*,
-                (SELECT MAX(visit_date) FROM farmer_visits WHERE farmer_id = ?) as last_visit
-            FROM 
-                users u
-            JOIN 
-                farmer_profile fp ON u.user_id = fp.user_id
-            WHERE 
-                u.user_id = ?
-        `, [farmerId, farmerId]);
-        
-        if (farmer.length === 0) {
-            return res.status(404).json({ error: 'Farmer not found' });
+    if (!officerId) {
+        return res.status(401).json({ error: 'Not logged in' });
+    }
+
+    const query = `
+        SELECT 
+            u.user_id, 
+            u.name, 
+            u.email, 
+            u.phone, 
+            u.gender, 
+            u.id_number,
+            fp.location
+        FROM 
+            users u
+        JOIN 
+            farmer_profile fp ON u.user_id = fp.farmer_id
+        JOIN 
+            farmer_assignments fa ON u.user_id = fa.farmer_id
+        JOIN 
+            extension_officers eo ON fa.officer_id = eo.officer_id
+        WHERE 
+            eo.user_id = ? AND
+            u.role = 'farmer'
+        ORDER BY 
+            u.name
+    `;
+
+    db.query(query, [officerId], (error, farmers) => {
+        if (error) {
+            console.error('Error fetching assigned farmers:', error);
+            return res.status(500).json({ error: 'Internal server error' });
         }
-        
-        res.json(farmer[0]);
-    } catch (error) {
-        console.error('Error fetching farmer details:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
+        res.json(farmers);
+    });
 });
-
-// API endpoint to schedule a visit
-app.post('/api/schedule-visit', async (req, res) => {
-    try {
-        const { farmerId, date, purpose } = req.body;
-        // In a real app, you would get the officer ID from the authenticated user's session
-        const officerId = 1; // Default to 1 for demo
-        
-        await pool.query(`
-            INSERT INTO farmer_visits 
-                (farmer_id, officer_id, visit_date, purpose, status) 
-            VALUES 
-                (?, ?, ?, ?, 'scheduled')
-        `, [farmerId, officerId, date, purpose]);
-        
-        res.json({ success: true, message: 'Visit scheduled successfully' });
-    } catch (error) {
-        console.error('Error scheduling visit:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-// Start server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
-// Add these endpoints to your existing server.js
 
 // API endpoint to get unassigned farmers
-app.get('/api/unassigned-farmers', async (req, res) => {
-    try {
-        const [farmers] = await pool.query(`
-            SELECT 
-                u.user_id, 
-                u.name, 
-                u.email, 
-                u.phone
-            FROM 
-                users u
-            WHERE 
-                u.role = 'farmer' AND 
-                u.extension_officer_id IS NULL
-            ORDER BY 
-                u.name
-        `);
-        
+app.get('/api/unassigned-farmers', (req, res) => {
+    const query = `
+    SELECT 
+        u.user_id, 
+        u.name, 
+        u.email, 
+        u.phone,
+        fp.location AS region
+    FROM 
+        users u
+    JOIN 
+        farmer_profile fp ON u.user_id = fp.farmer_id
+    LEFT JOIN 
+        farmer_assignments fa ON u.user_id = fa.farmer_id
+    WHERE 
+        u.role = 'farmer' AND 
+        fa.farmer_id IS NULL
+    ORDER BY 
+        u.name
+`;
+
+
+    db.query(query, (error, farmers) => {
+        if (error) {
+            console.error('Error fetching unassigned farmers:', error);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
         res.json(farmers);
-    } catch (error) {
-        console.error('Error fetching unassigned farmers:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
+    });
 });
 
 // API endpoint to get all extension officers
-app.get('/api/extension-officers', async (req, res) => {
-    try {
-        const [officers] = await pool.query(`
-            SELECT 
-                user_id, 
-                name, 
-                email, 
-                phone
-            FROM 
-                users
-            WHERE 
-                role = 'extension_officer'
-            ORDER BY 
-                name
-        `);
-        
+app.get('/api/extension-officers', (req, res) => {
+    const query = `
+        SELECT 
+            eo.officer_id,
+            u.user_id, 
+            u.name, 
+            u.email, 
+            u.phone, 
+            eo.region,
+            eo.specialization
+        FROM 
+            users u
+        JOIN 
+            extension_officers eo ON u.user_id = eo.user_id
+        WHERE 
+            u.role = 'extension_officer'
+        ORDER BY 
+            u.name
+    `;
+
+    db.query(query, (error, officers) => {
+        if (error) {
+            console.error('Error fetching extension officers:', error);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
         res.json(officers);
-    } catch (error) {
-        console.error('Error fetching extension officers:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
+    });
 });
 
 // API endpoint to get current assignments
-app.get('/api/current-assignments', async (req, res) => {
-    try {
-        const [assignments] = await pool.query(`
-            SELECT 
-                f.user_id as farmer_id,
-                f.name as farmer_name,
-                e.user_id as officer_id,
-                e.name as officer_name,
-                DATE_FORMAT(f.created_at, '%Y-%m-%d') as assigned_since
-            FROM 
-                users f
-            JOIN 
-                users e ON f.extension_officer_id = e.user_id
-            WHERE 
-                f.role = 'farmer' AND 
-                f.extension_officer_id IS NOT NULL
-            ORDER BY 
-                f.name
-        `);
-        
+app.get('/api/current-assignments', (req, res) => {
+    const query = `
+        SELECT 
+            f.user_id as farmer_id,
+            f.name as farmer_name,
+            u.user_id as officer_user_id,
+            u.name as officer_name,
+            eo.officer_id,
+            DATE_FORMAT(fa.assigned_at, '%Y-%m-%d') as assigned_since
+        FROM 
+            users f
+        JOIN 
+            farmer_assignments fa ON f.user_id = fa.farmer_id
+        JOIN 
+            extension_officers eo ON fa.officer_id = eo.officer_id
+        JOIN 
+            users u ON eo.user_id = u.user_id
+        WHERE 
+            f.role = 'farmer'
+        ORDER BY 
+            f.name
+    `;
+
+    db.query(query, (error, assignments) => {
+        if (error) {
+            console.error('Error fetching current assignments:', error);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
         res.json(assignments);
-    } catch (error) {
-        console.error('Error fetching current assignments:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
+    });
 });
 
 // API endpoint to assign a farmer to an officer
-app.post('/api/assign-farmer', async (req, res) => {
-    try {
-        const { farmerId, officerId } = req.body;
-        
-        await pool.query(`
-            UPDATE users 
-            SET extension_officer_id = ? 
-            WHERE user_id = ? AND role = 'farmer'
-        `, [officerId, farmerId]);
-        
+app.post('/api/assign-farmer', (req, res) => {
+    const { farmerId, officerId } = req.body; // officerId here is the officer_id from extension_officers table
+
+    const query = `
+        INSERT INTO farmer_assignments 
+            (farmer_id, officer_id) 
+        VALUES 
+            (?, ?)
+        ON DUPLICATE KEY UPDATE 
+            officer_id = VALUES(officer_id),
+            assigned_at = CURRENT_TIMESTAMP
+    `;
+
+    db.query(query, [farmerId, officerId], (error, result) => {
+        if (error) {
+            console.error('Error assigning farmer:', error);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
         res.json({ success: true, message: 'Farmer assigned successfully' });
-    } catch (error) {
-        console.error('Error assigning farmer:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
+    });
 });
 
 // API endpoint to unassign a farmer
-app.post('/api/unassign-farmer', async (req, res) => {
-    try {
-        const { farmerId } = req.body;
-        
-        await pool.query(`
-            UPDATE users 
-            SET extension_officer_id = NULL 
-            WHERE user_id = ? AND role = 'farmer'
-        `, [farmerId]);
-        
+app.post('/api/unassign-farmer', (req, res) => {
+    const { farmerId } = req.body;
+
+    const query = `
+        DELETE FROM farmer_assignments 
+        WHERE farmer_id = ?
+    `;
+
+    db.query(query, [farmerId], (error, result) => {
+        if (error) {
+            console.error('Error unassigning farmer:', error);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
         res.json({ success: true, message: 'Farmer unassigned successfully' });
-    } catch (error) {
-        console.error('Error unassigning farmer:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
+    });
 });
+
+// API endpoint to get detailed farmer information
+app.get('/api/farmer-details/:id', (req, res) => {
+    const farmerId = req.params.id;
+
+    const query = `
+        SELECT 
+            u.*, 
+            fp.*
+        FROM 
+            users u
+        JOIN 
+            farmer_profile fp ON u.user_id = fp.farmer_id
+        WHERE 
+            u.user_id = ?
+    `;
+
+    db.query(query, [farmerId], (error, farmer) => {
+        if (error) {
+            console.error('Error fetching farmer details:', error);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+
+        if (farmer.length === 0) {
+            return res.status(404).json({ error: 'Farmer not found' });
+        }
+
+        res.json(farmer[0]);
+    });
+});
+
+
 // Start server
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
