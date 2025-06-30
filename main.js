@@ -76,7 +76,7 @@ app.post('/register', upload.single('profilePicture'), async (req, res) => {
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Step 1: Insert into `users` table
+    // Step 1: Insert into users table
     const userInsertQuery = `
       INSERT INTO users (name, id_number, email, password, phone, gender, role, must_change_password)
       VALUES (?, ?, ?, ?, ?, ?, 'farmer', false)
@@ -91,7 +91,7 @@ app.post('/register', upload.single('profilePicture'), async (req, res) => {
 
       const userId = result.insertId;
 
-      // Step 2: Insert into `farmer_profile` table
+      // Step 2: Insert into farmer_profile table
       const profileInsertQuery = `
         INSERT INTO farmer_profile (farmer_id, location, profile_picture)
         VALUES (?, ?, ?)
