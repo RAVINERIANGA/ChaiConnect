@@ -4,87 +4,87 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Extension Officer Dashboard | chaiConnect</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <link rel="stylesheet" href="/css/extension-officer-dashboard.css">
+  <link rel="stylesheet" href="/css/extension_officer_dashboard.css">
+  <link rel="stylesheet" href="/css/dashboards_style.css">
 </head>
 
 <body>
   <div class="top-header">
-    <div class="logo">
-      <i class="fas fa-leaf"></i>
-      <span>chaiConnect</span>
+        <div class="right-icons">
+            <h2>chaiConnect</h2>
+        </div>
+        <div class="right-icons">
+            <a href="/alerts.html" title="View Alerts" style="position: relative;">
+                <img src="/images/system_alert_symbol.jpg" class="alert-icon" alt="Alerts">
+                <span id="alertCount">0</span>
+            </a>
+            <button class="logout-button" onclick="logout()">Logout</button>
+        </div>
     </div>
-    <div class="right-icons">
-      <a href="/alerts.html" title="View Alerts" class="alert-icon">
-        <i class="fas fa-bell"></i>
-        <span id="alertCount">0</span>
-      </a>
-      <button class="logout-button" onclick="logout()">
-        <i class="fas fa-sign-out-alt"></i>
-        Logout
-      </button>
-    </div>
-  </div>
 
   <div class="sidebar">
-    <h2><i class="fas fa-tachometer-alt"></i> Extension Dashboard</h2>
+    <h3>Extension Dashboard</h3>
     <ul>
-      <li class="active"><i class="fas fa-home"></i> Home</li>
-      <li onclick="viewFarmers()"><i class="fas fa-users"></i> Assigned Farmers</li>
-      <li onclick="scheduleVisit()"><i class="fas fa-calendar-check"></i> Schedule Visit</li>
-      <li onclick="uploadMaterial()"><i class="fas fa-file-upload"></i> Training Materials</li>
-      <li onclick="respondToComplaints()"><i class="fas fa-comments"></i> Farmer Complaints</li>
-      <li onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</li>
+      <li class="active">Home</li>
+      <li onclick="viewFarmers()">Assigned Farmers</li>
+      <li onclick="scheduleVisit()">Schedule Farm Visit</li>
+      <li onclick="uploadMaterial()">Upload Training Materials</li>
+      <li onclick="respondToComplaints()">Respond to Complaints</li>
+      <li onclick="logout()">Logout</li>
     </ul>
   </div>
 
   <div class="main-content">
-    <div class="welcome-section">
-      <h1>Welcome, <span id="officerName">Extension Officer</span></h1>
+    <section id="overview">
+      <h1 id="welcomeMessage">Welcome, <span id="officerName">Extension Officer</span></h1>
       <p>Manage your assigned farmers, schedule visits, and provide agricultural support.</p>
-    </div>
+    </section>
 
-    <div class="stats-grid">
+    <div class="dashboard-cards">
       <div class="stat-card">
-        <h3><i class="fas fa-users"></i> Assigned Farmers</h3>
-        <div class="stat-value" id="farmerCount">0</div>
-        <p>Farmers currently under your guidance</p>
-        <button onclick="viewFarmers()">
-          <i class="fas fa-list"></i> View All
-        </button>
+        <p>Assigned Farmers</p>
+        <h2 id="farmerCount">0</h2>
       </div>
-
       <div class="stat-card">
-        <h3><i class="fas fa-calendar-alt"></i> Upcoming Visits</h3>
-        <div class="stat-value">0</div>
-        <p>Farm visits scheduled this week</p>
-        <button onclick="scheduleVisit()">
-          <i class="fas fa-plus"></i> Schedule
-        </button>
+        <p>Upcoming Visits</p>
+        <h2>0</h2>
       </div>
-
       <div class="stat-card">
-        <h3><i class="fas fa-book"></i> Training Materials</h3>
-        <div class="stat-value">0</div>
-        <p>Resources available for farmers</p>
-        <button onclick="uploadMaterial()">
-          <i class="fas fa-upload"></i> Upload
-        </button>
+        <p>Training Materials</p>
+        <h2>0</h2>
       </div>
-
       <div class="stat-card">
-        <h3><i class="fas fa-comment-dots"></i> Open Complaints</h3>
-        <div class="stat-value">0</div>
-        <p>Issues requiring your attention</p>
-        <button onclick="respondToComplaints()">
-          <i class="fas fa-reply"></i> Respond
-        </button>
+        <p>Open Complaints</p>
+        <h2>0</h2>
       </div>
     </div>
+
+    <div class="card-actions">
+      <div class="card">
+        <h3>View Assigned Farmers</h3>
+        <p>See all farmers under your guidance.</p>
+        <button onclick="location.href='/assigned_farmers.html'">View</button>
+      </div>
+      <div class="card">
+        <h3>Schedule Visit</h3>
+        <p>Plan a farm visit with a farmer.</p>
+        <button onclick="location.href='/schedule_visit.html'">Schedule</button>
+      </div>
+      <div class="card">
+        <h3>Upload Training Materials</h3>
+        <p>Provide resources to help farmers grow better tea.</p>
+        <button onclick="location.href='/upload_training.html'">Upload</button>
+      </div>
+      <div class="card">
+        <h3>Respond to Complaints</h3>
+        <p>Address concerns raised by your assigned farmers.</p>
+        <button onclick="location.href='/extension_complaints.html'">Respond</button>
+      </div>
+    </div>
+
 
     <div class="recent-farmers">
-      <h3><i class="fas fa-user-friends"></i> Recently Assigned Farmers</h3>
+      <h3>Recently Assigned Farmers</h3>
       <table class="farmers-table" id="recentFarmersTable">
         <thead>
           <tr>
@@ -102,10 +102,7 @@
     </div>
   </div>
 
-  <div id="logoutToast" class="toast">
-    <i class="fas fa-check-circle"></i>
-    <span>Logged out successfully</span>
-  </div>
+  <div id="logoutToast" class="toast">✅ Logged out successfully</div>
 
   <script>
     // Fetch officer data and populate dashboard
@@ -166,27 +163,7 @@
       window.location.href = '/extension_complaints.html';
     }
 
-    function logout() {
-      fetch('/logout', { method: 'POST' })
-        .then(() => {
-          const toast = document.getElementById('logoutToast');
-          toast.classList.add('show');
-          setTimeout(() => {
-            window.location.href = '/';
-          }, 1500);
-        });
-    }
-
-    // Fetch alert count
-    fetch('/alerts/count')
-      .then(res => res.json())
-      .then(data => {
-        const alertCount = document.getElementById('alertCount');
-        if (data.count > 0) {
-          alertCount.textContent = data.count;
-          alertCount.style.display = 'flex';
-        }
-      });
+    
   </script>
   <script src="logout.js"></script>
   <script src="/alertCount.js"></script>
