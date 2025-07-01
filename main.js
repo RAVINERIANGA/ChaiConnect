@@ -103,6 +103,7 @@ app.post('/register', upload.single('profilePicture'), async (req, res) => {
           console.error(err);
           return res.send('Error inserting into farmer_profile table');
         }
+        logActivity(userId, 'User Registration', `New farmer registered: ${full_name}`);
 
         res.send('Registration successful!');
       });
@@ -333,6 +334,7 @@ app.post('/admin/assign-role', (req, res) => {
             console.error(err3);
             return res.status(500).json({ success: false, message: 'Error inserting extension officer' });
           }
+          logActivity(req.session.userId, 'Role Assignment', `Assigned ${role} role to ${name}`);
           res.json({ success: true, tempPassword });
         });
       } else {
@@ -654,6 +656,10 @@ app.post('/factory/deliveries', upload.single('photo'), (req, res) => {
           console.error('Error inserting delivery:', err2);
           return res.status(500).json({ success: false, message: 'Failed to record delivery' });
         }
+        logActivity(staff_id, 'Delivery Recorded', 
+      `Recorded ${quantity_kg}kg of grade ${quality_grade} from farmer ${id_number}`);
+    logActivity(farmer_id, 'Delivery Made', 
+      `Delivered ${quantity_kg}kg of grade ${quality_grade}`);
 
         res.json({ success: true, message: 'Delivery recorded successfully!' });
       }
@@ -912,6 +918,7 @@ app.post('/admin/suspend/:userId', (req, res) => {
               res.status(500).json({ success: false, message: 'Failed to complete suspension' });
             });
           }
+          logActivity(adminId, 'Account Suspended', `Suspended user ${userId} for reason: ${reason}`);
 
           res.json({ success: true, message: 'User suspended and removed from mismatches' });
         });
@@ -1224,6 +1231,8 @@ app.post('/admin/issue-payment', (req, res) => {
           console.error('Error updating delivery status:', err3);
           return res.status(500).json({ success: false, message: 'Server error after payment' });
         }
+        logActivity(req.session.userId, 'Payment Issued', 
+    `Issued payment of ${amount} for delivery ${delivery_id} to farmer ${farmer_id}`);
 
         res.json({ success: true, payment_id: result.insertId });
       });
