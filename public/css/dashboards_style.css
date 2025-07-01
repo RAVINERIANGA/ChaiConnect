@@ -329,3 +329,62 @@ th {
   background-color: #00796b;
   color: white;
 }
+/* Recent Farmers Table Styles */
+.recent-farmers {
+  background: white;
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow: var(--card-shadow);
+  margin-top: 30px;
+}
+
+.recent-farmers h3 {
+  font-size: 20px;
+  margin-bottom: 20px;
+  color: var(--primary-dark);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.recent-farmers h3 i {
+  color: var(--primary-color);
+}
+
+.farmers-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.farmers-table th {
+  background-color: var(--primary-light);
+  color: var(--primary-dark);
+  padding: 12px 15px;
+  text-align: left;
+}
+
+.farmers-table td {
+  padding: 12px 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.farmers-table tr:last-child td {
+  border-bottom: none;
+}
+
+.farmers-table tr:hover {
+  background-color: #f9f9f9;
+}
+
+.view-all {
+  display: block;
+  text-align: right;
+  margin-top: 15px;
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.view-all:hover {
+  text-decoration: underline;
+}
