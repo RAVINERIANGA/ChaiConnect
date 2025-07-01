@@ -49,7 +49,8 @@ const db = mysql.createConnection({
   host: 'localhost',
   user: 'root',
   password: 'DBSB3272',
-  database: 'chaiconnect'
+  database: 'chaiconnect',
+  port:3307
 });
 
 db.connect(err => {
@@ -76,7 +77,7 @@ app.post('/register', upload.single('profilePicture'), async (req, res) => {
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Step 1: Insert into `users` table
+    // Step 1: Insert into users table
     const userInsertQuery = `
       INSERT INTO users (name, id_number, email, password, phone, gender, role, must_change_password)
       VALUES (?, ?, ?, ?, ?, ?, 'farmer', false)
@@ -91,7 +92,7 @@ app.post('/register', upload.single('profilePicture'), async (req, res) => {
 
       const userId = result.insertId;
 
-      // Step 2: Insert into `farmer_profile` table
+      // Step 2: Insert into farmer_profile table
       const profileInsertQuery = `
         INSERT INTO farmer_profile (farmer_id, location, profile_picture)
         VALUES (?, ?, ?)
@@ -162,7 +163,7 @@ function proceedWithLogin(req, res, user) {
     req.session.userId = user.user_id;
     req.session.role = user.role;
     req.session.name = user.name;
-
+      
   // ✅ Check if must change password
   if (user.must_change_password) {
     return res.sendFile(path.join(__dirname, 'public/change_password.html'));
@@ -1703,6 +1704,62 @@ app.post('/api/unassign-farmer', (req, res) => {
     });
 });
 
+// API endpoint for extension officers to view their assigned farmers
+app.get('/api/my-assigned-farmers', (req, res) => {
+  const officerUserId = req.session.userId;
+  
+  if (!officerUserId) {
+    return res.status(401).json({ error: 'Not logged in' });
+  }
+
+  // First verify the user is an extension officer and get their officer_id
+  const checkOfficerQuery = `
+    SELECT eo.officer_id 
+    FROM extension_officers eo
+    WHERE eo.user_id = ?
+  `;
+
+  db.query(checkOfficerQuery, [officerUserId], (err, officerResults) => {
+    if (err) {
+      console.error('Error checking officer status:', err);
+      return res.status(500).json({ error: 'Database error checking officer status' });
+    }
+    
+    if (officerResults.length === 0) {
+      return res.status(403).json({ error: 'User is not an extension officer' });
+    }
+
+    const officerId = officerResults[0].officer_id;
+
+    // Now get all farmers assigned to this officer
+    const query = `
+      SELECT 
+        u.user_id,
+        u.name AS farmer_name,
+        u.phone,
+        u.email,
+        fp.location AS region,
+        DATE_FORMAT(fa.assigned_at, '%Y-%m-%d') AS assigned_since
+      FROM farmer_assignments fa
+      JOIN users u ON fa.farmer_id = u.user_id
+      LEFT JOIN farmer_profile fp ON u.user_id = fp.farmer_id
+      WHERE fa.officer_id = ?
+      ORDER BY u.name
+    `;
+
+    db.query(query, [officerId], (err, results) => {
+      if (err) {
+        console.error('Error fetching assigned farmers:', err);
+        return res.status(500).json({ 
+          error: 'Database error',
+          details: err.message
+        });
+      }
+
+      res.json(results);
+    });
+  });
+});
 // API endpoint to get detailed farmer information
 app.get('/api/farmer-details/:id', (req, res) => {
     const farmerId = req.params.id;
