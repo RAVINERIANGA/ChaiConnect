@@ -7,7 +7,7 @@
   <title>Farmer Dashboard | chaiConnect</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <link rel="stylesheet" href="/css/farmer-dashboard.css">
+  <link rel="stylesheet" href="/css/farmer_dashboard.css">
 </head>
 
 <body>
@@ -73,9 +73,65 @@
       </div>
     </div>
 
-    <div class="actions-grid">
-      <!-- Action Cards Here -->
-      <!-- (Same content as previous example) -->
+    
+       <div class="actions-grid">
+      <div class="action-card">
+        <h3><i class="fas fa-truck"></i> Delivery History</h3>
+        <p>View and download your full delivery history with quality grades and quantities.</p>
+        <button onclick="location.href='/delivery_history.html'">
+          <i class="fas fa-list"></i> View History
+        </button>
+      </div>
+
+      <div class="action-card">
+        <h3><i class="fas fa-money-bill-wave"></i> View Payments</h3>
+        <p>See your earnings, rates per kg, and past payment records.</p>
+        <button onclick="location.href='/payment_summary.html'">
+          <i class="fas fa-chart-line"></i> View Payments
+        </button>
+      </div>
+
+      <div class="action-card">
+        <h3><i class="fas fa-leaf"></i> Tea Grading</h3>
+        <p>Check moisture levels, rejection feedback, and quality grade status.</p>
+        <button onclick="location.href='/quality_feedback.html'">
+          <i class="fas fa-search"></i> Check Quality
+        </button>
+      </div>
+
+      <div class="action-card">
+        <h3><i class="fas fa-chalkboard-teacher"></i> Extension Visits</h3>
+        <p>Book agronomist visits and view upcoming training sessions.</p>
+        <button onclick="location.href='/extension_services.html'">
+          <i class="fas fa-calendar-plus"></i> Book Services
+        </button>
+      </div>
+
+      <div class="action-card">
+        <h3><i class="fas fa-headset"></i> Submit Complaint</h3>
+        <p>Raise complaints or ask questions about your account.</p>
+        <button onclick="location.href='/support.html'">
+          <i class="fas fa-comment-dots"></i> Get Support
+        </button>
+      </div>
+
+      <div class="action-card">
+        <h3><i class="fas fa-user-circle"></i> View Profile</h3>
+        <p>See and update your personal details, location and farm information.</p>
+        <button onclick="location.href='/profile.html'">
+          <i class="fas fa-user-edit"></i> View Profile
+        </button>
+      </div>
+
+      <div class="action-card">
+        <h3><i class="fas fa-truck-loading"></i> Delivery Request</h3>
+        <p>Request a tea collection from your farm.</p>
+        <button onclick="location.href='/request_delivery.html'">
+          <i class="fas fa-plus-circle"></i> Request Pickup
+        </button>
+      </div>
+    </div>
+  </div>
     </div>
   </div>
 
