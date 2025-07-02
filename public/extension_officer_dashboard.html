@@ -9,63 +9,48 @@
 
 <body>
   <div class="top-header">
-    <div class="logo">
-      <i class="fas fa-leaf"></i>
-      <span>chaiConnect</span>
+        <div class="right-icons">
+            <h2>chaiConnect</h2>
+        </div>
+        <div class="right-icons">
+            <a href="/alerts.html" title="View Alerts" style="position: relative;">
+                <img src="/images/system_alert_symbol.jpg" class="alert-icon" alt="Alerts">
+                <span id="alertCount">0</span>
+            </a>
+            <button class="logout-button" onclick="logout()">Logout</button>
+        </div>
     </div>
-    <div class="right-icons">
-      <a href="/alerts.html" title="View Alerts" class="alert-icon">
-        <i class="fas fa-bell"></i>
-        <span id="alertCount">0</span>
-      </a>
-      <button class="logout-button" onclick="logout()">
-        <i class="fas fa-sign-out-alt"></i>
-        Logout
-      </button>
-    </div>
-  </div>
 
   <div class="sidebar">
-    <h2><i class="fas fa-tachometer-alt"></i> Extension Dashboard</h2>
+    <h3>Extension Dashboard</h3>
     <ul>
-      <li class="active"><i class="fas fa-home"></i> Home</li>
-      <li onclick="viewFarmers()"><i class="fas fa-users"></i> Assigned Farmers</li>
-      <li onclick="scheduleVisit()"><i class="fas fa-calendar-check"></i> Schedule Visit</li>
-      <li onclick="uploadMaterial()"><i class="fas fa-file-upload"></i> Training Materials</li>
-      <li onclick="respondToComplaints()"><i class="fas fa-comments"></i> Farmer Complaints</li>
+      <li><a href="#" class="active">Home</a></li>
+      <li><a href="/assigned_farmers.html">Assigned Farmers</a></li>
+      <li><a href="/schedule_visit.html">Schedule Farm Visit</a></li>
+      <li><a href="/upload_training.html">Upload Training Materials</a></li>
+      <li><a href="/extension_complaints.html">Respond to Complaints</a></li>
     </ul>
   </div>
 
   <div class="main-content">
-    <div class="welcome-section">
-      <h1>Welcome, <span id="officerName">Extension Officer</span></h1>
+    <section id="overview">
+      <h1 id="welcomeMessage">Welcome, <span id="officerName">Extension Officer</span></h1>
       <p>Manage your assigned farmers, schedule visits, and provide agricultural support.</p>
     </section>
 
     <div class="dashboard-cards">
       <div class="stat-card">
-        <h3><i class="fas fa-users"></i> Assigned Farmers</h3>
-        <div class="stat-value" id="farmerCount">0</div>
-        <p>Farmers currently under your guidance</p>
-        <button onclick="viewFarmers()">
-          <i class="fas fa-list"></i> View All
-        </button>
+        <p>Assigned Farmers</p>
+        <h2 id="farmerCount">0</h2>
       </div>
-
       <div class="stat-card">
-        <h3><i class="fas fa-calendar-alt"></i> Upcoming Visits</h3>
-        <div class="stat-value" id="upcomingVisitsCount">0</div>
-        <p>Farm visits scheduled</p>
-        <button onclick="loadVisitRequests()">
-          <i class="fas fa-sync-alt"></i> Refresh
-        </button>
+        <p> Upcoming Visits</p>
+        <h2 id="upcomingVisitsCount">0</h2>
       </div>
-
       <div class="stat-card">
         <p>Training Materials</p>
         <h2>0</h2>
       </div>
-
       <div class="stat-card">
         <p>Open Complaints</p>
         <h2>0</h2>
@@ -101,8 +86,9 @@
       </div>
     </div>
 
+
     <div class="recent-farmers">
-      <h3><i class="fas fa-user-friends"></i> Recently Assigned Farmers</h3>
+      <h3>Recently Assigned Farmers</h3>
       <table class="farmers-table" id="recentFarmersTable">
         <thead>
           <tr>
@@ -117,18 +103,6 @@
         </tbody>
       </table>
       <a href="/assigned_farmers.html" class="view-all">View All Farmers →</a>
-    </div>
-
-    <div class="visit-requests-section">
-      <div class="section-header">
-        <h3><i class="fas fa-calendar-check"></i> Visit Requests</h3>
-        <button onclick="refreshVisitRequests()" class="refresh-btn">
-          <i class="fas fa-sync-alt"></i> Refresh
-        </button>
-      </div>
-      <div id="requestsContainer" class="requests-container">
-        <!-- Requests will be loaded here -->
-      </div>
     </div>
   </div>
 
@@ -339,7 +313,199 @@
         }, 300);
       }, 3000);
     }
+ // Load all visit-related data
+function loadVisitData() {
+  // Load pending visit requests
+  fetch('/api/visit-requests')
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        renderPendingVisits(data.requests);
+      }
+    });
 
+  // Load scheduled visits
+  fetch('/api/upcoming-visits')
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        renderScheduledVisits(data.visits);
+      }
+    });
+
+  // Load training sessions
+  fetch('/api/training-sessions')
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        renderTrainingSessions(data.sessions);
+      }
+    });
+}
+
+// Render pending visit requests
+function renderPendingVisits(requests) {
+  const container = document.getElementById('pendingVisitsContainer');
+  
+  if (requests.length === 0) {
+    container.innerHTML = '<p class="text-muted">No pending visit requests.</p>';
+    return;
+  }
+
+  let html = '<div class="list-group">';
+  
+  requests.forEach(request => {
+    const preferredDate = new Date(request.preferred_date);
+    
+    html += `
+    <div class="list-group-item">
+      <div class="d-flex justify-content-between">
+        <h5>${request.farmer_name}</h5>
+        <span class="badge bg-warning">Pending</span>
+      </div>
+      <p><strong>Preferred Date:</strong> ${preferredDate.toLocaleString()}</p>
+      <p><strong>Purpose:</strong> ${request.purpose}</p>
+      ${request.notes ? `<p><strong>Notes:</strong> ${request.notes}</p>` : ''}
+      
+      <div class="visit-actions mt-2">
+        <div class="input-group mb-2">
+          <input type="datetime-local" class="form-control schedule-date-input" 
+                 min="${new Date().toISOString().slice(0, 16)}">
+          <button class="btn btn-success schedule-btn" data-id="${request.visit_id}">
+            <i class="fas fa-calendar-plus"></i> Schedule
+          </button>
+        </div>
+        <button class="btn btn-outline-danger reject-btn" data-id="${request.visit_id}">
+          <i class="fas fa-times"></i> Reject
+        </button>
+      </div>
+    </div>
+    `;
+  });
+  
+  html += '</div>';
+  container.innerHTML = html;
+
+  // Add event listeners
+  document.querySelectorAll('.schedule-btn').forEach(btn => {
+    btn.addEventListener('click', scheduleVisit);
+  });
+  
+  document.querySelectorAll('.reject-btn').forEach(btn => {
+    btn.addEventListener('click', rejectVisit);
+  });
+}
+
+// Render scheduled visits
+function renderScheduledVisits(visits) {
+  const container = document.getElementById('scheduledVisitsContainer');
+  
+  if (visits.length === 0) {
+    container.innerHTML = '<p class="text-muted">No upcoming visits scheduled.</p>';
+    return;
+  }
+
+  let html = '<div class="list-group">';
+  
+  visits.forEach(visit => {
+    const visitDate = new Date(visit.scheduled_date);
+    
+    html += `
+    <div class="list-group-item">
+      <div class="d-flex justify-content-between">
+        <h5>${visit.farmer_name}</h5>
+        <span class="badge bg-success">Scheduled</span>
+      </div>
+      <p><strong>Date:</strong> ${visitDate.toLocaleString()}</p>
+      <p><strong>Purpose:</strong> ${visit.purpose}</p>
+      ${visit.notes ? `<p><strong>Notes:</strong> ${visit.notes}</p>` : ''}
+      <p><strong>Contact:</strong> ${visit.farmer_phone}</p>
+      
+      <div class="visit-actions mt-2">
+        <button class="btn btn-primary complete-btn" data-id="${visit.visit_id}">
+          <i class="fas fa-check"></i> Mark Complete
+        </button>
+        <button class="btn btn-outline-secondary reschedule-btn" data-id="${visit.visit_id}">
+          <i class="fas fa-calendar-alt"></i> Reschedule
+        </button>
+      </div>
+    </div>
+    `;
+  });
+  
+  html += '</div>';
+  container.innerHTML = html;
+
+  // Add event listeners
+  document.querySelectorAll('.complete-btn').forEach(btn => {
+    btn.addEventListener('click', completeVisit);
+  });
+  
+  document.querySelectorAll('.reschedule-btn').forEach(btn => {
+    btn.addEventListener('click', showRescheduleForm);
+  });
+}
+
+// Schedule a visit
+function scheduleVisit() {
+  const visitId = this.dataset.id;
+  const card = this.closest('.list-group-item');
+  const dateInput = card.querySelector('.schedule-date-input');
+  const scheduledDate = dateInput.value;
+  
+  if (!scheduledDate) {
+    showToast('Please select a date and time', 'error');
+    return;
+  }
+
+  fetch(`/api/schedule-visit/${visitId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ scheduledDate })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      showToast('Visit scheduled successfully!');
+      loadVisitData(); // Refresh all visit data
+    } else {
+      showToast(data.message || 'Error scheduling visit', 'error');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    showToast('Failed to schedule visit', 'error');
+  });
+}
+
+// Mark visit as complete
+function completeVisit() {
+  const visitId = this.dataset.id;
+  
+  if (!confirm('Mark this visit as completed?')) return;
+
+  fetch(`/api/complete-visit/${visitId}`, {
+    method: 'PUT'
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      showToast('Visit marked as completed');
+      loadVisitData(); // Refresh all visit data
+    } else {
+      showToast(data.message || 'Error completing visit', 'error');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    showToast('Failed to complete visit', 'error');
+  });
+}
+
+// Load data when page loads
+document.addEventListener('DOMContentLoaded', loadVisitData);
     // Initial load of visit requests when page loads
     document.addEventListener('DOMContentLoaded', function() {
       loadVisitRequests();
