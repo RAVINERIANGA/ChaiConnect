@@ -6,7 +6,7 @@ const path = require('path');
 const crypto = require('crypto');
 const session = require('express-session');
 const cors = require('cors');
-const { app } = require('./server');
+//const { app } = require('./server');
 
 const app = express();
 const port = 3000;
@@ -41,6 +41,17 @@ const deliveryStorage = multer.diskStorage({
 const deliveryUpload = multer({ storage: deliveryStorage });
 const upload = multer({ storage });
 
+const trainingStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/training_materials');
+  },
+  filename: function (req, file, cb) {
+    const ext = path.extname(file.originalname);
+    const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1E9) + ext;
+    cb(null, uniqueName);
+  }
+});
+const uploadTraining = multer({ storage: trainingStorage });
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
@@ -2117,6 +2128,236 @@ app.get('/api/farmer-details/:id', (req, res) => {
         res.json(farmer[0]);
     });
 });
+
+// Upload training materials route
+app.post('/api/upload-training', uploadTraining.single('file'), (req, res) => {
+  console.log('Upload request received:', req.body, req.file);
+  const officerId = req.session.userId;
+  const { title, description } = req.body;
+  const file = req.file;
+ console.log('Officer ID from session:', officerId);
+ 
+  if (!officerId || !file) {
+    return res.status(400).json({ success: false, message: 'Missing file or unauthorized' });
+  }
+
+  const query = `INSERT INTO training_materials (officer_id, title, description, filename) VALUES (?, ?, ?, ?)`;
+  db.query(query, [officerId, title, description, file.filename], (err, result) => {
+    if (err) {
+      console.error('Upload failed:', err);
+      return res.status(500).json({ success: false, message: 'Database error' });
+    }
+    res.json({ success: true, message: 'Training material uploaded' });
+  });
+});
+
+
+app.get('/api/training-materials/count', (req, res) => {
+  const officerId = req.session.userId;
+  const query = `SELECT COUNT(*) AS count FROM training_materials WHERE officer_id = ?`;
+
+  db.query(query, [officerId], (err, results) => {
+    if (err) {
+      console.error('Count error:', err);
+      return res.status(500).json({ success: false });
+    }
+    res.json({ success: true, count: results[0].count });
+  });
+});
+
+
+// Farmer submits a complaint
+app.post('/api/farmer/complaints', async (req, res) => {
+  try {
+    const farmerId = req.session.userId;
+    const { complaintText, category = 'other' } = req.body;
+
+    if (!farmerId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+
+    const query = `INSERT INTO complaints (farmer_id, complaint_text, category) VALUES (?, ?, ?)`;
+    db.query(query, [farmerId, complaintText, category], (err, result) => {
+      if (err) {
+        console.error('Error submitting complaint:', err);
+        return res.status(500).json({ success: false, message: 'Database error' });
+      }
+      
+      // In a real app, you might want to trigger a notification to admins here
+      res.json({ success: true, message: 'Complaint submitted successfully' });
+    });
+  } catch (error) {
+    console.error('Error in complaint submission:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// Admin gets all complaints
+app.get('/admin/complaints', async (req, res) => {
+  try {
+    // Verify admin role here
+    const query = `SELECT 
+      c.complaint_id, 
+      u.name, 
+      c.complaint_text, 
+      c.complaint_date, 
+      c.status,
+      c.category,
+      c.updated_at
+      FROM admin_complaints_view c
+      JOIN users u ON c.farmer_id = u.user_id
+      ORDER BY 
+        CASE WHEN c.status = 'open' THEN 1
+             WHEN c.status = 'in_progress' THEN 2
+             ELSE 3 END,
+        c.complaint_date DESC`;
+    
+    db.query(query, (err, results) => {
+      if (err) {
+        console.error('Error fetching complaints:', err);
+        return res.status(500).json({ success: false });
+      }
+      res.json(results);
+    });
+  } catch (error) {
+    console.error('Error in complaints route:', error);
+    res.status(500).json({ success: false });
+  }
+});
+
+// Admin updates complaint status
+app.put('/admin/complaints/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, adminNotes } = req.body;
+    
+    // Verify admin role here
+    
+    const query = `UPDATE complaints 
+      SET status = ?, 
+          admin_notes = IFNULL(?, admin_notes),
+          updated_at = CURRENT_TIMESTAMP
+      WHERE complaint_id = ?`;
+    
+    db.query(query, [status, adminNotes, id], (err, result) => {
+      if (err) {
+        console.error('Error updating complaint:', err);
+        return res.status(500).json({ success: false });
+      }
+      
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ success: false, message: 'Complaint not found' });
+      }
+      
+      // In a real app, you might notify the farmer about status change
+      res.json({ success: true });
+    });
+  } catch (error) {
+    console.error('Error in complaint update:', error);
+    res.status(500).json({ success: false });
+  }
+});
+
+// Create delivery request
+app.post('/api/delivery-requests', async (req, res) => {
+    try {
+        const farmerId = req.session.userId;
+        if (!farmerId) {
+            return res.status(401).json({ success: false, message: 'Unauthorized' });
+        }
+
+        const {
+            pickup_date,
+            pickup_time,
+            estimated_quantity,
+            collection_center,
+            notes = ''
+        } = req.body;
+
+        if (!pickup_date || !pickup_time || !estimated_quantity || !collection_center) {
+            return res.status(400).json({ success: false, message: 'Missing required fields' });
+        }
+
+        const insertResult = await query(
+            `INSERT INTO delivery_requests 
+            (farmer_id, pickup_date, pickup_time, estimated_quantity, collection_center, notes)
+            VALUES (?, ?, ?, ?, ?, ?)`,
+            [farmerId, pickup_date, pickup_time, estimated_quantity, collection_center, notes]
+        );
+
+        const rows = await query(
+            `SELECT * FROM delivery_requests WHERE request_id = ?`,
+            [insertResult.insertId]
+        );
+
+        res.json({ success: true, data: rows[0] });
+    } catch (error) {
+        console.error('Error creating delivery request:', error);
+        res.status(500).json({ success: false, message: 'Failed to submit delivery request' });
+    }
+});
+
+// Get farmer's delivery requests
+app.get('/api/delivery-requests', async (req, res) => {
+    try {
+        const farmerId = req.session.userId;
+        if (!farmerId) {
+            return res.status(401).json({ success: false, message: 'Unauthorized' });
+        }
+
+        const rows = await query(
+            `SELECT * FROM delivery_requests 
+             WHERE farmer_id = ? 
+             ORDER BY created_at DESC`,
+            [farmerId]
+        );
+
+        res.json({ success: true, data: rows });
+    } catch (error) {
+        console.error('Error fetching delivery requests:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch delivery requests' });
+    }
+});
+
+
+// Cancel delivery request
+app.post('/api/delivery-requests/:id/cancel', async (req, res) => {
+    try {
+        const farmerId = req.session.userId;
+        if (!farmerId) {
+            return res.status(401).json({ success: false, message: 'Unauthorized' });
+        }
+
+        const { reason = 'No reason provided' } = req.body;
+        const requestId = req.params.id;
+
+        const result = await query(
+            `UPDATE delivery_requests 
+             SET status = 'cancelled', cancellation_reason = ?
+             WHERE request_id = ? AND farmer_id = ? 
+             AND status IN ('pending', 'scheduled')`,
+            [reason, requestId, farmerId]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Request not found or cannot be cancelled' 
+            });
+        }
+
+        const rows = await query(
+            `SELECT * FROM delivery_requests WHERE request_id = ?`,
+            [requestId]
+        );
+
+        res.json({ success: true, data: rows[0] });
+    } catch (error) {
+        console.error('Error cancelling delivery request:', error);
+        res.status(500).json({ success: false, message: 'Failed to cancel delivery request' });
+    }
+});
+
 
 
 
