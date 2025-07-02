@@ -117,6 +117,31 @@
       width: 48%;
       margin-right: 2%;
     }
+
+    .search-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .search-box {
+      width: 100%;
+      max-width: 400px;
+      padding: 12px 16px;
+      font-size: 16px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+
+    .search-box:focus {
+      border-color: #4CAF50;
+    }
+
+    .search-box::placeholder {
+      color: #999;
+    }
   </style>
 </head>
 
@@ -128,10 +153,14 @@
     <button class="dashboard-btn" onclick="location.href='/admin_dashboard.html'">← Back to Dashboard</button>
   </div>
 
+  <div class="search-container">
+    <input type="text" class="search-box" id="searchInput" placeholder="Search by name or ID number..." />
+  </div>
+
   <table id="userTable">
     <thead>
       <tr>
-        <th>User ID</th>
+        <th>User's ID Number</th>
         <th>Name</th>
         <th>Email</th>
         <th>Phone</th>
@@ -178,7 +207,7 @@
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td>${user.user_id}</td>
+          <td>${user.id_number}</td>
           <td>${user.name}</td>
           <td>${user.email}</td>
           <td>${user.phone}</td>
@@ -194,7 +223,7 @@
 
     function showEditForm(user) {
       document.getElementById('editUserContainer').style.display = 'block';
-      document.getElementById('editUserId').value = user.user_id;
+      document.getElementById('editUserId').value = user.id_number;
       document.getElementById('editName').value = user.name;
       document.getElementById('editEmail').value = user.email;
       document.getElementById('editPhone').value = user.phone;
@@ -241,6 +270,17 @@
         alert(data.message || 'Delete failed');
       }
     }
+    document.getElementById('searchInput').addEventListener('input', function () {
+      const query = this.value.toLowerCase().trim();
+      const rows = document.querySelectorAll('#userTable tbody tr');
+
+      rows.forEach(row => {
+        const idCell = row.children[0].textContent.toLowerCase();
+        const nameCell = row.children[1].textContent.toLowerCase();
+        const match = idCell.includes(query) || nameCell.includes(query);
+        row.style.display = match ? '' : 'none';
+      });
+    });
 
     fetchUsers();
   </script>
