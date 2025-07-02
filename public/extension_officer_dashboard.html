@@ -4,7 +4,166 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Extension Officer Dashboard | chaiConnect</title>
-  <link rel="stylesheet" href="/css/dashboards_style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="css/extension_officer_dashboard.css">
+  <style>
+    /* Visit Requests Section */
+    .visit-requests-section {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      margin-top: 30px;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .refresh-btn {
+      background: #f0f0f0;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .refresh-btn:hover {
+      background: #e0e0e0;
+    }
+
+    .requests-container {
+      max-height: 500px;
+      overflow-y: auto;
+    }
+
+    .request-card {
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+      background: #f9f9f9;
+      transition: transform 0.2s;
+    }
+
+    .request-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .request-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .farmer-name {
+      font-weight: 600;
+      color: #2c3e50;
+    }
+
+    .farmer-location {
+      color: #7f8c8d;
+      font-size: 0.9em;
+    }
+
+    .request-body p {
+      margin: 8px 0;
+      color: #34495e;
+    }
+
+    .request-body strong {
+      color: #2c3e50;
+    }
+
+    .request-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .request-actions input {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    .request-actions button {
+      padding: 8px 15px;
+      border: none;
+      border-radius: 4px;
+      background: #27ae60;
+      color: white;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .request-actions button:hover {
+      background: #219653;
+    }
+
+    .no-requests {
+      text-align: center;
+      padding: 30px;
+      color: #7f8c8d;
+      font-style: italic;
+    }
+
+    .status-requested {
+      color: #d35400;
+      font-weight: bold;
+    }
+
+    .status-scheduled {
+      color: #27ae60;
+      font-weight: bold;
+    }
+
+    .status-completed {
+      color: #2980b9;
+      font-weight: bold;
+    }
+
+    /* Toast notifications */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 15px 20px;
+      background: #27ae60;
+      color: white;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.3s ease;
+      z-index: 1000;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .toast-error {
+      background: #e74c3c;
+    }
+
+    .toast i {
+      font-size: 1.2em;
+    }
+  </style>
 </head>
 
 <body>
@@ -44,8 +203,12 @@
         <h2 id="farmerCount">0</h2>
       </div>
       <div class="stat-card">
-        <p>Upcoming Visits</p>
-        <h2>0</h2>
+        <h3><i class="fas fa-calendar-alt"></i> Upcoming Visits</h3>
+        <div class="stat-value" id="upcomingVisitsCount">0</div>
+        <p>Farm visits scheduled</p>
+        <button onclick="loadVisitRequests()">
+          <i class="fas fa-sync-alt"></i> Refresh
+        </button>
       </div>
       <div class="stat-card">
         <p>Training Materials</p>
@@ -100,7 +263,10 @@
     </div>
   </div>
 
-  <div id="logoutToast" class="toast">✅ Logged out successfully</div>
+  <div id="logoutToast" class="toast">
+    <i class="fas fa-check-circle"></i>
+    <span>Logged out successfully</span>
+  </div>
 
   <script>
     // Fetch officer data and populate dashboard
@@ -161,7 +327,356 @@
       window.location.href = '/extension_complaints.html';
     }
 
+    function logout() {
+      fetch('/logout', { method: 'POST' })
+        .then(() => {
+          const toast = document.getElementById('logoutToast');
+          toast.classList.add('show');
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 1500);
+        });
+    }
+
+    // Fetch alert count
+    fetch('/alerts/count')
+      .then(res => res.json())
+      .then(data => {
+        const alertCount = document.getElementById('alertCount');
+        if (data.count > 0) {
+          alertCount.textContent = data.count;
+          alertCount.style.display = 'flex';
+        }
+      });
+
+    // Visit Requests functionality
+    function loadVisitRequests() {
+      fetch('/api/visit-requests')
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            renderVisitRequests(data.requests);
+            // Update upcoming visits count in stats
+            const upcomingVisits = data.requests.filter(r => r.status === 'scheduled').length;
+            document.getElementById('upcomingVisitsCount').textContent = upcomingVisits;
+          } else {
+            console.error('Error loading requests:', data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
+    }
+
+    function renderVisitRequests(requests) {
+      const container = document.getElementById('requestsContainer');
+      
+      if (requests.length === 0) {
+        container.innerHTML = '<div class="no-requests">No pending visit requests.</div>';
+        return;
+      }
+      
+      let html = '';
+      
+      requests.forEach(request => {
+        const preferredDate = request.preferred_date ? new Date(request.preferred_date) : null;
+        const scheduledDate = request.scheduled_date ? new Date(request.scheduled_date) : null;
+        const isScheduled = request.status === 'scheduled';
+        
+        html += `
+        <div class="request-card" data-id="${request.visit_id}">
+          <div class="request-header">
+            <span class="farmer-name">${request.farmer_name}</span>
+            <span class="farmer-location">${request.location || 'Unknown location'}</span>
+          </div>
+          <div class="request-body">
+            ${preferredDate ? `<p><strong>Preferred Date:</strong> ${preferredDate.toLocaleDateString()} at ${preferredDate.toLocaleTimeString()}</p>` : ''}
+            <p><strong>Purpose:</strong> ${request.purpose}</p>
+            ${request.notes ? `<p><strong>Notes:</strong> ${request.notes}</p>` : ''}
+            <p><strong>Contact:</strong> ${request.farmer_phone}</p>
+            ${isScheduled && scheduledDate ? `<p><strong>Scheduled Date:</strong> ${scheduledDate.toLocaleDateString()} at ${scheduledDate.toLocaleTimeString()}</p>` : ''}
+            <p><strong>Status:</strong> <span class="status-${request.status}">${request.status.charAt(0).toUpperCase() + request.status.slice(1)}</span></p>
+          </div>
+          ${!isScheduled ? `
+          <div class="request-actions">
+            <input type="datetime-local" class="schedule-date" required>
+            <button class="schedule-btn">Schedule Visit</button>
+          </div>
+          ` : ''}
+        </div>
+        `;
+      });
+      
+      container.innerHTML = html;
+      
+      // Add event listeners to schedule buttons
+      document.querySelectorAll('.schedule-btn').forEach(button => {
+        button.addEventListener('click', function() {
+          const card = this.closest('.request-card');
+          const visitId = card.dataset.id;
+          const scheduleDate = card.querySelector('.schedule-date').value;
+          
+          if (!scheduleDate) {
+            showToast('Please select a date and time', 'error');
+            return;
+          }
+          
+          fetch(`/api/schedule-visit/${visitId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ scheduledDate: scheduleDate })
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              showToast('Visit scheduled successfully!');
+              loadVisitRequests();
+            } else {
+              showToast('Error: ' + data.message, 'error');
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            showToast('Failed to schedule visit', 'error');
+          });
+        });
+      });
+    }
+
+    function refreshVisitRequests() {
+      loadVisitRequests();
+      showToast('Visit requests refreshed');
+    }
+
+    function showToast(message, type = 'success') {
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+        <span>${message}</span>
+      `;
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.classList.add('show');
+      }, 10);
+      
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+          toast.remove();
+        }, 300);
+      }, 3000);
+    }
+ // Load all visit-related data
+function loadVisitData() {
+  // Load pending visit requests
+  fetch('/api/visit-requests')
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        renderPendingVisits(data.requests);
+      }
+    });
+
+  // Load scheduled visits
+  fetch('/api/upcoming-visits')
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        renderScheduledVisits(data.visits);
+      }
+    });
+
+  // Load training sessions
+  fetch('/api/training-sessions')
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        renderTrainingSessions(data.sessions);
+      }
+    });
+}
+
+// Render pending visit requests
+function renderPendingVisits(requests) {
+  const container = document.getElementById('pendingVisitsContainer');
+  
+  if (requests.length === 0) {
+    container.innerHTML = '<p class="text-muted">No pending visit requests.</p>';
+    return;
+  }
+
+  let html = '<div class="list-group">';
+  
+  requests.forEach(request => {
+    const preferredDate = new Date(request.preferred_date);
     
+    html += `
+    <div class="list-group-item">
+      <div class="d-flex justify-content-between">
+        <h5>${request.farmer_name}</h5>
+        <span class="badge bg-warning">Pending</span>
+      </div>
+      <p><strong>Preferred Date:</strong> ${preferredDate.toLocaleString()}</p>
+      <p><strong>Purpose:</strong> ${request.purpose}</p>
+      ${request.notes ? `<p><strong>Notes:</strong> ${request.notes}</p>` : ''}
+      
+      <div class="visit-actions mt-2">
+        <div class="input-group mb-2">
+          <input type="datetime-local" class="form-control schedule-date-input" 
+                 min="${new Date().toISOString().slice(0, 16)}">
+          <button class="btn btn-success schedule-btn" data-id="${request.visit_id}">
+            <i class="fas fa-calendar-plus"></i> Schedule
+          </button>
+        </div>
+        <button class="btn btn-outline-danger reject-btn" data-id="${request.visit_id}">
+          <i class="fas fa-times"></i> Reject
+        </button>
+      </div>
+    </div>
+    `;
+  });
+  
+  html += '</div>';
+  container.innerHTML = html;
+
+  // Add event listeners
+  document.querySelectorAll('.schedule-btn').forEach(btn => {
+    btn.addEventListener('click', scheduleVisit);
+  });
+  
+  document.querySelectorAll('.reject-btn').forEach(btn => {
+    btn.addEventListener('click', rejectVisit);
+  });
+}
+
+// Render scheduled visits
+function renderScheduledVisits(visits) {
+  const container = document.getElementById('scheduledVisitsContainer');
+  
+  if (visits.length === 0) {
+    container.innerHTML = '<p class="text-muted">No upcoming visits scheduled.</p>';
+    return;
+  }
+
+  let html = '<div class="list-group">';
+  
+  visits.forEach(visit => {
+    const visitDate = new Date(visit.scheduled_date);
+    
+    html += `
+    <div class="list-group-item">
+      <div class="d-flex justify-content-between">
+        <h5>${visit.farmer_name}</h5>
+        <span class="badge bg-success">Scheduled</span>
+      </div>
+      <p><strong>Date:</strong> ${visitDate.toLocaleString()}</p>
+      <p><strong>Purpose:</strong> ${visit.purpose}</p>
+      ${visit.notes ? `<p><strong>Notes:</strong> ${visit.notes}</p>` : ''}
+      <p><strong>Contact:</strong> ${visit.farmer_phone}</p>
+      
+      <div class="visit-actions mt-2">
+        <button class="btn btn-primary complete-btn" data-id="${visit.visit_id}">
+          <i class="fas fa-check"></i> Mark Complete
+        </button>
+        <button class="btn btn-outline-secondary reschedule-btn" data-id="${visit.visit_id}">
+          <i class="fas fa-calendar-alt"></i> Reschedule
+        </button>
+      </div>
+    </div>
+    `;
+  });
+  
+  html += '</div>';
+  container.innerHTML = html;
+
+  // Add event listeners
+  document.querySelectorAll('.complete-btn').forEach(btn => {
+    btn.addEventListener('click', completeVisit);
+  });
+  
+  document.querySelectorAll('.reschedule-btn').forEach(btn => {
+    btn.addEventListener('click', showRescheduleForm);
+  });
+}
+
+// Schedule a visit
+function scheduleVisit() {
+  const visitId = this.dataset.id;
+  const card = this.closest('.list-group-item');
+  const dateInput = card.querySelector('.schedule-date-input');
+  const scheduledDate = dateInput.value;
+  
+  if (!scheduledDate) {
+    showToast('Please select a date and time', 'error');
+    return;
+  }
+
+  fetch(`/api/schedule-visit/${visitId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ scheduledDate })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      showToast('Visit scheduled successfully!');
+      loadVisitData(); // Refresh all visit data
+    } else {
+      showToast(data.message || 'Error scheduling visit', 'error');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    showToast('Failed to schedule visit', 'error');
+  });
+}
+
+// Mark visit as complete
+function completeVisit() {
+  const visitId = this.dataset.id;
+  
+  if (!confirm('Mark this visit as completed?')) return;
+
+  fetch(`/api/complete-visit/${visitId}`, {
+    method: 'PUT'
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      showToast('Visit marked as completed');
+      loadVisitData(); // Refresh all visit data
+    } else {
+      showToast(data.message || 'Error completing visit', 'error');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    showToast('Failed to complete visit', 'error');
+  });
+}
+
+// Load data when page loads
+document.addEventListener('DOMContentLoaded', loadVisitData);
+    // Initial load of visit requests when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      loadVisitRequests();
+    });
+
+    // Fetch training materials count
+fetch('/api/training-materials/count')
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      document.querySelectorAll('.stat-card .stat-value')[2].textContent = data.count;
+    }
+  });
+
   </script>
   <script src="logout.js"></script>
   <script src="/alertCount.js"></script>

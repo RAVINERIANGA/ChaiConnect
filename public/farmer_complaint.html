@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Submit Complaint | ChaiConnect</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f4f6f8;
+      padding: 40px;
+      color: #333;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: auto;
+      background-color: #fff;
+      padding: 40px;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+    }
+
+    h2 {
+      margin-bottom: 30px;
+      font-size: 28px;
+      color: #2c3e50;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 10px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      font-weight: 600;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 16px;
+      min-height: 150px;
+      resize: vertical;
+    }
+
+    .actions {
+      margin-top: 30px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: #45a049;
+    }
+
+    .btn-secondary {
+      background-color: #607d8b;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background-color: #455a64;
+    }
+
+    .top-bar {
+      margin-bottom: 20px;
+    }
+
+    .btn-back {
+      background-color: #555;
+      color: white;
+      padding: 8px 14px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 14px;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .btn-back:hover {
+      background-color: #333;
+    }
+
+    .btn-back i {
+      margin-right: 5px;
+    }
+
+    .success-message {
+      color: #4CAF50;
+      text-align: center;
+      margin-top: 20px;
+      font-weight: 600;
+    }
+
+    .error-message {
+      color: #f44336;
+      text-align: center;
+      margin-top: 20px;
+      font-weight: 600;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 20px;
+      }
+      
+      .container {
+        padding: 20px;
+      }
+      
+      .actions {
+        flex-direction: column;
+        gap: 10px;
+      }
+      
+      .btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="top-bar">
+      <a href="/farmer_dashboard.html" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+    </div>
+    
+    <h2><i class="fas fa-exclamation-circle"></i> Submit Complaint</h2>
+    
+    <form id="complaintForm">
+      <div class="form-group">
+        <label for="complaintText">Describe your complaint or question</label>
+        <textarea id="complaintText" name="complaintText" placeholder="Please provide details about your issue..." required></textarea>
+      </div>
+      
+      <div class="actions">
+        <button type="button" class="btn btn-secondary" onclick="window.location.href='/farmer_dashboard.html'">Cancel</button>
+        <button type="submit" class="btn btn-primary">Submit Complaint</button>
+      </div>
+      
+      <div id="message"></div>
+    </form>
+  </div>
+
+  <!-- Font Awesome for icons -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/js/all.min.js"></script>
+  
+  <script>
+    document.getElementById('complaintForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const complaintText = document.getElementById('complaintText').value.trim();
+      const messageDiv = document.getElementById('message');
+      
+      if (!complaintText) {
+        messageDiv.textContent = 'Please enter your complaint details';
+        messageDiv.className = 'error-message';
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/farmer/complaints', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ complaintText }),
+          credentials: 'include'
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+          messageDiv.textContent = 'Complaint submitted successfully! Our team will review it shortly.';
+          messageDiv.className = 'success-message';
+          document.getElementById('complaintForm').reset();
+          
+          // Clear success message after 5 seconds
+          setTimeout(() => {
+            messageDiv.textContent = '';
+            messageDiv.className = '';
+          }, 5000);
+        } else {
+          throw new Error(result.message || 'Failed to submit complaint');
+        }
+      } catch (error) {
+        console.error('Error submitting complaint:', error);
+        messageDiv.textContent = error.message || 'An error occurred while submitting your complaint';
+        messageDiv.className = 'error-message';
+      }
+    });
+  </script>
+</body>
+</html>

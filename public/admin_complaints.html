@@ -106,13 +106,15 @@
     <h2>📝 Farmer Complaints Review</h2>
     <table>
       <thead>
-        <tr>
-          <th>Farmer Name</th>
-          <th>Complaint</th>
-          <th>Date</th>
-          <th>Status</th>
-          <th>Update</th>
-        </tr>
+       <tr>
+      <th>Farmer Name</th>
+      <th>Category</th>
+      <th>Complaint</th>
+      <th>Submitted</th>
+      <th>Last Updated</th>
+      <th>Status</th>
+      <th>Actions</th>
+    </tr>
       </thead>
       <tbody id="complaintsTableBody">
         <!-- Complaints will load here -->
@@ -121,55 +123,69 @@
     <button class="back-btn" onclick="window.location.href='/admin_dashboard.html'">← Back to Dashboard</button>
   </div>
 
-  <script>
-    async function loadComplaints() {
-      const res = await fetch('/admin/complaints');
-      const complaints = await res.json();
-      const tbody = document.getElementById('complaintsTableBody');
-      tbody.innerHTML = '';
+ <script>
+  // Update your loadComplaints function
+  async function loadComplaints() {
+    const res = await fetch('/admin/complaints');
+    const complaints = await res.json();
+    const tbody = document.getElementById('complaintsTableBody');
+    tbody.innerHTML = '';
 
-      complaints.forEach(complaint => {
-        const row = document.createElement('tr');
-
-        const badgeClass = complaint.status.replace(' ', '_');
-        row.innerHTML = `
-          <td>${complaint.name}</td>
-          <td>${complaint.complaint_text}</td>
-          <td>${new Date(complaint.complaint_date).toLocaleDateString()}</td>
-          <td><span class="badge ${badgeClass}">${complaint.status}</span></td>
-          <td>
+    complaints.forEach(complaint => {
+      const row = document.createElement('tr');
+      const badgeClass = complaint.status.replace(' ', '_');
+      
+      row.innerHTML = `
+        <td>${complaint.name}</td>
+        <td>${complaint.category || 'other'}</td>
+        <td>${complaint.complaint_text}</td>
+        <td>${new Date(complaint.complaint_date).toLocaleString()}</td>
+        <td>${new Date(complaint.updated_at).toLocaleString()}</td>
+        <td><span class="badge ${badgeClass}">${complaint.status}</span></td>
+        <td>
+          <div class="status-actions">
             ${complaint.status !== 'resolved' ? `
-              <div class="status-select">
-                <select onchange="updateStatus(${complaint.complaint_id}, this.value)">
-                  <option value="">Change status</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="resolved">Resolved</option>
-                </select>
-              </div>
-            ` : '<em>N/A</em>'}
-          </td>
-        `;
-        tbody.appendChild(row);
-      });
+              <select onchange="updateStatus(${complaint.complaint_id}, this.value)" class="status-select">
+                <option value="">Change status</option>
+                <option value="in_progress" ${complaint.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
+                <option value="resolved">Resolved</option>
+              </select>
+              <button onclick="showNotesModal(${complaint.complaint_id})" class="notes-btn">
+                <i class="fas fa-edit"></i> Notes
+              </button>
+            ` : '<em>Resolved</em>'}
+          </div>
+        </td>
+      `;
+      tbody.appendChild(row);
+    });
+  }
+
+  // Add this new function for admin notes
+  async function showNotesModal(complaintId) {
+    // In a real app, you would implement a modal to view/edit admin notes
+    const notes = prompt('Enter admin notes for this complaint:');
+    if (notes !== null) {
+      await updateStatus(complaintId, null, notes);
     }
+  }
 
-    async function updateStatus(id, status) {
-      const res = await fetch(`/admin/complaints/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status })
-      });
+  // Update the updateStatus function
+  async function updateStatus(id, status, notes = null) {
+    const res = await fetch(`/admin/complaints/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status, adminNotes: notes })
+    });
 
-      const data = await res.json();
-      if (data.success) {
-        alert('Status updated successfully');
-        loadComplaints();
-      } else {
-        alert('Failed to update status');
-      }
+    const data = await res.json();
+    if (data.success) {
+      alert('Complaint updated successfully');
+      loadComplaints();
+    } else {
+      alert(data.message || 'Failed to update complaint');
     }
-
-    document.addEventListener('DOMContentLoaded', loadComplaints);
-  </script>
+  }
+</script>
 </body>
 </html>

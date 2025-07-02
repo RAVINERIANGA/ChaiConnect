@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Upload Training Material | chaiConnect</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"/>
+  <link rel="stylesheet" href="css/extension_officer_dashboard.css" />
+  <style>
+    .upload-container {
+      max-width: 600px;
+      margin: 50px auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .upload-container h2 {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .upload-container input, .upload-container textarea {
+      width: 100%;
+      margin-bottom: 15px;
+      padding: 10px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    .upload-container button {
+      background: #27ae60;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      width: 100%;
+    }
+    .upload-container button:hover {
+      background: #219653;
+    }
+    .success-message {
+      color: #27ae60;
+      text-align: center;
+      margin-top: 10px;
+    }
+    .error-message {
+      color: #e74c3c;
+      text-align: center;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="upload-container">
+    <h2><i class="fas fa-upload"></i> Upload Training Material</h2>
+    <form id="uploadForm" enctype="multipart/form-data">
+      <input type="text" name="title" placeholder="Material Title" required />
+      <textarea name="description" placeholder="Brief Description" rows="4" required></textarea>
+      <input type="file" name="file" accept=".pdf,.doc,.ppt,.jpg,.png" required />
+      <button type="submit">Upload</button>
+      <div id="uploadMessage"></div>
+    </form>
+  </div>
+
+  <script>
+    document.getElementById('uploadForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const form = e.target;
+      const formData = new FormData(form);
+
+      console.log('Form data:', formData);
+      
+      fetch('/api/upload-training', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      })
+      then(res => {
+    console.log('Response status:', res.status); // Add this
+    return res.json();
+  })
+      .then(data => {
+        console.log('Response data:', data); // Add this
+        const messageBox = document.getElementById('uploadMessage');
+        if (data.success) {
+          messageBox.textContent = "Upload successful!";
+          messageBox.className = 'success-message';
+          form.reset();
+        } else {
+          messageBox.textContent = "Upload failed: " + data.message;
+          messageBox.className = 'error-message';
+        }
+      })
+       .catch(err => {
+    console.error('Fetch error:', err); 
+    document.getElementById('uploadMessage').textContent = 'An error occurred: ' + err.message;
+    document.getElementById('uploadMessage').className = 'error-message';
+  });
+    });
+  </script>
+</body>
+</html>

@@ -1,205 +1,1085 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
-  <title>Admin Dashboard</title>
-  <link rel="stylesheet" href="/css/dashboards_style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - ChaiConnect</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      /* Light theme colors */
+      --bg-primary: #ffffff;
+      --bg-secondary: #f8fafc;
+      --bg-tertiary: #f1f5f9;
+      --text-primary: #1e293b;
+      --text-secondary: #64748b;
+      --text-muted: #94a3b8;
+      --accent-primary: #059669;
+      --accent-secondary: #10b981;
+      --accent-hover: #047857;
+      --border-color: #e2e8f0;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+      --danger: #dc2626;
+      --warning: #d97706;
+      --info: #2563eb;
+      --success: #059669;
+    }
+
+    [data-theme="dark"] {
+      /* Dark theme colors */
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-tertiary: #334155;
+      --text-primary: #f8fafc;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+      --accent-primary: #10b981;
+      --accent-secondary: #34d399;
+      --accent-hover: #059669;
+      --border-color: #374151;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg-secondary);
+      color: var(--text-primary);
+      transition: all 0.3s ease;
+      line-height: 1.6;
+    }
+
+    /* Top Header */
+    .top-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 64px;
+      background-color: var(--bg-primary);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 24px;
+      z-index: 1000;
+      backdrop-filter: blur(10px);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--accent-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .theme-toggle {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .theme-toggle:hover {
+      background: var(--accent-primary);
+      color: white;
+    }
+
+    .alert-container {
+      position: relative;
+    }
+
+    .alert-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: var(--text-secondary);
+    }
+
+    .alert-icon:hover {
+      background: var(--accent-primary);
+      color: white;
+    }
+
+    .alert-badge {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      background: var(--danger);
+      color: white;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 10px;
+      min-width: 18px;
+      text-align: center;
+      line-height: 1.2;
+    }
+
+    .logout-button {
+      background: linear-gradient(135deg, var(--danger), #ef4444);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .logout-button:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 280px;
+      background: var(--bg-primary);
+      border-right: 1px solid var(--border-color);
+      height: 100vh;
+      position: fixed;
+      top: 64px;
+      left: 0;
+      padding: 24px;
+      overflow-y: auto;
+      transition: all 0.3s ease;
+    }
+
+    .sidebar-header {
+      margin-bottom: 32px;
+    }
+
+    .sidebar-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .sidebar-subtitle {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .nav-menu {
+      list-style: none;
+    }
+
+    .nav-item {
+      margin-bottom: 4px;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      text-decoration: none;
+      color: var(--text-secondary);
+      border-radius: 8px;
+      transition: all 0.2s ease;
+      font-weight: 500;
+    }
+
+    .nav-link:hover,
+    .nav-link.active {
+      background: var(--accent-primary);
+      color: white;
+      transform: translateX(4px);
+    }
+
+    .nav-link i {
+      width: 20px;
+      text-align: center;
+    }
+
+    /* Main Content */
+    .main-content {
+      margin-left: 280px;
+      margin-top: 64px;
+      padding: 32px;
+      min-height: calc(100vh - 64px);
+    }
+
+    .welcome-section {
+      margin-bottom: 32px;
+    }
+
+    .welcome-title {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .welcome-subtitle {
+      font-size: 16px;
+      color: var(--text-secondary);
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 24px;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .stat-header {
+      display: flex;
+      justify-content: between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .stat-label {
+      font-size: 14px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .stat-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      margin-left: auto;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .stat-change {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .stat-change.positive {
+      color: var(--success);
+    }
+
+    .stat-change.neutral {
+      color: var(--text-muted);
+    }
+
+    /* Action Cards Grid */
+    .actions-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+    }
+
+    .action-card {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 24px;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .action-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--accent-primary);
+    }
+
+    .action-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .action-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .action-content h3 {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .action-content p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+
+    .action-button {
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .action-button:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      top: 80px;
+      right: 24px;
+      background: var(--success);
+      color: white;
+      padding: 16px 24px;
+      border-radius: 8px;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transform: translateX(400px);
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 1001;
+    }
+
+    .toast.show {
+      transform: translateX(0);
+      opacity: 1;
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 1024px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+      
+      .main-content {
+        margin-left: 0;
+      }
+      
+      .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      }
+      
+      .actions-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .top-header {
+        padding: 0 16px;
+      }
+      
+      .main-content {
+        padding: 20px 16px;
+      }
+      
+      .welcome-title {
+        font-size: 24px;
+      }
+      
+      .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+      
+      .actions-grid {
+        gap: 16px;
+      }
+    }
+
+    /* Scrollbar Styling */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg-secondary);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--text-muted);
+    }
+  </style>
 </head>
 
-<body>
-  <!-- Top Floating Header -->
+<body data-theme="light">
+  <!-- Top Header -->
   <div class="top-header">
-    <div class="right-icons">
-      <h2>chaiConnect</h2>
+    <div class="header-left">
+      <div class="logo">
+        <i class="fas fa-leaf"></i>
+        ChaiConnect
+      </div>
     </div>
-    <div class="right-icons">
-      <a href="/alerts.html" title="View Alerts" style="position: relative;">
-        <img src="/images/system_alert_symbol.jpg" class="alert-icon" alt="Alerts">
-        <span id="alertCount">0</span>
-      </a>
-      <button class="logout-button" onclick="logout()">Logout</button>
+    <div class="header-right">
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Theme">
+        <i class="fas fa-moon" id="theme-icon"></i>
+      </button>
+      <div class="alert-container">
+        <a href="/alerts.html" class="alert-icon" title="View Alerts">
+          <i class="fas fa-bell"></i>
+          <span class="alert-badge" id="alertCount" style="display: none;">0</span>
+        </a>
+      </div>
+      <button class="logout-button" onclick="logout()">
+        <i class="fas fa-sign-out-alt"></i>
+        Logout
+      </button>
     </div>
   </div>
 
+  <!-- Sidebar -->
   <div class="sidebar">
-    <h3>Admin Dashboard</h3>
-    <ul>
-      <li><a href="#" class="active">Home</a></li>
-      <li><a href="view_profile.html">View My Profile</a></li>
-      <li><a href="assign_roles.html">Create New Users</a></li>
-      <li><a href="manage_users.html">View All System Users</a></li>
-      <li><a href="/farmer_mismatches.html">Review Mismatches</a></li>
-      <li><a href="/suspended_accounts.html">View suspended accounts</a></li>
-      <li><a href="/view_policies.html">View uploaded policies</a></li>
-      <!--<li><a href="#logout" onclick="logout()">Logout</a></li>-->
+    <div class="sidebar-header">
+      <div class="sidebar-title">Admin Dashboard</div>
+      <div class="sidebar-subtitle">Management Portal</div>
+    </div>
+    <ul class="nav-menu">
+      <li class="nav-item">
+        <a href="#" class="nav-link active">
+          <i class="fas fa-home"></i>
+          Dashboard
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="admin_profile.html" class="nav-link">
+          <i class="fas fa-user"></i>
+          My Profile
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="assign_roles.html" class="nav-link">
+          <i class="fas fa-user-plus"></i>
+          Create Users
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="manage_users.html" class="nav-link">
+          <i class="fas fa-users"></i>
+          All Users
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="/farmer_mismatches.html" class="nav-link">
+          <i class="fas fa-exclamation-triangle"></i>
+          Mismatches
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="/suspended_accounts.html" class="nav-link">
+          <i class="fas fa-user-lock"></i>
+          Suspended Accounts
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="/view_policies.html" class="nav-link">
+          <i class="fas fa-file-contract"></i>
+          Policies
+        </a>
+      </li>
     </ul>
   </div>
 
+  <!-- Main Content -->
   <div class="main-content">
-    <section id="overview">
-      <h1 id="welcomeMessage">Welcome, Admin</h1>
-      <p>Oversee the operations of ChaiConnect.</p>
-    </section>
+    <div class="welcome-section">
+      <h1 class="welcome-title" id="welcomeMessage">Welcome, Admin</h1>
+      <p class="welcome-subtitle">Oversee and manage ChaiConnect operations with ease</p>
+    </div>
 
-    <!-- Stat Summary Cards -->
-    <div class="dashboard-cards">
+    <!-- Stats Grid -->
+    <div class="stats-grid">
       <div class="stat-card">
-        <p>Total Farmers</p>
-        <h2 id="totalFarmers">Loading...</h2>
+        <div class="stat-header">
+          <div class="stat-label">Total Farmers</div>
+          <div class="stat-icon">
+            <i class="fas fa-seedling"></i>
+          </div>
+        </div>
+        <div class="stat-value" id="totalFarmers">Loading...</div>
+        <div class="stat-change neutral">
+          <i class="fas fa-minus"></i>
+          No change from last month
+        </div>
       </div>
+
       <div class="stat-card">
-        <p>Total Factory Staff</p>
-        <h2 id="totalFactoryStaff">Loading...</h2>
+        <div class="stat-header">
+          <div class="stat-label">Factory Staff</div>
+          <div class="stat-icon">
+            <i class="fas fa-industry"></i>
+          </div>
+        </div>
+        <div class="stat-value" id="totalFactoryStaff">Loading...</div>
+        <div class="stat-change positive">
+          <i class="fas fa-arrow-up"></i>
+          +2 this month
+        </div>
       </div>
+
       <div class="stat-card">
-        <p>Total Extension Officers</p>
-        <h2 id="totalExtensionOfficers">Loading...</h2>
+        <div class="stat-header">
+          <div class="stat-label">Extension Officers</div>
+          <div class="stat-icon">
+            <i class="fas fa-user-tie"></i>
+          </div>
+        </div>
+        <div class="stat-value" id="totalExtensionOfficers">Loading...</div>
+        <div class="stat-change positive">
+          <i class="fas fa-arrow-up"></i>
+          +1 this month
+        </div>
       </div>
+
       <div class="stat-card">
-        <p>Tea Delivered Today</p>
-        <h2 id="teaDeliveredToday">Loading...</h2>
+        <div class="stat-header">
+          <div class="stat-label">Tea Today</div>
+          <div class="stat-icon">
+            <i class="fas fa-leaf"></i>
+          </div>
+        </div>
+        <div class="stat-value" id="teaDeliveredToday">Loading...</div>
+        <div class="stat-change positive">
+          <i class="fas fa-arrow-up"></i>
+          +15% from yesterday
+        </div>
       </div>
+
       <div class="stat-card">
-        <p>Tea Delivered This Month</p>
-        <h2 id="teaDeliveredThisMonth">Loading...</h2>
+        <div class="stat-header">
+          <div class="stat-label">Tea This Month</div>
+          <div class="stat-icon">
+            <i class="fas fa-calendar-alt"></i>
+          </div>
+        </div>
+        <div class="stat-value" id="teaDeliveredThisMonth">Loading...</div>
+        <div class="stat-change positive">
+          <i class="fas fa-arrow-up"></i>
+          +8% from last month
+        </div>
       </div>
+
       <div class="stat-card">
-        <p>Tea Delivered Overall</p>
-        <h2 id="teaDeliveredOverall">Loading...</h2>
+        <div class="stat-header">
+          <div class="stat-label">Total Tea Delivered</div>
+          <div class="stat-icon">
+            <i class="fas fa-chart-line"></i>
+          </div>
+        </div>
+        <div class="stat-value" id="teaDeliveredOverall">Loading...</div>
+        <div class="stat-change positive">
+          <i class="fas fa-arrow-up"></i>
+          Growing steadily
+        </div>
       </div>
     </div>
 
-
-    <!-- Feature Actions -->
-    <div class="card-actions">
-      <div class="card">
-        <h3>Manage Users</h3>
-        <p>View, add, or remove farmers, factory staff and extension officers.</p>
-        <button onclick="location.href='/manage_users.html'">Manage</button>
+    <!-- Action Cards -->
+    <div class="actions-grid">
+      <div class="action-card">
+        <div class="action-header">
+          <div class="action-icon">
+            <i class="fas fa-users-cog"></i>
+          </div>
+          <div class="action-content">
+            <h3>Manage Users</h3>
+            <p>View, add, or remove farmers, factory staff and extension officers from the system.</p>
+          </div>
+        </div>
+        <button class="action-button" onclick="location.href='/manage_users.html'">
+          <i class="fas fa-arrow-right"></i>
+          Manage Users
+        </button>
       </div>
 
-      <div class="card">
-        <h3>Add new users</h3>
-        <p>Add new users(Factory Staff/Extension Officers) to the system to newly added system users.</p>
-        <button onclick="location.href='/assign_roles.html'">Add</button>
-      </div>
-      <div class="card">
-        <h3>Create Alerts</h3>
-        <p>Send important notifications and updates to various user groups.</p>
-        <button onclick="location.href='/create_alert.html'">Create</button>
-      </div>
-
-      <div class="card">
-        <h3>Set Payment Rates</h3>
-        <p>Configure and update the payment rates per kilogram for tea deliveries.</p>
-        <button onclick="location.href='/set_rates.html'">Set Rates</button>
-      </div>
-      <div class="card">
-        <h3>Review Complaints</h3>
-        <p>Review and resolve complaints submitted by farmers.</p>
-        <button onclick="location.href='/admin_complaints.html'">Review</button>
+      <div class="action-card">
+        <div class="action-header">
+          <div class="action-icon">
+            <i class="fas fa-user-plus"></i>
+          </div>
+          <div class="action-content">
+            <h3>Add New Users</h3>
+            <p>Register new factory staff and extension officers to expand your team.</p>
+          </div>
+        </div>
+        <button class="action-button" onclick="location.href='/assign_roles.html'">
+          <i class="fas fa-plus"></i>
+          Add Users
+        </button>
       </div>
 
-      <div class="card">
-        <h3>Issue Payments</h3>
-        <p>Process and distribute payments for verified tea deliveries to farmers.</p>
-        <button onclick="location.href='/issue_payments.html'">Issue</button>
-      </div>
-      <div class="card">
-        <h3>View Issued Payments</h3>
-        <p>Track and review all payments that have been issued to farmers.</p>
-        <button onclick="location.href='/admin_view_payments.html'">View</button>
-      </div>
-
-      <div class="card">
-        <h3>System Activity</h3>
-        <p>Track key platform actions and activity logs.</p>
-        <button onclick="location.href='/system_logs.html'">Monitor</button>
-      </div>
-
-      <div class="card">
-        <h3>Analytics Dashboard</h3>
-        <p>Explore platform usage, trends and performance.</p>
-        <button onclick="location.href='/analytics.html'">Analytics</button>
+      <div class="action-card">
+        <div class="action-header">
+          <div class="action-icon">
+            <i class="fas fa-bell"></i>
+          </div>
+          <div class="action-content">
+            <h3>Create Alerts</h3>
+            <p>Send important notifications and updates to various user groups.</p>
+          </div>
+        </div>
+        <button class="action-button" onclick="location.href='/create_alert.html'">
+          <i class="fas fa-bullhorn"></i>
+          Create Alert
+        </button>
       </div>
 
-      <div class="card">
-        <h3>Reports</h3>
-        <p>Generate system reports for finance, training, and productivity.</p>
-        <button onclick="location.href='/reports.html'">View Reports</button>
+      <div class="action-card">
+        <div class="action-header">
+          <div class="action-icon">
+            <i class="fas fa-tags"></i>
+          </div>
+          <div class="action-content">
+            <h3>Set Payment Rates</h3>
+            <p>Configure and update the payment rates per kilogram for tea deliveries.</p>
+          </div>
+        </div>
+        <button class="action-button" onclick="location.href='/set_rates.html'">
+          <i class="fas fa-dollar-sign"></i>
+          Set Rates
+        </button>
       </div>
 
-      <div class="card">
-        <h3>Upload Policy Documents</h3>
-        <p>Create and upload documents for the system and upload for the users to view.</p>
-        <button onclick="location.href='/policies.html'">Upload</button>
+      <div class="action-card">
+        <div class="action-header">
+          <div class="action-icon">
+            <i class="fas fa-comments"></i>
+          </div>
+          <div class="action-content">
+            <h3>Review Complaints</h3>
+            <p>Address and resolve issues submitted by farmers and other users.</p>
+          </div>
+        </div>
+        <button class="action-button" onclick="location.href='/admin_complaints.html'">
+          <i class="fas fa-eye"></i>
+          Review
+        </button>
       </div>
 
-      <div class="card">
-        <h3>View all mismatch reports/Flagged accounts</h3>
-        <p>Review mismatch reports and complaints raised by factory staff on farmers.</p>
-        <button onclick="location.href='/farmer_mismatches.html'">View</button>
+      <div class="action-card">
+        <div class="action-header">
+          <div class="action-icon">
+            <i class="fas fa-money-bill-wave"></i>
+          </div>
+          <div class="action-content">
+            <h3>Issue Payments</h3>
+            <p>Process and distribute payments for verified tea deliveries to farmers.</p>
+          </div>
+        </div>
+        <button class="action-button" onclick="location.href='/issue_payments.html'">
+          <i class="fas fa-credit-card"></i>
+          Issue Payments
+        </button>
+      </div>
+
+      <div class="action-card">
+        <div class="action-header">
+          <div class="action-icon">
+            <i class="fas fa-receipt"></i>
+          </div>
+          <div class="action-content">
+            <h3>View Payments</h3>
+            <p>Track and review all payments that have been issued to farmers.</p>
+          </div>
+        </div>
+        <button class="action-button" onclick="location.href='/admin_view_payments.html'">
+          <i class="fas fa-list"></i>
+          View Payments
+        </button>
+      </div>
+
+      <div class="action-card">
+        <div class="action-header">
+          <div class="action-icon">
+            <i class="fas fa-chart-bar"></i>
+          </div>
+          <div class="action-content">
+            <h3>System Activity</h3>
+            <p>Monitor platform usage, track key actions and review activity logs.</p>
+          </div>
+        </div>
+        <button class="action-button" onclick="location.href='/system_logs.html'">
+          <i class="fas fa-chart-line"></i>
+          Monitor
+        </button>
+      </div>
+
+      <div class="action-card">
+        <div class="action-header">
+          <div class="action-icon">
+            <i class="fas fa-analytics"></i>
+          </div>
+          <div class="action-content">
+            <h3>Analytics Dashboard</h3>
+            <p>Explore detailed insights on platform usage, trends and performance metrics.</p>
+          </div>
+        </div>
+        <button class="action-button" onclick="location.href='/analytics.html'">
+          <i class="fas fa-chart-pie"></i>
+          View Analytics
+        </button>
+      </div>
+
+      <div class="action-card">
+        <div class="action-header">
+          <div class="action-icon">
+            <i class="fas fa-file-alt"></i>
+          </div>
+          <div class="action-content">
+            <h3>Generate Reports</h3>
+            <p>Create comprehensive reports for finance, training, and productivity analysis.</p>
+          </div>
+        </div>
+        <button class="action-button" onclick="location.href='/reports.html'">
+          <i class="fas fa-download"></i>
+          Generate Reports
+        </button>
+      </div>
+
+      <div class="action-card">
+        <div class="action-header">
+          <div class="action-icon">
+            <i class="fas fa-file-upload"></i>
+          </div>
+          <div class="action-content">
+            <h3>Upload Policies</h3>
+            <p>Create and upload important policy documents for users to access.</p>
+          </div>
+        </div>
+        <button class="action-button" onclick="location.href='/policies.html'">
+          <i class="fas fa-upload"></i>
+          Upload
+        </button>
+      </div>
+
+      <div class="action-card">
+        <div class="action-header">
+          <div class="action-icon">
+            <i class="fas fa-flag"></i>
+          </div>
+          <div class="action-content">
+            <h3>Flagged Accounts</h3>
+            <p>Review mismatch reports and complaints raised by factory staff on farmers.</p>
+          </div>
+        </div>
+        <button class="action-button" onclick="location.href='/farmer_mismatches.html'">
+          <i class="fas fa-search"></i>
+          Review Flags
+        </button>
       </div>
     </div>
-
   </div>
-  <div id="logoutToast" class="toast">✅ Logged out successfully</div>
-</body>
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    fetch('/api/me')
-      .then(res => {
-        if (!res.ok) throw new Error('Not authenticated');
-        return res.json();
-      })
-      .then(data => {
-        const name = data.name || 'Admin';
-        document.getElementById('welcomeMessage').textContent = `Welcome, ${name}`;
-      })
-      .catch(err => {
-        console.error('Error fetching user info:', err);
-        document.getElementById('welcomeMessage').textContent = 'Welcome, Admin';
+
+  <!-- Toast Notification -->
+  <div id="logoutToast" class="toast">
+    <i class="fas fa-check-circle"></i>
+    Logged out successfully
+  </div>
+
+  <script>
+    // Theme Toggle
+    function toggleTheme() {
+      const body = document.body;
+      const themeIcon = document.getElementById('theme-icon');
+      const currentTheme = body.getAttribute('data-theme');
+      
+      if (currentTheme === 'light') {
+        body.setAttribute('data-theme', 'dark');
+        themeIcon.className = 'fas fa-sun';
+        localStorage.setItem('theme', 'dark');
+      } else {
+        body.setAttribute('data-theme', 'light');
+        themeIcon.className = 'fas fa-moon';
+        localStorage.setItem('theme', 'light');
+      }
+    }
+
+    // Load saved theme
+    document.addEventListener('DOMContentLoaded', () => {
+      const savedTheme = localStorage.getItem('theme') || 'light';
+      const themeIcon = document.getElementById('theme-icon');
+      
+      document.body.setAttribute('data-theme', savedTheme);
+      themeIcon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+    });
+
+    // Load user info
+    document.addEventListener('DOMContentLoaded', () => {
+      fetch('/api/me')
+        .then(res => {
+          if (!res.ok) throw new Error('Not authenticated');
+          return res.json();
+        })
+        .then(data => {
+          const name = data.name || 'Admin';
+          document.getElementById('welcomeMessage').textContent = `Welcome back, ${name}`;
+        })
+        .catch(err => {
+          console.error('Error fetching user info:', err);
+          document.getElementById('welcomeMessage').textContent = 'Welcome back, Admin';
+        });
+    });
+
+    // Load dashboard stats
+    document.addEventListener("DOMContentLoaded", () => {
+      fetch('/api/dashboard-stats')
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById('totalFarmers').textContent = data.totalFarmers || '0';
+          document.getElementById('totalFactoryStaff').textContent = data.totalFactoryStaff || '0';
+          document.getElementById('totalExtensionOfficers').textContent = data.totalExtensionOfficers || '0';
+          document.getElementById('teaDeliveredToday').textContent = `${data.teaDeliveredToday || 0} kg`;
+          document.getElementById('teaDeliveredThisMonth').textContent = `${data.teaDeliveredThisMonth || 0} kg`;
+          document.getElementById('teaDeliveredOverall').textContent = `${data.teaDeliveredOverall || 0} kg`;
+        })
+        .catch(err => {
+          console.error('Failed to load dashboard stats', err);
+          // Set fallback values
+          document.getElementById('totalFarmers').textContent = '---';
+          document.getElementById('totalFactoryStaff').textContent = '---';
+          document.getElementById('totalExtensionOfficers').textContent = '---';
+          document.getElementById('teaDeliveredToday').textContent = '--- kg';
+          document.getElementById('teaDeliveredThisMonth').textContent = '--- kg';
+          document.getElementById('teaDeliveredOverall').textContent = '--- kg';
+        });
+    });
+
+    // Load alert count
+    document.addEventListener('DOMContentLoaded', () => {
+      fetch('/alerts/count')
+        .then(res => res.json())
+        .then(data => {
+          const count = data.count || 0;
+          const badge = document.getElementById('alertCount');
+          if (count > 0) {
+            badge.textContent = count > 99 ? '99+' : count;
+            badge.style.display = 'block';
+          } else {
+            badge.style.display = 'none';
+          }
+        })
+        .catch(err => {
+          console.error('Failed to load alert count:', err);
+          document.getElementById('alertCount').style.display = 'none';
+        });
+    });
+
+    // Logout function
+    function logout() {
+      // Add your logout logic here
+      fetch('/api/logout', { method: 'POST' })
+        .then(() => {
+          showToast();
+          setTimeout(() => {
+            window.location.href = '/login.html';
+          }, 1500);
+        })
+        .catch(err => {
+          console.error('Logout error:', err);
+          showToast();
+          setTimeout(() => {
+            window.location.href = '/login.html';
+          }, 1500);
+        });
+    }
+
+    // Show toast notification
+    function showToast() {
+      const toast = document.getElementById('logoutToast');
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    // Mobile menu toggle (for future mobile implementation)
+    function toggleMobileMenu() {
+      const sidebar = document.querySelector('.sidebar');
+      sidebar.classList.toggle('mobile-open');
+    }
+
+    // Add loading animation to buttons
+    document.querySelectorAll('.action-button').forEach(button => {
+      button.addEventListener('click', function(e) {
+        // Don't prevent default if it's a navigation
+        if (this.onclick) return;
+        
+        const originalText = this.innerHTML;
+        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+        this.disabled = true;
+        
+        setTimeout(() => {
+          this.innerHTML = originalText;
+          this.disabled = false;
+        }, 1000);
       });
-  });
+    });
 
-
-
-  document.addEventListener("DOMContentLoaded", () => {
-    fetch('/api/dashboard-stats')
-      .then(response => response.json())
-      .then(data => {
-        document.getElementById('totalFarmers').textContent = data.totalFarmers;
-        document.getElementById('totalFactoryStaff').textContent = data.totalFactoryStaff;
-        document.getElementById('totalExtensionOfficers').textContent = data.totalExtensionOfficers;
-        document.getElementById('teaDeliveredToday').textContent = `${data.teaDeliveredToday} kg`;
-        document.getElementById('teaDeliveredThisMonth').textContent = `${data.teaDeliveredThisMonth} kg`;
-        document.getElementById('teaDeliveredOverall').textContent = `${data.teaDeliveredOverall} kg`;
-      })
-      .catch(err => {
-        console.error('Failed to load dashboard stats', err);
-      });
-  });
-
-
-  document.addEventListener('DOMContentLoaded', () => {
-    fetch('/alerts/count')
-      .then(res => res.json())
-      .then(data => {
-        const count = data.count;
-        const badge = document.getElementById('alertCount');
-        if (count > 0) {
-          badge.textContent = count;
-          badge.style.display = 'inline-block';
+    // Smooth scroll for any anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
         }
-      })
-      .catch(err => console.error('Failed to load alert count:', err));
-  });
-</script>
-<script src="/alertCount.js"></script>
+      });
+    });
 
+    // Add ripple effect to buttons
+    function createRipple(event) {
+      const button = event.currentTarget;
+      const circle = document.createElement('span');
+      const diameter = Math.max(button.clientWidth, button.clientHeight);
+      const radius = diameter / 2;
 
+      circle.style.width = circle.style.height = `${diameter}px`;
+      circle.style.left = `${event.clientX - button.offsetLeft - radius}px`;
+      circle.style.top = `${event.clientY - button.offsetTop - radius}px`;
+      circle.classList.add('ripple');
 
-<script src="/logout.js"></script>
+      const ripple = button.getElementsByClassName('ripple')[0];
+      if (ripple) {
+        ripple.remove();
+      }
 
+      button.appendChild(circle);
+    }
+
+    // Add ripple effect to all buttons
+    document.querySelectorAll('.action-button, .logout-button').forEach(button => {
+      button.addEventListener('click', createRipple);
+    });
+
+    // Add CSS for ripple effect
+    const rippleStyle = document.createElement('style');
+    rippleStyle.textContent = `
+      .action-button, .logout-button {
+        position: relative;
+        overflow: hidden;
+      }
+      
+      .ripple {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.3);
+        animation: ripple-animation 0.6s linear;
+        pointer-events: none;
+      }
+      
+      @keyframes ripple-animation {
+        to {
+          transform: scale(4);
+          opacity: 0;
+        }
+      }
+    `;
+    document.head.appendChild(rippleStyle);
+  </script>
+</body>
 </html>
