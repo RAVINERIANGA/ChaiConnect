@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Request Delivery | ChaiConnect</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
     body {
       background-color: #f7f9fb;
@@ -18,46 +19,131 @@
     textarea {
       resize: none;
     }
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1100;
+    }
   </style>
 </head>
 <body>
   <div class="container py-4">
-    <h2 class="text-center mb-4 text-success">Request a Delivery Collection</h2>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2 class="text-success mb-0"><i class="fas fa-truck"></i> Request a Delivery Collection</h2>
+      <a href="/delivery_history.html" class="btn btn-outline-success">
+        <i class="fas fa-history"></i> View Delivery History
+      </a>
+    </div>
 
     <div class="card">
       <div class="card-body">
         <form id="deliveryRequestForm">
-          <div class="mb-3">
-            <label for="pickupDate" class="form-label">Preferred Pickup Date</label>
-            <input type="date" class="form-control" id="pickupDate" required>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="pickupDate" class="form-label">Preferred Pickup Date</label>
+              <input type="date" class="form-control" id="pickupDate" required min="">
+            </div>
+            <div class="col-md-6">
+              <label for="pickupTime" class="form-label">Preferred Pickup Time</label>
+              <input type="time" class="form-control" id="pickupTime" required>
+            </div>
           </div>
+          
           <div class="mb-3">
-            <label for="pickupTime" class="form-label">Preferred Pickup Time</label>
-            <input type="time" class="form-control" id="pickupTime" required>
+            <label for="estimatedQuantity" class="form-label">Estimated Quantity (kg)</label>
+            <input type="number" step="0.1" class="form-control" id="estimatedQuantity" required>
           </div>
+          
+          <div class="mb-3">
+            <label for="collectionCenter" class="form-label">Preferred Collection Center</label>
+            <select class="form-select" id="collectionCenter" required>
+              <option value="">Select center</option>
+              <option value="Main Factory">Main Factory</option>
+              <option value="North Collection Center">North Collection Center</option>
+              <option value="South Collection Center">South Collection Center</option>
+              <option value="East Collection Center">East Collection Center</option>
+            </select>
+          </div>
+          
           <div class="mb-3">
             <label for="notes" class="form-label">Additional Notes</label>
             <textarea class="form-control" id="notes" rows="3" placeholder="e.g. Please come early morning..."></textarea>
           </div>
-          <button type="submit" class="btn btn-success w-100">Submit Request</button>
+          
+          <button type="submit" class="btn btn-success w-100 py-2">
+            <i class="fas fa-paper-plane me-2"></i> Submit Request
+          </button>
         </form>
       </div>
     </div>
   </div>
 
+  <div class="toast-container">
+    <div id="successToast" class="toast align-items-center text-white bg-success" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body">
+          <i class="fas fa-check-circle me-2"></i>
+          <span id="toastMessage"></span>
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    document.getElementById('deliveryRequestForm').addEventListener('submit', function(e) {
+    // Set minimum date to today
+    document.getElementById('pickupDate').min = new Date().toISOString().split('T')[0];
+    
+    // Initialize toast
+    const successToast = new bootstrap.Toast(document.getElementById('successToast'));
+    
+    document.getElementById('deliveryRequestForm').addEventListener('submit', async function(e) {
       e.preventDefault();
 
-      const date = document.getElementById('pickupDate').value;
-      const time = document.getElementById('pickupTime').value;
-      const notes = document.getElementById('notes').value;
+      const requestData = {
+        pickup_date: document.getElementById('pickupDate').value,
+        pickup_time: document.getElementById('pickupTime').value,
+        estimated_quantity: parseFloat(document.getElementById('estimatedQuantity').value),
+        collection_center: document.getElementById('collectionCenter').value,
+        notes: document.getElementById('notes').value,
+        status: 'pending'
+      };
 
-      // Optional: Send data to backend (not yet implemented in server.js)
-      // fetch('/farmer/delivery-request', { method: 'POST', body: JSON.stringify(...) })
+      try {
+        const response = await fetch('/api/delivery-requests', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(requestData),
+          credentials: 'include'
+        });
 
-      alert(`Your delivery request for ${date} at ${time} has been submitted!`);
-      this.reset();
+        if (!response.ok) {
+          throw new Error('Failed to submit request');
+        }
+
+        const result = await response.json();
+        
+        // Show success message
+        document.getElementById('toastMessage').textContent = 
+          `Request submitted for ${requestData.pickup_date} at ${requestData.collection_center}`;
+        successToast.show();
+        
+        // Reset form
+        this.reset();
+        
+        // Optional: Redirect to history after delay
+        setTimeout(() => {
+          window.location.href = '/delivery_history.html';
+        }, 2000);
+        
+      } catch (error) {
+        console.error('Error submitting request:', error);
+        alert('Failed to submit delivery request. Please try again.');
+      }
     });
   </script>
 </body>

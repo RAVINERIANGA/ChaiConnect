@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Schedule Farm Visit | chaiConnect</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/extension_officer_dashboard.css">
+  <style>
+    /* Additional styles specific to the scheduling page */
+    .visit-form-container {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: var(--card-shadow);
+      margin-top: 30px;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: var(--primary-dark);
+    }
+    
+    .form-control {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-family: 'Poppins', sans-serif;
+    }
+    
+    textarea.form-control {
+      min-height: 120px;
+      resize: vertical;
+    }
+    
+    .btn-submit {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .btn-submit:hover {
+      background-color: var(--primary-dark);
+    }
+    
+    .farmer-select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background-color: white;
+    }
+    
+    .datetime-picker {
+      display: flex;
+      gap: 15px;
+    }
+    
+    .datetime-picker > div {
+      flex: 1;
+    }
+    
+    .success-message {
+      background-color: #d4edda;
+      color: #155724;
+      padding: 15px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="top-header">
+    <div class="logo">
+      <i class="fas fa-leaf"></i>
+      <span>chaiConnect</span>
+    </div>
+    <div class="right-icons">
+      <a href="/alerts.html" title="View Alerts" class="alert-icon">
+        <i class="fas fa-bell"></i>
+        <span id="alertCount">0</span>
+      </a>
+      <button class="logout-button" onclick="logout()">
+        <i class="fas fa-sign-out-alt"></i>
+        Logout
+      </button>
+    </div>
+  </div>
+
+  <div class="sidebar">
+    <h2><i class="fas fa-tachometer-alt"></i> Extension Dashboard</h2>
+    <ul>
+      <li><i class="fas fa-home"></i> <a href="/extension_officer_dashboard.html">Home</a></li>
+      <li><i class="fas fa-users"></i> <a href="/assigned_farmers.html">Assigned Farmers</a></li>
+      <li class="active"><i class="fas fa-calendar-check"></i> Schedule Visit</li>
+      <li><i class="fas fa-file-upload"></i> <a href="/upload_training.html">Training Materials</a></li>
+      <li><i class="fas fa-comments"></i> <a href="/extension_complaints.html">Farmer Complaints</a></li>
+      <li><i class="fas fa-sign-out-alt"></i> <a href="#" onclick="logout()">Logout</a></li>
+    </ul>
+  </div>
+
+  <div class="main-content">
+    <div class="welcome-section">
+      <h1>Schedule Farm Visit</h1>
+      <p>Plan and organize visits to your assigned farmers' farms.</p>
+    </div>
+
+    <div class="visit-form-container">
+      <div class="success-message" id="successMessage">
+        <i class="fas fa-check-circle"></i> Visit scheduled successfully!
+      </div>
+      
+      <form id="visitForm">
+        <div class="form-group">
+          <label for="farmerSelect"><i class="fas fa-user"></i> Select Farmer</label>
+          <select class="farmer-select" id="farmerSelect" required>
+            <option value="">-- Select a farmer --</option>
+            <!-- Options will be populated by JavaScript -->
+          </select>
+        </div>
+        
+        <div class="form-group datetime-picker">
+          <div>
+            <label for="visitDate"><i class="fas fa-calendar-day"></i> Visit Date</label>
+            <input type="date" class="form-control" id="visitDate" required>
+          </div>
+          <div>
+            <label for="visitTime"><i class="fas fa-clock"></i> Visit Time</label>
+            <input type="time" class="form-control" id="visitTime" required>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="visitPurpose"><i class="fas fa-bullseye"></i> Purpose of Visit</label>
+          <select class="form-control" id="visitPurpose" required>
+            <option value="">-- Select purpose --</option>
+            <option value="routine_check">Routine Check</option>
+            <option value="training">Training Session</option>
+            <option value="problem_solving">Problem Solving</option>
+            <option value="harvest_advice">Harvest Advice</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="visitNotes"><i class="fas fa-sticky-note"></i> Notes/Agenda</label>
+          <textarea class="form-control" id="visitNotes" placeholder="Enter any specific notes or agenda items for this visit..."></textarea>
+        </div>
+        
+        <button type="submit" class="btn-submit">
+          <i class="fas fa-calendar-plus"></i> Schedule Visit
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div id="logoutToast" class="toast">
+    <i class="fas fa-check-circle"></i>
+    <span>Logged out successfully</span>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Fetch officer's assigned farmers
+      fetch('/api/my-assigned-farmers')
+        .then(res => res.json())
+        .then(farmers => {
+          const select = document.getElementById('farmerSelect');
+          
+          if (farmers.length === 0) {
+            select.innerHTML = '<option value="">No farmers assigned to you</option>';
+            select.disabled = true;
+            return;
+          }
+          
+          farmers.forEach(farmer => {
+            const option = document.createElement('option');
+            option.value = farmer.farmer_id;
+            option.textContent = `${farmer.farmer_name} (${farmer.region || 'No region'})`;
+            select.appendChild(option);
+          });
+        })
+        .catch(err => {
+          console.error('Error loading farmers:', err);
+          const select = document.getElementById('farmerSelect');
+          select.innerHTML = '<option value="">Error loading farmers</option>';
+          select.disabled = true;
+        });
+      
+      // Set minimum date to today
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('visitDate').min = today;
+      
+      // Handle form submission
+      document.getElementById('visitForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const form = e.target;
+        const submitButton = form.querySelector('button[type="submit"]');
+        const successMessage = document.getElementById('successMessage');
+        
+        // Get form values
+        const farmerId = form.farmerSelect.value;
+        const visitDate = form.visitDate.value;
+        const visitTime = form.visitTime.value;
+        const purpose = form.visitPurpose.value;
+        const notes = form.visitNotes.value;
+        
+        // Create datetime string
+        const visitDateTime = `${visitDate}T${visitTime}:00`;
+        
+        // Prepare data for API
+        const visitData = {
+          farmer_id: farmerId,
+          visit_datetime: visitDateTime,
+          purpose: purpose,
+          notes: notes,
+          status: 'scheduled'
+        };
+        
+        try {
+          // Disable submit button during request
+          submitButton.disabled = true;
+          submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Scheduling...';
+          
+          // Send data to API
+          const response = await fetch('/api/schedule-visit', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(visitData)
+          });
+          
+          if (!response.ok) {
+            throw new Error('Failed to schedule visit');
+          }
+          
+          // Show success message
+          successMessage.style.display = 'flex';
+          successMessage.scrollIntoView({ behavior: 'smooth' });
+          
+          // Reset form
+          form.reset();
+          
+          // Hide success message after 5 seconds
+          setTimeout(() => {
+            successMessage.style.display = 'none';
+          }, 5000);
+          
+        } catch (error) {
+          alert('Error scheduling visit: ' + error.message);
+          console.error('Error:', error);
+        } finally {
+          // Re-enable submit button
+          submitButton.disabled = false;
+          submitButton.innerHTML = '<i class="fas fa-calendar-plus"></i> Schedule Visit';
+        }
+      });
+    });
+
+    // Fetch alert count
+    fetch('/alerts/count')
+      .then(res => res.json())
+      .then(data => {
+        const alertCount = document.getElementById('alertCount');
+        if (data.count > 0) {
+          alertCount.textContent = data.count;
+          alertCount.style.display = 'flex';
+        }
+      });
+
+    function logout() {
+      fetch('/logout', { method: 'POST' })
+        .then(() => {
+          const toast = document.getElementById('logoutToast');
+          toast.classList.add('show');
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 1500);
+        });
+    }
+
+    
+  
+  </script>
+  <script src="logout.js"></script>
+  <script src="/alertCount.js"></script>
+</body>
+</html>

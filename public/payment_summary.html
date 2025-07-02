@@ -1,119 +1,443 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Payment Summary | ChaiConnect</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Payments | ChaiConnect</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
     body {
-      background-color: #f7f9fb;
-      font-family: 'Segoe UI', sans-serif;
+      font-family: 'Inter', sans-serif;
+      background-color: #f5f7fa;
+      color: #333;
+      padding: 20px;
     }
-    .card {
-      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-      border: none;
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: #fff;
       border-radius: 10px;
+      box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+      padding: 30px;
     }
-    .table thead {
-      background-color: #0d6efd;
-      color: #fff;
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #eee;
+    }
+
+    h1 {
+      font-size: 24px;
+      color: #2c3e50;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-back {
+      background-color: #555;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: background-color 0.3s;
+    }
+
+    .btn-back:hover {
+      background-color: #333;
+    }
+
+    .stats-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      border-left: 4px solid #4CAF50;
+    }
+
+    .stat-card h3 {
+      font-size: 16px;
+      color: #666;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+
+    .stat-detail {
+      font-size: 14px;
+      color: #666;
+      margin-top: 5px;
+    }
+
+    .section-title {
+      font-size: 20px;
+      color: #2c3e50;
+      margin: 30px 0 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th, td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+
+    th {
+      background-color: #f8f9fa;
+      color: #555;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 13px;
+    }
+
+    tr:hover {
+      background-color: #f8f9fa;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .badge-paid {
+      background-color: #e6f7e6;
+      color: #2e7d32;
+    }
+
+    .badge-pending {
+      background-color: #fff3e0;
+      color: #e65100;
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    label {
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+
+    select, input {
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .price-rates {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    .rate-card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 15px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      border: 1px solid #eee;
+    }
+
+    .rate-grade {
+      font-weight: 600;
+      color: #2c3e50;
+      margin-bottom: 5px;
+    }
+
+    .rate-value {
+      font-size: 20px;
+      font-weight: 600;
+      color: #4CAF50;
+    }
+
+    .rate-date {
+      font-size: 12px;
+      color: #888;
+      margin-top: 5px;
+    }
+
+    .no-results {
+      text-align: center;
+      padding: 40px;
+      color: #888;
+      font-size: 16px;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 20px;
+      }
+      
+      th, td {
+        padding: 8px 10px;
+        font-size: 14px;
+      }
+      
+      .stats-container {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="container py-4">
-    <h2 class="mb-4 text-center text-success">Farmer Payment Summary</h2>
+  <div class="container">
+    <div class="header">
+      <h1><i class="fas fa-money-bill-wave"></i> My Payments</h1>
+      <a href="/farmer_dashboard.html" class="btn-back">
+        <i class="fas fa-arrow-left"></i> Back to Dashboard
+      </a>
+    </div>
 
-    <!-- Summary Cards -->
-    <div class="row g-3 mb-4">
-      <div class="col-md-4">
-        <div class="card text-center">
-          <div class="card-body">
-            <h5 class="card-title">Total Earnings</h5>
-            <p class="card-text fs-4 text-success" id="totalEarnings">Loading...</p>
-          </div>
-        </div>
+    <div class="stats-container">
+      <div class="stat-card">
+        <h3><i class="fas fa-wallet"></i> Total Earnings</h3>
+        <div class="stat-value" id="totalEarnings">KES 0.00</div>
+        <div class="stat-detail">All time payments received</div>
       </div>
-      <div class="col-md-4">
-        <div class="card text-center">
-          <div class="card-body">
-            <h5 class="card-title">Current Rate</h5>
-            <p class="card-text fs-4 text-primary" id="currentRate">Loading...</p>
-          </div>
-        </div>
+      
+      <div class="stat-card">
+        <h3><i class="fas fa-calendar-check"></i> This Month</h3>
+        <div class="stat-value" id="monthEarnings">KES 0.00</div>
+        <div class="stat-detail">Payments received this month</div>
       </div>
-      <div class="col-md-4">
-        <div class="card text-center">
-          <div class="card-body">
-            <h5 class="card-title">Last Payment</h5>
-            <p class="card-text fs-4 text-warning" id="lastPayment">Loading...</p>
-          </div>
-        </div>
+      
+      <div class="stat-card">
+        <h3><i class="fas fa-truck"></i> Pending Payments</h3>
+        <div class="stat-value" id="pendingPayments">KES 0.00</div>
+        <div class="stat-detail">Deliveries not yet paid</div>
       </div>
     </div>
 
-    <!-- Payment Table -->
-    <div class="card">
-      <div class="card-body">
-        <h5 class="card-title mb-3">Payment History</h5>
-        <div class="table-responsive">
-          <table class="table table-bordered">
-            <thead>
-              <tr>
-                <th>Payment Date</th>
-                <th>Quality Grade</th>
-                <th>Quantity (kg)</th>
-                <th>Amount (KSh)</th>
-                <th>Method</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody id="paymentTableBody">
-              <!-- Filled by JS -->
-            </tbody>
-          </table>
-        </div>
+    <h2 class="section-title"><i class="fas fa-tags"></i> Current Price Rates</h2>
+    <div class="price-rates" id="priceRates">
+      <!-- Price rates will be loaded here -->
+    </div>
+
+    <h2 class="section-title"><i class="fas fa-history"></i> Payment History</h2>
+    
+    <div class="filters">
+      <div class="filter-group">
+        <label for="search">Search</label>
+        <input type="text" id="search" placeholder="Search by delivery ID...">
       </div>
+      
+      <div class="filter-group">
+        <label for="status">Status</label>
+        <select id="status">
+          <option value="all">All Statuses</option>
+          <option value="completed">Completed</option>
+          <option value="pending">Pending</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label for="startDate">From Date</label>
+        <input type="date" id="startDate">
+      </div>
+      
+      <div class="filter-group">
+        <label for="endDate">To Date</label>
+        <input type="date" id="endDate">
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Payment Date</th>
+          <th>Delivery ID</th>
+          <th>Quantity (kg)</th>
+          <th>Grade</th>
+          <th>Rate (KES/kg)</th>
+          <th>Amount</th>
+          <th>Method</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="paymentsTable">
+        <!-- Payments will be loaded here -->
+      </tbody>
+    </table>
+    
+    <div id="noPayments" class="no-results" style="display: none;">
+      <i class="fas fa-info-circle" style="font-size: 24px; margin-bottom: 10px;"></i>
+      <p>No payment records found</p>
     </div>
   </div>
 
   <script>
-    fetch('/farmer/paymentsummary')
-      .then(res => res.json())
-      .then(data => {
-        if (!data.success) {
-          alert('Failed to load payment data.');
+    // DOM Elements
+    const searchInput = document.getElementById('search');
+    const statusFilter = document.getElementById('status');
+    const startDateFilter = document.getElementById('startDate');
+    const endDateFilter = document.getElementById('endDate');
+    const paymentsTable = document.getElementById('paymentsTable');
+    const noPaymentsMsg = document.getElementById('noPayments');
+    const priceRatesContainer = document.getElementById('priceRates');
+    const totalEarningsEl = document.getElementById('totalEarnings');
+    const monthEarningsEl = document.getElementById('monthEarnings');
+    const pendingPaymentsEl = document.getElementById('pendingPayments');
+
+    // Format currency
+    function formatCurrency(amount) {
+      return 'KES ' + parseFloat(amount).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+    }
+
+    // Load payment rates
+    async function loadPaymentRates() {
+      try {
+        const response = await fetch('/api/payment-rates');
+        const rates = await response.json();
+        
+        priceRatesContainer.innerHTML = '';
+        
+        rates.forEach(rate => {
+          const rateCard = document.createElement('div');
+          rateCard.className = 'rate-card';
+          rateCard.innerHTML = `
+            <div class="rate-grade">Grade ${rate.quality_grade}</div>
+            <div class="rate-value">${formatCurrency(rate.price_per_kg)}/kg</div>
+            <div class="rate-date">Effective ${new Date(rate.effective_date).toLocaleDateString()}</div>
+          `;
+          priceRatesContainer.appendChild(rateCard);
+        });
+      } catch (error) {
+        console.error('Error loading payment rates:', error);
+      }
+    }
+
+    // Load payment statistics
+    async function loadPaymentStats() {
+      try {
+        const response = await fetch('/api/farmer/payments/stats');
+        const stats = await response.json();
+        
+        totalEarningsEl.textContent = formatCurrency(stats.total_earnings || 0);
+        monthEarningsEl.textContent = formatCurrency(stats.month_earnings || 0);
+        pendingPaymentsEl.textContent = formatCurrency(stats.pending_amount || 0);
+      } catch (error) {
+        console.error('Error loading payment stats:', error);
+      }
+    }
+
+    // Load payment history
+    async function loadPayments() {
+      try {
+        const params = new URLSearchParams();
+        
+        if (searchInput.value) params.append('search', searchInput.value);
+        if (statusFilter.value !== 'all') params.append('status', statusFilter.value);
+        if (startDateFilter.value) params.append('start_date', startDateFilter.value);
+        if (endDateFilter.value) params.append('end_date', endDateFilter.value);
+        
+        const response = await fetch(`/api/farmer/payments?${params.toString()}`);
+        const payments = await response.json();
+        
+        paymentsTable.innerHTML = '';
+        
+        if (payments.length === 0) {
+          noPaymentsMsg.style.display = 'block';
           return;
         }
-
-        document.getElementById('totalEarnings').textContent = `KSh ${data.summary.totalEarnings}`;
-        document.getElementById('currentRate').textContent = `KSh ${data.summary.currentRate}/kg`;
-        const lastPaymentText = data.summary.lastPaymentAmount && data.summary.lastPaymentDate
-          ? `KSh ${data.summary.lastPaymentAmount} on ${new Date(data.summary.lastPaymentDate).toLocaleDateString()}`
-          : 'N/A';
-        document.getElementById('lastPayment').textContent = lastPaymentText;
-
-        const tbody = document.getElementById('paymentTableBody');
-        tbody.innerHTML = '';
-
-        data.payments.forEach(p => {
+        
+        noPaymentsMsg.style.display = 'none';
+        
+        payments.forEach(payment => {
           const row = document.createElement('tr');
+          const statusClass = payment.status === 'completed' ? 'badge-paid' : 'badge-pending';
+          
           row.innerHTML = `
-            <td>${new Date(p.payment_date).toLocaleDateString()}</td>
-            <td>${p.quality_grade || 'N/A'}</td>
-            <td>${p.quantity_kg || '0'} kg</td>
-            <td>KSh ${p.amount}</td>
-            <td>${p.payment_method || 'N/A'}</td>
-            <td>${p.status}</td>
+            <td>${payment.payment_date ? new Date(payment.payment_date).toLocaleDateString() : 'Pending'}</td>
+            <td>${payment.delivery_id}</td>
+            <td>${payment.quantity_kg} kg</td>
+            <td>${payment.quality_grade}</td>
+            <td>${formatCurrency(payment.price_per_kg)}</td>
+            <td>${formatCurrency(payment.amount)}</td>
+            <td>${payment.payment_method || '—'}</td>
+            <td><span class="badge ${statusClass}">${payment.status}</span></td>
           `;
-          tbody.appendChild(row);
+          paymentsTable.appendChild(row);
         });
-      })
-      .catch(err => {
-        console.error('Error loading payments:', err);
-        alert('Something went wrong.');
-      });
+      } catch (error) {
+        console.error('Error loading payments:', error);
+        noPaymentsMsg.style.display = 'block';
+      }
+    }
+
+    // Event listeners for filters
+    [searchInput, statusFilter, startDateFilter, endDateFilter].forEach(filter => {
+      filter.addEventListener('change', loadPayments);
+    });
+
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', () => {
+      loadPaymentRates();
+      loadPaymentStats();
+      loadPayments();
+      
+      // Set default date range (last 3 months)
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setMonth(endDate.getMonth() - 3);
+      
+      startDateFilter.valueAsDate = startDate;
+      endDateFilter.valueAsDate = endDate;
+    });
   </script>
 </body>
 </html>

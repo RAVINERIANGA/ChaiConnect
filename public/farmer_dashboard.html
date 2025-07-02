@@ -40,7 +40,7 @@
       <li><a href="/payment_summary.html"><i class="fas fa-money-bill-wave"></i> Payment Summary</a></li>
       <li><a href="/quality_feedback.html"><i class="fas fa-leaf"></i> Tea Quality</a></li>
       <li><a href="/extension_services.html"><i class="fas fa-chalkboard-teacher"></i> Extension Services</a></li>
-      <li><a href="/contactus.html"><i class="fas fa-headset"></i> Support</a></li>
+      <li><a href="/farmer_complaint.html"><i class="fas fa-headset"></i> Support</a></li>
     </ul>
   </div>
 
@@ -110,7 +110,7 @@
       <div class="action-card">
         <h3><i class="fas fa-headset"></i> Submit Complaint</h3>
         <p>Raise complaints or ask questions about your account.</p>
-        <button onclick="location.href='/support.html'">
+        <button onclick="location.href='/farmer_complaint.html'">
           <i class="fas fa-comment-dots"></i> Get Support
         </button>
       </div>
@@ -190,6 +190,66 @@
           }
         });
     });
+
+    // Load farmer's visit data
+function loadFarmerVisitData() {
+  // Load scheduled visits
+  fetch('/api/my-visits')
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        renderFarmerVisits(data.visits);
+      }
+    });
+
+  // Load training sessions
+  fetch('/api/training-sessions')
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        renderTrainingSessions(data.sessions);
+      }
+    });
+}
+
+// Render farmer's visits
+function renderFarmerVisits(visits) {
+  const container = document.getElementById('visitsContainer');
+  
+  if (visits.length === 0) {
+    container.innerHTML = '<p>No visits scheduled yet.</p>';
+    return;
+  }
+
+  let html = '<div class="list-group">';
+  
+  visits.forEach(visit => {
+    const date = visit.scheduled_date ? new Date(visit.scheduled_date) : new Date(visit.preferred_date);
+    const statusClass = `status-${visit.status}`;
+    
+    html += `
+    <div class="list-group-item">
+      <div class="d-flex justify-content-between">
+        <h5>${visit.purpose}</h5>
+        <span class="badge ${statusClass}">${visit.status.charAt(0).toUpperCase() + visit.status.slice(1)}</span>
+      </div>
+      <p><i class="far fa-calendar"></i> ${date.toLocaleDateString()} 
+         <i class="far fa-clock"></i> ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+      ${visit.notes ? `<p><i class="fas fa-sticky-note"></i> ${visit.notes}</p>` : ''}
+      ${visit.officer_name ? `
+      <p><i class="fas fa-user-tie"></i> Officer: ${visit.officer_name} 
+         ${visit.officer_phone ? `(<i class="fas fa-phone"></i> ${visit.officer_phone})` : ''}
+      </p>` : ''}
+    </div>
+    `;
+  });
+  
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+// Load data when page loads
+document.addEventListener('DOMContentLoaded', loadFarmerVisitData);
 
     function logout() {
       fetch('/logout', { method: 'POST' })
