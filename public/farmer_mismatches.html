@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <title>Farmer Mismatches | ChaiConnect</title>
@@ -34,7 +35,8 @@
       margin-top: 20px;
     }
 
-    th, td {
+    th,
+    td {
       padding: 12px;
       text-align: center;
       border: 1px solid #ddd;
@@ -74,11 +76,33 @@
       font-size: 0.9em;
       color: #7f8c8d;
     }
+    .backToDB {
+      display: block;
+      margin: 40px auto 0;
+      background-color: #455a64;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .backToDB:hover {
+      background-color: #263238;
+    }
   </style>
 </head>
+
 <body>
   <div class="container">
+    <button class="backToDB" onclick="location.href='/admin_dashboard.html'">← Back to Dashboard</button>
     <h2>Flagged Farmer Mismatches</h2>
+    <div style="text-align: right; margin-bottom: 10px;">
+      <input type="text" id="searchInput" placeholder="Search by Name or ID Number"
+        style="padding: 8px; width: 300px; border-radius: 5px; border: 1px solid #ccc;">
+    </div>
+
     <table>
       <thead>
         <tr>
@@ -98,36 +122,62 @@
   </div>
 
   <script>
+    let allMismatches = [];
+
     async function loadMismatches() {
       const res = await fetch('/admin/farmer-mismatches');
       const data = await res.json();
 
+      if (data.success && data.mismatches.length > 0) {
+        allMismatches = data.mismatches;
+        renderTable(allMismatches);
+      } else {
+        document.getElementById('mismatchTableBody').innerHTML =
+          '<tr><td colspan="7">No mismatches found.</td></tr>';
+      }
+    }
+
+    function renderTable(mismatches) {
       const tbody = document.getElementById('mismatchTableBody');
       tbody.innerHTML = '';
 
-      if (data.success && data.mismatches.length > 0) {
-        data.mismatches.forEach(m => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td>${m.name}</td>
-            <td>${m.id_number}</td>
-            <td>${m.profile_picture 
-                ? `<img class="profile" src="/uploads/${m.profile_picture}" alt="Profile">` 
-                : 'No Photo'}</td>
-            <td>${m.flagged_by}</td>
-            <td class="reason">${m.reason || 'No reason provided'}</td>
-            <td>${m.flagged_at.slice(0, 10)}</td>
-            <td>
-              <button class="unflag" onclick="unflag(${m.user_id})">Unflag</button>
-              <button class="suspend" onclick="suspend(${m.user_id})">Suspend</button>
-            </td>
-          `;
-          tbody.appendChild(tr);
-        });
-      } else {
-        tbody.innerHTML = '<tr><td colspan="7">No mismatches found.</td></tr>';
+      if (mismatches.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7">No matching results.</td></tr>';
+        return;
       }
+
+      mismatches.forEach(m => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+      <td>${m.name}</td>
+      <td>${m.id_number}</td>
+      <td>${m.profile_picture
+            ? `<img class="profile" src="/uploads/${m.profile_picture}" alt="Profile">`
+            : 'No Photo'}</td>
+      <td>${m.flagged_by}</td>
+      <td class="reason">${m.reason || 'No reason provided'}</td>
+      <td>${m.flagged_at.slice(0, 10)}</td>
+      <td>
+        <button class="unflag" onclick="unflag(${m.user_id})">Unflag</button>
+        <button class="suspend" onclick="suspend(${m.user_id})">Suspend</button>
+      </td>
+    `;
+        tbody.appendChild(tr);
+      });
     }
+
+    function filterTable(query) {
+      const q = query.trim().toLowerCase();
+      const filtered = allMismatches.filter(m =>
+        m.name.toLowerCase().includes(q) || m.id_number.toString().includes(q)
+      );
+      renderTable(filtered);
+    }
+
+    document.getElementById('searchInput').addEventListener('input', function () {
+      filterTable(this.value);
+    });
+
 
     async function unflag(userId) {
       if (!confirm('Are you sure you want to unflag this user?')) return;
@@ -156,4 +206,5 @@
     window.onload = loadMismatches;
   </script>
 </body>
+
 </html>
