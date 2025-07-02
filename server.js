@@ -2205,215 +2205,67 @@ app.get('/api/training-materials/count', (req, res) => {
   });
 });
 
+// Get complaints for the extension officer (assuming all open ones for now)
+app.get('/api/extension/complaints', (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) return res.status(403).json({ success: false, message: 'Not logged in' });
 
-// Farmer submits a complaint
-app.post('/api/farmer/complaints', async (req, res) => {
-  try {
-    const farmerId = req.session.userId;
-    const { complaintText, category = 'other' } = req.body;
+  const query = `
+    SELECT complaint_id, farmer_id, complaint_text, complaint_date, status, category, admin_notes
+    FROM complaints
+    WHERE status != 'resolved'
+    ORDER BY complaint_date DESC
+  `;
+  db.query(query, (err, results) => {
+    if (err) return res.status(500).json({ success: false, message: 'Database error' });
+    res.json({ success: true, complaints: results });
+  });
+});
 
-    if (!farmerId) {
-      return res.status(401).json({ success: false, message: 'Unauthorized' });
+// Update complaint status and notes
+app.put('/api/extension/complaints/:id', (req, res) => {
+  const userId = req.session.userId;
+  const { id } = req.params;
+  const { admin_notes, status } = req.body;
+
+  if (!userId) return res.status(403).json({ success: false, message: 'Unauthorized' });
+
+  const query = `
+    UPDATE complaints
+    SET admin_notes = ?, status = ?
+    WHERE complaint_id = ?
+  `;
+  db.query(query, [admin_notes, status, id], (err, result) => {
+    if (err) return res.status(500).json({ success: false, message: 'Database error' });
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Complaint not found' });
     }
+    res.json({ success: true });
+  });
+});
 
-    const query = `INSERT INTO complaints (farmer_id, complaint_text, category) VALUES (?, ?, ?)`;
-    db.query(query, [farmerId, complaintText, category], (err, result) => {
-      if (err) {
-        console.error('Error submitting complaint:', err);
-        return res.status(500).json({ success: false, message: 'Database error' });
-      }
-      
-      // In a real app, you might want to trigger a notification to admins here
-      res.json({ success: true, message: 'Complaint submitted successfully' });
-    });
-  } catch (error) {
-    console.error('Error in complaint submission:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
+
+app.post('/api/farmer/submit-complaint', (req, res) => {
+  const farmerId = req.session.userId; // Should be set during login
+  const { category, complaint_text } = req.body;
+
+  if (!farmerId || !category || !complaint_text) {
+    return res.status(400).json({ success: false, message: 'Missing required fields' });
   }
-});
 
-// Admin gets all complaints
-app.get('/admin/complaints', async (req, res) => {
-  try {
-    // Verify admin role here
-    const query = `SELECT 
-      c.complaint_id, 
-      u.name, 
-      c.complaint_text, 
-      c.complaint_date, 
-      c.status,
-      c.category,
-      c.updated_at
-      FROM admin_complaints_view c
-      JOIN users u ON c.farmer_id = u.user_id
-      ORDER BY 
-        CASE WHEN c.status = 'open' THEN 1
-             WHEN c.status = 'in_progress' THEN 2
-             ELSE 3 END,
-        c.complaint_date DESC`;
-    
-    db.query(query, (err, results) => {
-      if (err) {
-        console.error('Error fetching complaints:', err);
-        return res.status(500).json({ success: false });
-      }
-      res.json(results);
-    });
-  } catch (error) {
-    console.error('Error in complaints route:', error);
-    res.status(500).json({ success: false });
-  }
-});
+  const sql = `
+    INSERT INTO complaints (farmer_id, category, complaint_text)
+    VALUES (?, ?, ?)
+  `;
 
-// Admin updates complaint status
-app.put('/admin/complaints/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { status, adminNotes } = req.body;
-    
-    // Verify admin role here
-    
-    const query = `UPDATE complaints 
-      SET status = ?, 
-          admin_notes = IFNULL(?, admin_notes),
-          updated_at = CURRENT_TIMESTAMP
-      WHERE complaint_id = ?`;
-    
-    db.query(query, [status, adminNotes, id], (err, result) => {
-      if (err) {
-        console.error('Error updating complaint:', err);
-        return res.status(500).json({ success: false });
-      }
-      
-      if (result.affectedRows === 0) {
-        return res.status(404).json({ success: false, message: 'Complaint not found' });
-      }
-      
-      // In a real app, you might notify the farmer about status change
-      res.json({ success: true });
-    });
-  } catch (error) {
-    console.error('Error in complaint update:', error);
-    res.status(500).json({ success: false });
-  }
-});
-
-// Create delivery request
-app.post('/api/delivery-requests', async (req, res) => {
-    const connection = await pool.getConnection();
-    try {
-        const farmerId = req.session.userId;
-        if (!farmerId) {
-            return res.status(401).json({ success: false, message: 'Unauthorized' });
-        }
-
-        const {
-            pickup_date,
-            pickup_time,
-            estimated_quantity,
-            collection_center,
-            notes = ''
-        } = req.body;
-
-        // Validate input
-        if (!pickup_date || !pickup_time || !estimated_quantity || !collection_center) {
-            return res.status(400).json({ success: false, message: 'Missing required fields' });
-        }
-
-        // Insert new delivery request
-        const [result] = await connection.query(
-            `INSERT INTO delivery_requests 
-            (farmer_id, pickup_date, pickup_time, estimated_quantity, collection_center, notes)
-            VALUES (?, ?, ?, ?, ?, ?)`,
-            [farmerId, pickup_date, pickup_time, estimated_quantity, collection_center, notes]
-        );
-
-        // Get the newly created request
-        const [rows] = await connection.query(
-            `SELECT * FROM delivery_requests WHERE request_id = ?`,
-            [result.insertId]
-        );
-
-        res.json({ success: true, data: rows[0] });
-    } catch (error) {
-        console.error('Error creating delivery request:', error);
-        res.status(500).json({ success: false, message: 'Failed to submit delivery request' });
-    } finally {
-        connection.release();
+  db.query(sql, [farmerId, category, complaint_text], (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ success: false, message: 'Database error' });
     }
+    res.json({ success: true });
+  });
 });
-
-// Get farmer's delivery requests
-app.get('/api/delivery-requests', async (req, res) => {
-    const connection = await pool.getConnection();
-    try {
-        const farmerId = req.session.userId;
-        if (!farmerId) {
-            return res.status(401).json({ success: false, message: 'Unauthorized' });
-        }
-
-        // Get all requests for this farmer
-        const [rows] = await connection.query(
-            `SELECT * FROM delivery_requests 
-            WHERE farmer_id = ?
-            ORDER BY created_at DESC`,
-            [farmerId]
-        );
-
-        res.json({ success: true, data: rows });
-    } catch (error) {
-        console.error('Error fetching delivery requests:', error);
-        res.status(500).json({ success: false, message: 'Failed to fetch delivery requests' });
-    } finally {
-        connection.release();
-    }
-});
-
-// Cancel delivery request
-app.post('/api/delivery-requests/:id/cancel', async (req, res) => {
-    const connection = await pool.getConnection();
-    try {
-        const farmerId = req.session.userId;
-        if (!farmerId) {
-            return res.status(401).json({ success: false, message: 'Unauthorized' });
-        }
-
-        const { reason = 'No reason provided' } = req.body;
-        const requestId = req.params.id;
-
-        // Only allow cancellation of pending or scheduled requests
-        const [result] = await connection.query(
-            `UPDATE delivery_requests 
-            SET status = 'cancelled', cancellation_reason = ?
-            WHERE request_id = ? AND farmer_id = ? 
-            AND status IN ('pending', 'scheduled')`,
-            [reason, requestId, farmerId]
-        );
-
-        if (result.affectedRows === 0) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Request not found or cannot be cancelled' 
-            });
-        }
-
-        // Get the updated request
-        const [rows] = await connection.query(
-            `SELECT * FROM delivery_requests WHERE request_id = ?`,
-            [requestId]
-        );
-
-        res.json({ success: true, data: rows[0] });
-    } catch (error) {
-        console.error('Error cancelling delivery request:', error);
-        res.status(500).json({ success: false, message: 'Failed to cancel delivery request' });
-    } finally {
-        connection.release();
-    }
-});
-
-
-
 
 
 
