@@ -4,166 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Extension Officer Dashboard | chaiConnect</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <link rel="stylesheet" href="css/extension_officer_dashboard.css">
-  <style>
-    /* Visit Requests Section */
-    .visit-requests-section {
-      background: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      margin-top: 30px;
-    }
-
-    .section-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-
-    .refresh-btn {
-      background: #f0f0f0;
-      border: none;
-      padding: 8px 15px;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-
-    .refresh-btn:hover {
-      background: #e0e0e0;
-    }
-
-    .requests-container {
-      max-height: 500px;
-      overflow-y: auto;
-    }
-
-    .request-card {
-      border: 1px solid #e0e0e0;
-      border-radius: 8px;
-      padding: 15px;
-      margin-bottom: 15px;
-      background: #f9f9f9;
-      transition: transform 0.2s;
-    }
-
-    .request-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-
-    .request-header {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 10px;
-      padding-bottom: 8px;
-      border-bottom: 1px solid #eee;
-    }
-
-    .farmer-name {
-      font-weight: 600;
-      color: #2c3e50;
-    }
-
-    .farmer-location {
-      color: #7f8c8d;
-      font-size: 0.9em;
-    }
-
-    .request-body p {
-      margin: 8px 0;
-      color: #34495e;
-    }
-
-    .request-body strong {
-      color: #2c3e50;
-    }
-
-    .request-actions {
-      display: flex;
-      gap: 10px;
-      margin-top: 15px;
-    }
-
-    .request-actions input {
-      flex: 1;
-      padding: 8px 12px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      font-family: 'Poppins', sans-serif;
-    }
-
-    .request-actions button {
-      padding: 8px 15px;
-      border: none;
-      border-radius: 4px;
-      background: #27ae60;
-      color: white;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-
-    .request-actions button:hover {
-      background: #219653;
-    }
-
-    .no-requests {
-      text-align: center;
-      padding: 30px;
-      color: #7f8c8d;
-      font-style: italic;
-    }
-
-    .status-requested {
-      color: #d35400;
-      font-weight: bold;
-    }
-
-    .status-scheduled {
-      color: #27ae60;
-      font-weight: bold;
-    }
-
-    .status-completed {
-      color: #2980b9;
-      font-weight: bold;
-    }
-
-    /* Toast notifications */
-    .toast {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      padding: 15px 20px;
-      background: #27ae60;
-      color: white;
-      border-radius: 5px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      opacity: 0;
-      transform: translateY(20px);
-      transition: all 0.3s ease;
-      z-index: 1000;
-    }
-
-    .toast.show {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .toast-error {
-      background: #e74c3c;
-    }
-
-    .toast i {
-      font-size: 1.2em;
-    }
-  </style>
+  <link rel="stylesheet" href="/css/dashboards_style.css">
 </head>
 
 <body>
@@ -203,12 +44,8 @@
         <h2 id="farmerCount">0</h2>
       </div>
       <div class="stat-card">
-        <h3><i class="fas fa-calendar-alt"></i> Upcoming Visits</h3>
-        <div class="stat-value" id="upcomingVisitsCount">0</div>
-        <p>Farm visits scheduled</p>
-        <button onclick="loadVisitRequests()">
-          <i class="fas fa-sync-alt"></i> Refresh
-        </button>
+        <p> Upcoming Visits</p>
+        <h2 id="upcomingVisitsCount">0</h2>
       </div>
       <div class="stat-card">
         <p>Training Materials</p>
@@ -240,6 +77,12 @@
         <h3>Respond to Complaints</h3>
         <p>Address concerns raised by your assigned farmers.</p>
         <button onclick="location.href='/extension_complaints.html'">Respond</button>
+      </div>
+      <div class = "card">
+        <h3>Load Visit Requests</h3>
+        <p>View Requests by various farmers to visit their farms</p>
+        <button onclick="loadVisitRequests()">Load Visit Requests
+        </button>
       </div>
     </div>
 
