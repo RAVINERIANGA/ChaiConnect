@@ -1,220 +1,123 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Submit Complaint | ChaiConnect</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
     body {
-      font-family: 'Inter', sans-serif;
-      background-color: #f4f6f8;
-      padding: 40px;
-      color: #333;
+      font-family: 'Poppins', sans-serif;
+      background: #f4f4f4;
+      padding: 20px;
     }
-
     .container {
-      max-width: 800px;
+      max-width: 700px;
       margin: auto;
-      background-color: #fff;
-      padding: 40px;
+      background: #fff;
+      padding: 30px;
       border-radius: 10px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
     }
-
     h2 {
-      margin-bottom: 30px;
-      font-size: 28px;
       color: #2c3e50;
-      border-bottom: 1px solid #ddd;
-      padding-bottom: 10px;
-    }
-
-    .form-group {
       margin-bottom: 20px;
     }
-
     label {
-      font-weight: 600;
+      font-weight: 500;
+      margin-top: 10px;
       display: block;
-      margin-bottom: 6px;
     }
-
-    textarea {
+    select, textarea {
       width: 100%;
       padding: 12px;
-      border: 1px solid #ccc;
+      margin-top: 8px;
+      margin-bottom: 20px;
       border-radius: 6px;
-      font-size: 16px;
-      min-height: 150px;
-      resize: vertical;
+      border: 1px solid #ccc;
+      font-size: 15px;
+      font-family: 'Poppins', sans-serif;
     }
-
-    .actions {
-      margin-top: 30px;
-      display: flex;
-      justify-content: space-between;
-    }
-
-    .btn {
-      padding: 12px 24px;
-      font-size: 16px;
+    button {
+      background: #27ae60;
+      color: white;
       border: none;
+      padding: 12px 20px;
+      font-size: 16px;
       border-radius: 6px;
       cursor: pointer;
+      font-weight: bold;
     }
-
-    .btn-primary {
-      background-color: #4CAF50;
-      color: white;
+    button:hover {
+      background: #219653;
     }
-
-    .btn-primary:hover {
-      background-color: #45a049;
-    }
-
-    .btn-secondary {
-      background-color: #607d8b;
-      color: white;
-    }
-
-    .btn-secondary:hover {
-      background-color: #455a64;
-    }
-
-    .top-bar {
-      margin-bottom: 20px;
-    }
-
-    .btn-back {
-      background-color: #555;
-      color: white;
-      padding: 8px 14px;
-      border-radius: 6px;
-      text-decoration: none;
-      font-size: 14px;
-      display: inline-flex;
-      align-items: center;
-    }
-
-    .btn-back:hover {
-      background-color: #333;
-    }
-
-    .btn-back i {
-      margin-right: 5px;
-    }
-
-    .success-message {
-      color: #4CAF50;
-      text-align: center;
+    .message {
       margin-top: 20px;
-      font-weight: 600;
+      font-weight: bold;
     }
-
-    .error-message {
-      color: #f44336;
-      text-align: center;
-      margin-top: 20px;
-      font-weight: 600;
+    .message.success {
+      color: #27ae60;
     }
-
-    @media (max-width: 600px) {
-      body {
-        padding: 20px;
-      }
-      
-      .container {
-        padding: 20px;
-      }
-      
-      .actions {
-        flex-direction: column;
-        gap: 10px;
-      }
-      
-      .btn {
-        width: 100%;
-      }
+    .message.error {
+      color: #e74c3c;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="top-bar">
-      <a href="/farmer_dashboard.html" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
-    </div>
-    
-    <h2><i class="fas fa-exclamation-circle"></i> Submit Complaint</h2>
-    
-    <form id="complaintForm">
-      <div class="form-group">
-        <label for="complaintText">Describe your complaint or question</label>
-        <textarea id="complaintText" name="complaintText" placeholder="Please provide details about your issue..." required></textarea>
-      </div>
-      
-      <div class="actions">
-        <button type="button" class="btn btn-secondary" onclick="window.location.href='/farmer_dashboard.html'">Cancel</button>
-        <button type="submit" class="btn btn-primary">Submit Complaint</button>
-      </div>
-      
-      <div id="message"></div>
-    </form>
-  </div>
 
-  <!-- Font Awesome for icons -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/js/all.min.js"></script>
-  
-  <script>
-    document.getElementById('complaintForm').addEventListener('submit', async function(e) {
-      e.preventDefault();
-      
-      const complaintText = document.getElementById('complaintText').value.trim();
-      const messageDiv = document.getElementById('message');
-      
-      if (!complaintText) {
-        messageDiv.textContent = 'Please enter your complaint details';
-        messageDiv.className = 'error-message';
-        return;
+<div class="container">
+  <h2>Submit a Complaint</h2>
+
+  <form id="complaintForm">
+    <label for="category">Category</label>
+    <select id="category" required>
+      <option value="">-- Select Category --</option>
+      <option value="account">Account</option>
+      <option value="delivery">Delivery</option>
+      <option value="payment">Payment</option>
+      <option value="other">Other</option>
+    </select>
+
+    <label for="complaintText">Complaint</label>
+    <textarea id="complaintText" rows="5" placeholder="Describe your complaint here..." required></textarea>
+
+    <button type="submit">Submit Complaint</button>
+  </form>
+
+  <div id="responseMessage" class="message"></div>
+</div>
+
+<script>
+  document.getElementById('complaintForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const category = document.getElementById('category').value;
+    const complaint_text = document.getElementById('complaintText').value;
+    const message = document.getElementById('responseMessage');
+
+    try {
+      const res = await fetch('/api/farmer/submit-complaint', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category, complaint_text })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        message.textContent = 'Complaint submitted successfully.';
+        message.className = 'message success';
+        document.getElementById('complaintForm').reset();
+      } else {
+        message.textContent = data.message || 'Something went wrong.';
+        message.className = 'message error';
       }
-      
-      try {
-        const response = await fetch('/api/farmer/complaints', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ complaintText }),
-          credentials: 'include'
-        });
-        
-        const result = await response.json();
-        
-        if (response.ok) {
-          messageDiv.textContent = 'Complaint submitted successfully! Our team will review it shortly.';
-          messageDiv.className = 'success-message';
-          document.getElementById('complaintForm').reset();
-          
-          // Clear success message after 5 seconds
-          setTimeout(() => {
-            messageDiv.textContent = '';
-            messageDiv.className = '';
-          }, 5000);
-        } else {
-          throw new Error(result.message || 'Failed to submit complaint');
-        }
-      } catch (error) {
-        console.error('Error submitting complaint:', error);
-        messageDiv.textContent = error.message || 'An error occurred while submitting your complaint';
-        messageDiv.className = 'error-message';
-      }
-    });
-  </script>
+    } catch (err) {
+      message.textContent = 'An error occurred.';
+      message.className = 'message error';
+    }
+  });
+</script>
+
 </body>
 </html>

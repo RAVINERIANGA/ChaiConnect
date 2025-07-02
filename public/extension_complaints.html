@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Extension Officer - Respond to Complaints</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: #f4f4f4;
+      padding: 20px;
+    }
+    h2 {
+      color: #2c3e50;
+      margin-bottom: 20px;
+    }
+    .complaint-card {
+      background: #fff;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .complaint-card p {
+      margin: 6px 0;
+    }
+    .status-open {
+      color: #d35400;
+      font-weight: bold;
+    }
+    .status-in_progress {
+      color: #f39c12;
+      font-weight: bold;
+    }
+    .status-resolved {
+      color: #27ae60;
+      font-weight: bold;
+    }
+    textarea {
+      width: 100%;
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      resize: vertical;
+    }
+    .actions {
+      margin-top: 10px;
+    }
+    .actions button {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 5px;
+      margin-right: 10px;
+      cursor: pointer;
+      font-weight: bold;
+      color: white;
+    }
+    .btn-progress {
+      background: #f39c12;
+    }
+    .btn-resolve {
+      background: #27ae60;
+    }
+    .btn-progress:hover {
+      background: #e67e22;
+    }
+    .btn-resolve:hover {
+      background: #219653;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Respond to Farmer Complaints</h2>
+  <div id="complaintsContainer">Loading complaints...</div>
+
+  <script>
+    // Fetch complaints
+    fetch('/api/extension/complaints')
+      .then(res => res.json())
+      .then(data => {
+        const container = document.getElementById('complaintsContainer');
+        container.innerHTML = '';
+
+        if (!data.success || data.complaints.length === 0) {
+          container.innerHTML = '<p>No complaints found.</p>';
+          return;
+        }
+
+        data.complaints.forEach(complaint => {
+          const div = document.createElement('div');
+          div.className = 'complaint-card';
+
+          div.innerHTML = `
+            <p><strong>Farmer ID:</strong> ${complaint.farmer_id}</p>
+            <p><strong>Category:</strong> ${complaint.category}</p>
+            <p><strong>Date:</strong> ${new Date(complaint.complaint_date).toLocaleString()}</p>
+            <p><strong>Status:</strong> <span class="status-${complaint.status}">${complaint.status.replace('_', ' ')}</span></p>
+            <p><strong>Complaint:</strong> ${complaint.complaint_text}</p>
+            <p><strong>Admin Notes:</strong> ${complaint.admin_notes || '—'}</p>
+            ${complaint.status !== 'resolved' ? `
+              <textarea placeholder="Add your notes...">${complaint.admin_notes || ''}</textarea>
+              <div class="actions">
+                <button class="btn-progress" onclick="updateComplaint(${complaint.complaint_id}, this, 'in_progress')">Mark In Progress</button>
+                <button class="btn-resolve" onclick="updateComplaint(${complaint.complaint_id}, this, 'resolved')">Resolve</button>
+              </div>
+            ` : ''}
+          `;
+          container.appendChild(div);
+        });
+      });
+
+    function updateComplaint(id, btn, status) {
+      const card = btn.closest('.complaint-card');
+      const notes = card.querySelector('textarea').value;
+
+      fetch(`/api/extension/complaints/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ admin_notes: notes, status: status })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          alert("Complaint updated successfully");
+          location.reload();
+        } else {
+          alert("Error: " + data.message);
+        }
+      });
+    }
+  </script>
+
+</body>
+</html>

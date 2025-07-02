@@ -6,8 +6,300 @@
   <title>Extension Officer Dashboard | chaiConnect</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <link rel="stylesheet" href="css/extension_officer_dashboard.css">
   <style>
+    :root {
+      --primary-color: #00796b;
+      --primary-dark: #004d40;
+      --primary-light: #b2dfdb;
+      --accent-color: #ffc107;
+      --text-dark: #263238;
+      --text-light: #eceff1;
+      --bg-light: #f5f5f5;
+      --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: var(--bg-light);
+      color: var(--text-dark);
+      line-height: 1.6;
+    }
+
+    .top-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 70px;
+      background-color: var(--primary-dark);
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 30px;
+      z-index: 1000;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .logo {
+      font-size: 24px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+    }
+
+    .logo i {
+      margin-right: 10px;
+      color: var(--accent-color);
+    }
+
+    .right-icons {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .alert-icon {
+      position: relative;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    #alertCount {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background-color: #e53935;
+      color: white;
+      font-size: 12px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logout-button {
+      background-color: white;
+      color: var(--primary-dark);
+      border: none;
+      padding: 8px 16px;
+      border-radius: 30px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .logout-button:hover {
+      background-color: var(--primary-light);
+      transform: translateY(-2px);
+    }
+
+    .sidebar {
+      width: 260px;
+      background: var(--primary-dark);
+      color: white;
+      height: 100vh;
+      position: fixed;
+      padding: 30px 20px;
+      padding-top: 90px;
+    }
+
+    .sidebar h2 {
+      font-size: 20px;
+      margin-bottom: 30px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .sidebar h2 i {
+      color: var(--accent-color);
+    }
+
+    .sidebar ul {
+      list-style: none;
+    }
+
+    .sidebar ul li {
+      margin: 20px 0;
+      cursor: pointer;
+      padding: 12px 15px;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .sidebar ul li:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .sidebar ul li.active {
+      background-color: var(--primary-color);
+      font-weight: 500;
+    }
+
+    .sidebar ul li i {
+      width: 24px;
+      text-align: center;
+    }
+
+    .main-content {
+      margin-left: 260px;
+      padding: 30px;
+      padding-top: 90px;
+    }
+
+    .welcome-section {
+      margin-bottom: 30px;
+    }
+
+    .welcome-section h1 {
+      font-size: 28px;
+      margin-bottom: 10px;
+      color: var(--primary-dark);
+    }
+
+    .welcome-section p {
+      color: #666;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 25px;
+      margin-bottom: 40px;
+    }
+
+    .stat-card {
+      background: white;
+      border-radius: 12px;
+      padding: 25px;
+      box-shadow: var(--card-shadow);
+      transition: transform 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .stat-card h3 {
+      font-size: 18px;
+      margin-bottom: 15px;
+      color: var(--primary-dark);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .stat-card h3 i {
+      color: var(--primary-color);
+    }
+
+    .stat-card p {
+      color: #666;
+      margin-bottom: 15px;
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: 600;
+      color: var(--primary-dark);
+      margin-bottom: 10px;
+    }
+
+    .stat-card button {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .stat-card button:hover {
+      background-color: var(--primary-dark);
+    }
+
+    .recent-farmers {
+      background: white;
+      border-radius: 12px;
+      padding: 25px;
+      box-shadow: var(--card-shadow);
+      margin-top: 30px;
+    }
+
+    .recent-farmers h3 {
+      font-size: 20px;
+      margin-bottom: 20px;
+      color: var(--primary-dark);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .recent-farmers h3 i {
+      color: var(--primary-color);
+    }
+
+    .farmers-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .farmers-table th {
+      background-color: var(--primary-light);
+      color: var(--primary-dark);
+      padding: 12px 15px;
+      text-align: left;
+    }
+
+    .farmers-table td {
+      padding: 12px 15px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .farmers-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .farmers-table tr:hover {
+      background-color: #f9f9f9;
+    }
+
+    .view-all {
+      display: block;
+      text-align: right;
+      margin-top: 15px;
+      color: var(--primary-color);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .view-all:hover {
+      text-decoration: underline;
+    }
+
     /* Visit Requests Section */
     .visit-requests-section {
       background: #fff;
@@ -163,45 +455,72 @@
     .toast i {
       font-size: 1.2em;
     }
+
+    @media (max-width: 992px) {
+      .sidebar {
+        width: 220px;
+      }
+      .main-content {
+        margin-left: 220px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        display: none;
+      }
+      .main-content {
+        margin-left: 0;
+      }
+    }
   </style>
 </head>
 
 <body>
   <div class="top-header">
-        <div class="right-icons">
-            <h2>chaiConnect</h2>
-        </div>
-        <div class="right-icons">
-            <a href="/alerts.html" title="View Alerts" style="position: relative;">
-                <img src="/images/system_alert_symbol.jpg" class="alert-icon" alt="Alerts">
-                <span id="alertCount">0</span>
-            </a>
-            <button class="logout-button" onclick="logout()">Logout</button>
-        </div>
+    <div class="logo">
+      <i class="fas fa-leaf"></i>
+      <span>chaiConnect</span>
     </div>
+    <div class="right-icons">
+      <a href="/alerts.html" title="View Alerts" class="alert-icon">
+        <i class="fas fa-bell"></i>
+        <span id="alertCount">0</span>
+      </a>
+      <button class="logout-button" onclick="logout()">
+        <i class="fas fa-sign-out-alt"></i>
+        Logout
+      </button>
+    </div>
+  </div>
 
   <div class="sidebar">
-    <h3>Extension Dashboard</h3>
+    <h2><i class="fas fa-tachometer-alt"></i> Extension Dashboard</h2>
     <ul>
-      <li><a href="#" class="active">Home</a></li>
-      <li><a href="/assigned_farmers.html">Assigned Farmers</a></li>
-      <li><a href="/schedule_visit.html">Schedule Farm Visit</a></li>
-      <li><a href="/upload_training.html">Upload Training Materials</a></li>
-      <li><a href="/extension_complaints.html">Respond to Complaints</a></li>
+      <li class="active"><i class="fas fa-home"></i> Home</li>
+      <li onclick="viewFarmers()"><i class="fas fa-users"></i> Assigned Farmers</li>
+      <li onclick="scheduleVisit()"><i class="fas fa-calendar-check"></i> Schedule Visit</li>
+      <li onclick="uploadMaterial()"><i class="fas fa-file-upload"></i> Training Materials</li>
+      <li onclick="respondToComplaints()"><i class="fas fa-comments"></i> Farmer Complaints</li>
     </ul>
   </div>
 
   <div class="main-content">
-    <section id="overview">
-      <h1 id="welcomeMessage">Welcome, <span id="officerName">Extension Officer</span></h1>
+    <div class="welcome-section">
+      <h1>Welcome, <span id="officerName">Extension Officer</span></h1>
       <p>Manage your assigned farmers, schedule visits, and provide agricultural support.</p>
-    </section>
+    </div>
 
-    <div class="dashboard-cards">
+    <div class="stats-grid">
       <div class="stat-card">
-        <p>Assigned Farmers</p>
-        <h2 id="farmerCount">0</h2>
+        <h3><i class="fas fa-users"></i> Assigned Farmers</h3>
+        <div class="stat-value" id="farmerCount">0</div>
+        <p>Farmers currently under your guidance</p>
+        <button onclick="viewFarmers()">
+          <i class="fas fa-list"></i> View All
+        </button>
       </div>
+
       <div class="stat-card">
         <h3><i class="fas fa-calendar-alt"></i> Upcoming Visits</h3>
         <div class="stat-value" id="upcomingVisitsCount">0</div>
@@ -210,42 +529,28 @@
           <i class="fas fa-sync-alt"></i> Refresh
         </button>
       </div>
+
       <div class="stat-card">
-        <p>Training Materials</p>
-        <h2>0</h2>
+        <h3><i class="fas fa-book"></i> Training Materials</h3>
+        <div class="stat-value">0</div>
+        <p>Resources available for farmers</p>
+        <button onclick="uploadMaterial()">
+          <i class="fas fa-upload"></i> Upload
+        </button>
       </div>
+
       <div class="stat-card">
-        <p>Open Complaints</p>
-        <h2>0</h2>
+        <h3><i class="fas fa-comment-dots"></i> Open Complaints</h3>
+        <div class="stat-value">0</div>
+        <p>Issues requiring your attention</p>
+        <button onclick="respondToComplaints()">
+          <i class="fas fa-reply"></i> Respond
+        </button>
       </div>
     </div>
-
-    <div class="card-actions">
-      <div class="card">
-        <h3>View Assigned Farmers</h3>
-        <p>See all farmers under your guidance.</p>
-        <button onclick="location.href='/assigned_farmers.html'">View</button>
-      </div>
-      <div class="card">
-        <h3>Schedule Visit</h3>
-        <p>Plan a farm visit with a farmer.</p>
-        <button onclick="location.href='/schedule_visit.html'">Schedule</button>
-      </div>
-      <div class="card">
-        <h3>Upload Training Materials</h3>
-        <p>Provide resources to help farmers grow better tea.</p>
-        <button onclick="location.href='/upload_training.html'">Upload</button>
-      </div>
-      <div class="card">
-        <h3>Respond to Complaints</h3>
-        <p>Address concerns raised by your assigned farmers.</p>
-        <button onclick="location.href='/extension_complaints.html'">Respond</button>
-      </div>
-    </div>
-
 
     <div class="recent-farmers">
-      <h3>Recently Assigned Farmers</h3>
+      <h3><i class="fas fa-user-friends"></i> Recently Assigned Farmers</h3>
       <table class="farmers-table" id="recentFarmersTable">
         <thead>
           <tr>
@@ -260,6 +565,18 @@
         </tbody>
       </table>
       <a href="/assigned_farmers.html" class="view-all">View All Farmers →</a>
+    </div>
+
+    <div class="visit-requests-section">
+      <div class="section-header">
+        <h3><i class="fas fa-calendar-check"></i> Visit Requests</h3>
+        <button onclick="refreshVisitRequests()" class="refresh-btn">
+          <i class="fas fa-sync-alt"></i> Refresh
+        </button>
+      </div>
+      <div id="requestsContainer" class="requests-container">
+        <!-- Requests will be loaded here -->
+      </div>
     </div>
   </div>
 
@@ -470,199 +787,7 @@
         }, 300);
       }, 3000);
     }
- // Load all visit-related data
-function loadVisitData() {
-  // Load pending visit requests
-  fetch('/api/visit-requests')
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        renderPendingVisits(data.requests);
-      }
-    });
 
-  // Load scheduled visits
-  fetch('/api/upcoming-visits')
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        renderScheduledVisits(data.visits);
-      }
-    });
-
-  // Load training sessions
-  fetch('/api/training-sessions')
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        renderTrainingSessions(data.sessions);
-      }
-    });
-}
-
-// Render pending visit requests
-function renderPendingVisits(requests) {
-  const container = document.getElementById('pendingVisitsContainer');
-  
-  if (requests.length === 0) {
-    container.innerHTML = '<p class="text-muted">No pending visit requests.</p>';
-    return;
-  }
-
-  let html = '<div class="list-group">';
-  
-  requests.forEach(request => {
-    const preferredDate = new Date(request.preferred_date);
-    
-    html += `
-    <div class="list-group-item">
-      <div class="d-flex justify-content-between">
-        <h5>${request.farmer_name}</h5>
-        <span class="badge bg-warning">Pending</span>
-      </div>
-      <p><strong>Preferred Date:</strong> ${preferredDate.toLocaleString()}</p>
-      <p><strong>Purpose:</strong> ${request.purpose}</p>
-      ${request.notes ? `<p><strong>Notes:</strong> ${request.notes}</p>` : ''}
-      
-      <div class="visit-actions mt-2">
-        <div class="input-group mb-2">
-          <input type="datetime-local" class="form-control schedule-date-input" 
-                 min="${new Date().toISOString().slice(0, 16)}">
-          <button class="btn btn-success schedule-btn" data-id="${request.visit_id}">
-            <i class="fas fa-calendar-plus"></i> Schedule
-          </button>
-        </div>
-        <button class="btn btn-outline-danger reject-btn" data-id="${request.visit_id}">
-          <i class="fas fa-times"></i> Reject
-        </button>
-      </div>
-    </div>
-    `;
-  });
-  
-  html += '</div>';
-  container.innerHTML = html;
-
-  // Add event listeners
-  document.querySelectorAll('.schedule-btn').forEach(btn => {
-    btn.addEventListener('click', scheduleVisit);
-  });
-  
-  document.querySelectorAll('.reject-btn').forEach(btn => {
-    btn.addEventListener('click', rejectVisit);
-  });
-}
-
-// Render scheduled visits
-function renderScheduledVisits(visits) {
-  const container = document.getElementById('scheduledVisitsContainer');
-  
-  if (visits.length === 0) {
-    container.innerHTML = '<p class="text-muted">No upcoming visits scheduled.</p>';
-    return;
-  }
-
-  let html = '<div class="list-group">';
-  
-  visits.forEach(visit => {
-    const visitDate = new Date(visit.scheduled_date);
-    
-    html += `
-    <div class="list-group-item">
-      <div class="d-flex justify-content-between">
-        <h5>${visit.farmer_name}</h5>
-        <span class="badge bg-success">Scheduled</span>
-      </div>
-      <p><strong>Date:</strong> ${visitDate.toLocaleString()}</p>
-      <p><strong>Purpose:</strong> ${visit.purpose}</p>
-      ${visit.notes ? `<p><strong>Notes:</strong> ${visit.notes}</p>` : ''}
-      <p><strong>Contact:</strong> ${visit.farmer_phone}</p>
-      
-      <div class="visit-actions mt-2">
-        <button class="btn btn-primary complete-btn" data-id="${visit.visit_id}">
-          <i class="fas fa-check"></i> Mark Complete
-        </button>
-        <button class="btn btn-outline-secondary reschedule-btn" data-id="${visit.visit_id}">
-          <i class="fas fa-calendar-alt"></i> Reschedule
-        </button>
-      </div>
-    </div>
-    `;
-  });
-  
-  html += '</div>';
-  container.innerHTML = html;
-
-  // Add event listeners
-  document.querySelectorAll('.complete-btn').forEach(btn => {
-    btn.addEventListener('click', completeVisit);
-  });
-  
-  document.querySelectorAll('.reschedule-btn').forEach(btn => {
-    btn.addEventListener('click', showRescheduleForm);
-  });
-}
-
-// Schedule a visit
-function scheduleVisit() {
-  const visitId = this.dataset.id;
-  const card = this.closest('.list-group-item');
-  const dateInput = card.querySelector('.schedule-date-input');
-  const scheduledDate = dateInput.value;
-  
-  if (!scheduledDate) {
-    showToast('Please select a date and time', 'error');
-    return;
-  }
-
-  fetch(`/api/schedule-visit/${visitId}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ scheduledDate })
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.success) {
-      showToast('Visit scheduled successfully!');
-      loadVisitData(); // Refresh all visit data
-    } else {
-      showToast(data.message || 'Error scheduling visit', 'error');
-    }
-  })
-  .catch(error => {
-    console.error('Error:', error);
-    showToast('Failed to schedule visit', 'error');
-  });
-}
-
-// Mark visit as complete
-function completeVisit() {
-  const visitId = this.dataset.id;
-  
-  if (!confirm('Mark this visit as completed?')) return;
-
-  fetch(`/api/complete-visit/${visitId}`, {
-    method: 'PUT'
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.success) {
-      showToast('Visit marked as completed');
-      loadVisitData(); // Refresh all visit data
-    } else {
-      showToast(data.message || 'Error completing visit', 'error');
-    }
-  })
-  .catch(error => {
-    console.error('Error:', error);
-    showToast('Failed to complete visit', 'error');
-  });
-}
-
-// Load data when page loads
-document.addEventListener('DOMContentLoaded', loadVisitData);
     // Initial load of visit requests when page loads
     document.addEventListener('DOMContentLoaded', function() {
       loadVisitRequests();
