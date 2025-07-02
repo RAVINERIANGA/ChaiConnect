@@ -532,16 +532,53 @@
 
   <!-- Sidebar -->
   <div class="sidebar">
-    <h3>Admin Dashboard</h3>
-    <ul>
-      <li><a href="#" class="active">Home</a></li>
-      <li><a href="admin_profile.html">View My Profile</a></li>
-      <li><a href="assign_roles.html">Create New Users</a></li>
-      <li><a href="manage_users.html">View All System Users</a></li>
-      <li><a href="/farmer_mismatches.html">Review Mismatches</a></li>
-      <li><a href="/suspended_accounts.html">View suspended accounts</a></li>
-      <li><a href="/view_policies.html">View uploaded policies</a></li>
-      <!--<li><a href="#logout" onclick="logout()">Logout</a></li>-->
+    <div class="sidebar-header">
+      <div class="sidebar-title">Admin Dashboard</div>
+      <div class="sidebar-subtitle">Management Portal</div>
+    </div>
+    <ul class="nav-menu">
+      <li class="nav-item">
+        <a href="#" class="nav-link active">
+          <i class="fas fa-home"></i>
+          Dashboard
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="admin_profile.html" class="nav-link">
+          <i class="fas fa-user"></i>
+          My Profile
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="assign_roles.html" class="nav-link">
+          <i class="fas fa-user-plus"></i>
+          Create Users
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="manage_users.html" class="nav-link">
+          <i class="fas fa-users"></i>
+          All Users
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="/farmer_mismatches.html" class="nav-link">
+          <i class="fas fa-exclamation-triangle"></i>
+          Mismatches
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="/suspended_accounts.html" class="nav-link">
+          <i class="fas fa-user-lock"></i>
+          Suspended Accounts
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="/view_policies.html" class="nav-link">
+          <i class="fas fa-file-contract"></i>
+          Policies
+        </a>
+      </li>
     </ul>
   </div>
 
@@ -672,16 +709,37 @@
           Add Users
         </button>
       </div>
-      <div class="card">
-        <h3>Create Alerts</h3>
-        <p>Send out alerts to various users.</p>
-        <button onclick="location.href='/create_alert.html'">Create</button>
+
+      <div class="action-card">
+        <div class="action-header">
+          <div class="action-icon">
+            <i class="fas fa-bell"></i>
+          </div>
+          <div class="action-content">
+            <h3>Create Alerts</h3>
+            <p>Send important notifications and updates to various user groups.</p>
+          </div>
+        </div>
+        <button class="action-button" onclick="location.href='/create_alert.html'">
+          <i class="fas fa-bullhorn"></i>
+          Create Alert
+        </button>
       </div>
 
-      <div class="card">
-        <h3>Set Payment Rates</h3>
-        <p>Define the rate per kg for tea deliveries.</p>
-        <button onclick="location.href='/set_rates.html'">Set Rates</button>
+      <div class="action-card">
+        <div class="action-header">
+          <div class="action-icon">
+            <i class="fas fa-tags"></i>
+          </div>
+          <div class="action-content">
+            <h3>Set Payment Rates</h3>
+            <p>Configure and update the payment rates per kilogram for tea deliveries.</p>
+          </div>
+        </div>
+        <button class="action-button" onclick="location.href='/set_rates.html'">
+          <i class="fas fa-dollar-sign"></i>
+          Set Rates
+        </button>
       </div>
 
       <div class="action-card">
@@ -700,15 +758,36 @@
         </button>
       </div>
 
-      <div class="card">
-        <h3>Issue Payments</h3>
-        <p>Pay verified tea deliveries to farmers.</p>
-        <button onclick="location.href='/issue_payments.html'">Issue</button>
+      <div class="action-card">
+        <div class="action-header">
+          <div class="action-icon">
+            <i class="fas fa-money-bill-wave"></i>
+          </div>
+          <div class="action-content">
+            <h3>Issue Payments</h3>
+            <p>Process and distribute payments for verified tea deliveries to farmers.</p>
+          </div>
+        </div>
+        <button class="action-button" onclick="location.href='/issue_payments.html'">
+          <i class="fas fa-credit-card"></i>
+          Issue Payments
+        </button>
       </div>
-      <div class="card">
-        <h3>View Issued Payments</h3>
-        <p>View payment that have already been issued.</p>
-        <button onclick="location.href='/admin_view_payments.html'">View</button>
+
+      <div class="action-card">
+        <div class="action-header">
+          <div class="action-icon">
+            <i class="fas fa-receipt"></i>
+          </div>
+          <div class="action-content">
+            <h3>View Payments</h3>
+            <p>Track and review all payments that have been issued to farmers.</p>
+          </div>
+        </div>
+        <button class="action-button" onclick="location.href='/admin_view_payments.html'">
+          <i class="fas fa-list"></i>
+          View Payments
+        </button>
       </div>
 
       <div class="action-card">
@@ -775,12 +854,23 @@
         </button>
       </div>
 
-      <div class="card">
-        <h3>View all mismatch reports/Flagged accounts</h3>
-        <p>View mismatch complaints raised by factory staff on farmers</p>
-        <button onclick="location.href='/farmer_mismatches.html'">View</button>
+      <div class="action-card">
+        <div class="action-header">
+          <div class="action-icon">
+            <i class="fas fa-flag"></i>
+          </div>
+          <div class="action-content">
+            <h3>Flagged Accounts</h3>
+            <p>Review mismatch reports and complaints raised by factory staff on farmers.</p>
+          </div>
+        </div>
+        <button class="action-button" onclick="location.href='/farmer_mismatches.html'">
+          <i class="fas fa-search"></i>
+          Review Flags
+        </button>
       </div>
     </div>
+  </div>
 
   <!-- Toast Notification -->
   <div id="logoutToast" class="toast">
