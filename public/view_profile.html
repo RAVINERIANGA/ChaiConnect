@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Profile</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      min-height: 100vh;
+      padding: 2rem 1rem;
+      color: #1a202c;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #059669, #047857);
+      padding: 2rem;
+      text-align: center;
+      color: white;
+    }
+
+    .header h2 {
+      font-size: 1.75rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .header p {
+      opacity: 0.9;
+      font-weight: 300;
+    }
+
+    .back-btn {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 50px;
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      backdrop-filter: blur(10px);
+    }
+
+    .back-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .content {
+      padding: 2.5rem;
+    }
+
+    .section {
+      margin-bottom: 3rem;
+    }
+
+    .section:last-child {
+      margin-bottom: 0;
+    }
+
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (min-width: 640px) {
+      .form-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .form-group.full-width {
+        grid-column: 1 / -1;
+      }
+    }
+
+    .form-group {
+      position: relative;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: 500;
+      color: #374151;
+      margin-bottom: 0.5rem;
+      font-size: 0.875rem;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 0.875rem 1rem;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      font-size: 1rem;
+      transition: all 0.2s ease;
+      background: #fafafa;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: #059669;
+      background: white;
+      box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+    }
+
+    .form-group input:disabled {
+      background: #f3f4f6;
+      color: #6b7280;
+      cursor: not-allowed;
+    }
+
+    .btn {
+      font-family: inherit;
+      font-weight: 500;
+      padding: 0.875rem 2rem;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #059669, #047857);
+      color: white;
+      box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(5, 150, 105, 0.4);
+    }
+
+    .btn-secondary {
+      background: linear-gradient(135deg, #0d9488, #0f766e);
+      color: white;
+      box-shadow: 0 4px 14px rgba(13, 148, 136, 0.3);
+    }
+
+    .btn-secondary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(13, 148, 136, 0.4);
+    }
+
+    .actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 2rem;
+    }
+
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #e5e7eb, transparent);
+      margin: 3rem 0;
+    }
+
+    /* Smooth animations */
+    .container {
+      animation: slideUp 0.5s ease-out;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Mobile responsiveness */
+    @media (max-width: 640px) {
+      body {
+        padding: 1rem 0.5rem;
+      }
+
+      .content {
+        padding: 1.5rem;
+      }
+
+      .header {
+        padding: 1.5rem;
+      }
+
+      .back-btn {
+        position: static;
+        margin-bottom: 1rem;
+        align-self: flex-start;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <a href="#" id="backBtn" class="back-btn">← Dashboard</a>
+      <h2>👤 My Profile</h2>
+      <p>Manage your account information and security</p>
+    </div>
+
+    <div class="content">
+      <div class="section">
+        <h3 class="section-title">
+          <span>📝</span>
+          Personal Information
+        </h3>
+
+        <form id="profileForm">
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label for="name">Full Name</label>
+              <input type="text" id="name" name="name" required />
+            </div>
+
+            <div class="form-group">
+              <label for="email">Email Address</label>
+              <input type="email" id="email" name="email" required />
+            </div>
+
+            <div class="form-group">
+              <label for="phone">Phone Number</label>
+              <input type="text" id="phone" name="phone" required />
+            </div>
+
+            <div class="form-group">
+              <label for="id_number">ID Number</label>
+              <input type="text" id="id_number" name="id_number" disabled />
+            </div>
+
+            <div class="form-group">
+              <label for="role">Role</label>
+              <input type="text" id="role" name="role" disabled />
+            </div>
+          </div>
+
+          <div class="actions">
+            <button type="submit" class="btn btn-primary">💾 Save Changes</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="section">
+        <h3 class="section-title">
+          <span>🔐</span>
+          Security Settings
+        </h3>
+
+        <form id="passwordForm">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="currentPassword">Current Password</label>
+              <input type="password" id="currentPassword" name="currentPassword" required />
+            </div>
+
+            <div class="form-group">
+              <label for="newPassword">New Password</label>
+              <input type="password" id="newPassword" name="newPassword" required />
+            </div>
+          </div>
+
+          <div class="actions">
+            <button type="submit" class="btn btn-secondary">🔄 Change Password</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let userRole = '';
+
+    async function loadProfile() {
+      try {
+        const res = await fetch('/my-profile');
+        const data = await res.json();
+        document.getElementById('name').value = data.name || '';
+        document.getElementById('email').value = data.email || '';
+        document.getElementById('phone').value = data.phone || '';
+        document.getElementById('id_number').value = data.id_number || '';
+        document.getElementById('role').value = data.role || '';
+
+        // Store user role and set appropriate dashboard link
+        userRole = data.role || '';
+        setDashboardLink(userRole);
+      } catch (error) {
+        console.error('Error loading profile:', error);
+      }
+    }
+
+    function setDashboardLink(role) {
+      const backBtn = document.getElementById('backBtn');
+      switch (role.toLowerCase()) {
+        case 'admin':
+          backBtn.href = '/admin_dashboard.html';
+          break;
+        case 'factory_staff':
+          backBtn.href = '/factory_staff_dashboard.html';
+          break;
+        case 'farmer':
+          backBtn.href = '/student_dashboard.html';
+          break;
+        case 'extension_officer':
+          backBtn.href = '/extension_officer_dashboard.html';
+          break;
+        default:
+          backBtn.href = '/login.html';
+      }
+    }
+
+    document.getElementById('profileForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      const originalText = submitBtn.innerHTML;
+
+      submitBtn.innerHTML = '⏳ Saving...';
+      submitBtn.disabled = true;
+
+      try {
+        const body = {
+          name: document.getElementById('name').value,
+          email: document.getElementById('email').value,
+          phone: document.getElementById('phone').value
+        };
+
+        const res = await fetch('/my-profile/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+
+        const result = await res.json();
+        if (result.success) {
+          alert('Profile updated successfully!');
+        } else {
+          alert(result.error || 'Error updating profile');
+        }
+
+      } catch (error) {
+        alert('Error updating profile. Please try again.');
+      } finally {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+      }
+    });
+
+    document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      const originalText = submitBtn.innerHTML;
+
+      submitBtn.innerHTML = '⏳ Updating...';
+      submitBtn.disabled = true;
+
+      try {
+        const res = await fetch('/my-profile/change-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            currentPassword: document.getElementById('currentPassword').value,
+            newPassword: document.getElementById('newPassword').value
+          })
+        });
+
+        const result = await res.json();
+
+        if (result.success) {
+          alert(result.message || 'Password changed successfully!');
+          document.getElementById('currentPassword').value = '';
+          document.getElementById('newPassword').value = '';
+          setTimeout(() => {
+            switch (role.toLowerCase()) {
+              case 'admin':
+                backBtn.href = '/admin_dashboard.html';
+                break;
+              case 'factory_staff':
+                backBtn.href = '/factory_staff_dashboard.html';
+                break;
+              case 'farmer':
+                backBtn.href = '/student_dashboard.html';
+                break;
+              case 'extension_officer':
+                backBtn.href = '/extension_officer_dashboard.html';
+                break;
+              default:
+                backBtn.href = '/login.html';
+            }
+          }, 1000);
+        } else {
+          alert(result.error || 'Error changing password.');
+        }
+      } catch (error) {
+        alert('Error changing password. Please try again.');
+      } finally {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+      }
+    });
+
+    loadProfile();
+  </script>
+</body>
+
+</html>

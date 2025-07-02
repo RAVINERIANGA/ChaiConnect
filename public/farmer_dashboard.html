@@ -13,141 +13,114 @@
 <body>
   <!-- Header Content -->
   <div class="top-header">
-    <div class="logo">
-      <i class="fas fa-leaf"></i>
-      <span>chaiConnect</span>
+    <div class="right-icons">
+      <h2>chaiConnect</h2>
     </div>
     <div class="right-icons">
-      <a href="/alerts.html" title="View Alerts" class="alert-icon">
-        <i class="fas fa-bell"></i>
+      <a href="/alerts.html" title="View Alerts" style="position: relative;">
+        <img src="/images/system_alert_symbol.jpg" class="alert-icon" alt="Alerts">
         <span id="alertCount">0</span>
       </a>
-      <button class="logout-button" onclick="logout()">
-        <i class="fas fa-sign-out-alt"></i>
-        Logout
-      </button>
+      <button class="logout-button" onclick="logout()">Logout</button>
     </div>
   </div>
 
   <!-- Sidebar Content -->
   <div class="sidebar">
-    <h2><i class="fas fa-user-tie"></i> chaiConnect</h2>
     <h3>Farmer Dashboard</h3>
     <ul>
-      <li><a href="#" class="active"><i class="fas fa-home"></i> Home</a></li>
-      <li><a href="/profile.html"><i class="fas fa-user"></i> My Profile</a></li>
-      <li><a href="/delivery_history.html"><i class="fas fa-truck"></i> Delivery History</a></li>
-      <li><a href="/payment_summary.html"><i class="fas fa-money-bill-wave"></i> Payment Summary</a></li>
-      <li><a href="/quality_feedback.html"><i class="fas fa-leaf"></i> Tea Quality</a></li>
-      <li><a href="/extension_services.html"><i class="fas fa-chalkboard-teacher"></i> Extension Services</a></li>
-      <li><a href="/farmer_complaint.html"><i class="fas fa-headset"></i> Support</a></li>
+      <li><a href="#" class="active">Home</a></li>
+      <li><a href="/profile.html">My Profile</a></li>
+      <li><a href="/delivery_history.html">Delivery History</a></li>
+      <li><a href="/payment_summary.html">Payment Summary</a></li>
+      <li><a href="/quality_feedback.html">Tea Quality</a></li>
+      <li><a href="/extension_services.html">Extension Services</a></li>
+      <li><a href="/farmer_support.html">Support</a></li>
     </ul>
   </div>
 
   <!-- Main Content -->
   <div class="main-content">
-    <div class="welcome-section">
-      <h1>Welcome, <span id="welcomeMessage">Farmer</span></h1>
-      <p>Manage your tea deliveries, payments, and farming support services.</p>
-    </div>
+    <section id="overview">
+      <h1 id="welcomeMessage">Welcome, Farmer</h1>
+      <p>Access your account, deliveries, earnings, and tea updates.</p>
+    </section>
 
-    <div class="stats-grid">
+    <div class="dashboard-cards">
       <div class="stat-card">
-        <p><i class="fas fa-calendar-day"></i> Last Delivery</p>
-        <div class="stat-value" id="lastDelivery">Loading...</div>
+        <p>Last Delivery</p>
+        <h2 id="lastDelivery">Loading...</h2>
       </div>
-
       <div class="stat-card">
-        <p><i class="fas fa-weight-hanging"></i> Monthly Total Delivered</p>
-        <div class="stat-value" id="totalDelivery">Loading...</div>
+        <p>Monthly Total Delivered</p>
+        <h2 id="totalDelivery">Loading...</h2>
       </div>
-
       <div class="stat-card">
-        <p><i class="fas fa-wallet"></i> Pending Payment</p>
-        <div class="stat-value" id="pendingPayment">Loading...</div>
+        <p>Pending Payment</p>
+        <h2 id="pendingPayment">Loading...</h2>
       </div>
-
       <div class="stat-card">
-        <p><i class="fas fa-user-check"></i> Account Status</p>
-        <div class="stat-value" id="accountStatus">Loading...</div>
+        <p>Account Status</p>
+        <h2 id="accountStatus">Loading...</h2>
       </div>
     </div>
 
-    
-       <div class="actions-grid">
-      <div class="action-card">
-        <h3><i class="fas fa-truck"></i> Delivery History</h3>
-        <p>View and download your full delivery history with quality grades and quantities.</p>
-        <button onclick="location.href='/delivery_history.html'">
-          <i class="fas fa-list"></i> View History
-        </button>
+    <div class="card-actions">
+      <div class="card">
+        <h3>Delivery History</h3>
+        <p>View and download your full delivery history.</p>
+        <button onclick="location.href='/delivery_history.html'">View</button>
       </div>
 
-      <div class="action-card">
-        <h3><i class="fas fa-money-bill-wave"></i> View Payments</h3>
-        <p>See your earnings, rates per kg, and past payment records.</p>
-        <button onclick="location.href='/payment_summary.html'">
-          <i class="fas fa-chart-line"></i> View Payments
-        </button>
+      <div class="card">
+        <h3>View Payments</h3>
+        <p>See earnings, rates per kg, and past payments.</p>
+        <button onclick="location.href='/payment_summary.html'">Payments</button>
       </div>
 
-      <div class="action-card">
-        <h3><i class="fas fa-leaf"></i> Tea Grading</h3>
-        <p>Check moisture levels, rejection feedback, and quality grade status.</p>
-        <button onclick="location.href='/quality_feedback.html'">
-          <i class="fas fa-search"></i> Check Quality
-        </button>
+      <div class="card">
+        <h3>Tea Grading</h3>
+        <p>See moisture level, rejection feedback, and grade status.</p>
+        <button onclick="location.href='/quality_feedback.html'">Quality</button>
       </div>
 
-      <div class="action-card">
-        <h3><i class="fas fa-chalkboard-teacher"></i> Extension Visits</h3>
-        <p>Book agronomist visits and view upcoming training sessions.</p>
-        <button onclick="location.href='/extension_services.html'">
-          <i class="fas fa-calendar-plus"></i> Book Services
-        </button>
+      <div class="card">
+        <h3>Extension Visits</h3>
+        <p>Book agronomist visits and upcoming trainings.</p>
+        <button onclick="location.href='/extension_services.html'">Book</button>
       </div>
 
-      <div class="action-card">
-        <h3><i class="fas fa-headset"></i> Submit Complaint</h3>
-        <p>Raise complaints or ask questions about your account.</p>
-        <button onclick="location.href='/farmer_complaint.html'">
-          <i class="fas fa-comment-dots"></i> Get Support
-        </button>
+      <div class="card">
+        <h3>Submit Complaint</h3>
+        <p>Raise complaints or ask questions.</p>
+        <button onclick="location.href='/support.html'">Support</button>
       </div>
 
-      <div class="action-card">
-        <h3><i class="fas fa-user-circle"></i> View Profile</h3>
-        <p>See and update your personal details, location and farm information.</p>
-        <button onclick="location.href='/profile.html'">
-          <i class="fas fa-user-edit"></i> View Profile
-        </button>
+      <div class="card">
+        <h3>View Profile</h3>
+        <p>See your personal details, location and farm info.</p>
+        <button onclick="location.href='/profile.html'">Profile</button>
       </div>
 
-      <div class="action-card">
-        <h3><i class="fas fa-truck-loading"></i> Delivery Request</h3>
-        <p>Request a tea collection from your farm.</p>
-        <button onclick="location.href='/request_delivery.html'">
-          <i class="fas fa-plus-circle"></i> Request Pickup
-        </button>
+      
+
+      <div class="card">
+        <h3>Delivery Request</h3>
+        <p>Request a delivery collection.</p>
+        <button onclick="location.href='/request_delivery.html'">Request</button>
       </div>
     </div>
   </div>
-    </div>
   </div>
 
-  <!-- Toast Notification -->
-  <div id="logoutToast" class="toast">
-    <i class="fas fa-check-circle"></i>
-    <span>Logged out successfully</span>
-  </div>
+  <div id="logoutToast" class="toast">✅ Logged out successfully</div>
 
-  <!-- JavaScript -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       fetch('/api/me')
         .then(res => res.json())
         .then(data => {
-          document.getElementById('welcomeMessage').textContent = data.name;
+          document.getElementById('welcomeMessage').textContent = `Welcome, ${data.name}`;
           const farmerId = data.userId;
 
           fetch(`/api/farmer/${farmerId}/profile`)
