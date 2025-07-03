@@ -232,6 +232,45 @@
         grid-template-columns: 1fr;
       }
     }
+    .price-rates-container {
+  margin-bottom: 30px;
+  overflow-x: auto;
+}
+
+.rates-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.rates-table th {
+  background-color: #4CAF50;
+  color: white;
+  padding: 12px 15px;
+  text-align: left;
+}
+
+.rates-table td {
+  padding: 12px 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.rates-table tr:last-child td {
+  border-bottom: none;
+}
+
+.rates-table tr:hover {
+  background-color: #f5f5f5;
+}
+
+.rate-value {
+  color: #4CAF50;
+  font-weight: 600;
+}
   </style>
 </head>
 <body>
@@ -263,10 +302,26 @@
       </div>
     </div>
 
-    <h2 class="section-title"><i class="fas fa-tags"></i> Current Price Rates</h2>
-    <div class="price-rates" id="priceRates">
-      <!-- Price rates will be loaded here -->
-    </div>
+    <!-- Replace the existing price-rates section with this enhanced version -->
+<h2 class="section-title"><i class="fas fa-tags"></i> Current Price Rates</h2>
+<div class="price-rates-container">
+  <table class="rates-table">
+    <thead>
+      <tr>
+        <th>Quality Grade</th>
+        <th>Price per KG</th>
+        <th>Effective Date</th>
+      </tr>
+    </thead>
+    <tbody id="priceRates">
+      <!-- Rates will be loaded here -->
+    </tbody>
+  </table>
+</div>
+
+<div class="rate-note">
+  <i class="fas fa-info-circle"></i> These rates are set by the administration and may change periodically.
+</div>
 
     <h2 class="section-title"><i class="fas fa-history"></i> Payment History</h2>
     
@@ -338,28 +393,48 @@
       return 'KES ' + parseFloat(amount).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
     }
 
-    // Load payment rates
-    async function loadPaymentRates() {
-      try {
-        const response = await fetch('/api/payment-rates');
-        const rates = await response.json();
-        
-        priceRatesContainer.innerHTML = '';
-        
-        rates.forEach(rate => {
-          const rateCard = document.createElement('div');
-          rateCard.className = 'rate-card';
-          rateCard.innerHTML = `
-            <div class="rate-grade">Grade ${rate.quality_grade}</div>
-            <div class="rate-value">${formatCurrency(rate.price_per_kg)}/kg</div>
-            <div class="rate-date">Effective ${new Date(rate.effective_date).toLocaleDateString()}</div>
-          `;
-          priceRatesContainer.appendChild(rateCard);
-        });
-      } catch (error) {
-        console.error('Error loading payment rates:', error);
-      }
+// Load payment rates
+async function loadPaymentRates() {
+  try {
+    const response = await fetch('/admin/payment-rates');
+    const rates = await response.json();
+    
+    const ratesTable = document.getElementById('priceRates');
+    ratesTable.innerHTML = '';
+    
+    if (rates.length === 0) {
+      ratesTable.innerHTML = `
+        <tr>
+          <td colspan="3" style="text-align: center; color: #888;">
+            No payment rates available
+          </td>
+        </tr>
+      `;
+      return;
     }
+    
+    rates.forEach(rate => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>Grade ${rate.quality_grade}</td>
+        <td class="rate-value">${formatCurrency(rate.price_per_kg)}/kg</td>
+        <td>${new Date(rate.effective_date).toLocaleDateString()}</td>
+      `;
+      ratesTable.appendChild(row);
+    });
+  } catch (error) {
+    console.error('Error loading payment rates:', error);
+    const ratesTable = document.getElementById('priceRates');
+    ratesTable.innerHTML = `
+      <tr>
+        <td colspan="3" style="text-align: center; color: #ff4444;">
+          Error loading payment rates. Please try again later.
+        </td>
+      </tr>
+    `;
+  }
+}
+
 
     // Load payment statistics
     async function loadPaymentStats() {
