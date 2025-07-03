@@ -187,7 +187,7 @@
           <tr>
             <td colspan="8" class="text-center py-4 text-danger">
               <i class="fas fa-exclamation-circle me-2"></i>
-              Failed to load delivery history. Please try again later.
+              ${error.message || 'Failed to load delivery history. Please try again later.'}
             </td>
           </tr>
         `;
@@ -306,6 +306,8 @@
           credentials: 'include'
         });
 
+ const result = await response.json();
+
         if (!response.ok) throw new Error('Failed to cancel request');
 
         cancelModal.hide();
@@ -315,7 +317,7 @@
         alert('Delivery request cancelled successfully');
       } catch (error) {
         console.error('Error cancelling request:', error);
-        alert('Failed to cancel delivery request');
+         alert(error.message || 'Failed to cancel delivery request');
       }
     }
 

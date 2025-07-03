@@ -20,6 +20,8 @@ app.use(session({
   saveUninitialized: false,
   cookie: { secure: false }
 }));
+
+
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
  
 
@@ -69,6 +71,20 @@ const db = mysql.createConnection({
 db.connect(err => {
   if (err) throw err;
   console.log('Connected to MySQL');
+});
+
+// ✅ Verify session route
+app.get('/api/verify-session', (req, res) => {
+  if (!req.session || !req.session.userId) {
+    return res.status(401).json({ valid: false });
+  }
+  res.json({ 
+    valid: true,
+    user: {
+      id: req.session.userId,
+      role: req.session.role
+    }
+  });
 });
 
 function logActivity(userId, action, details = '') {
@@ -196,6 +212,7 @@ function proceedWithLogin(req, res, user) {
       return res.send('Unknown role');
   }
 }
+
 app.get('/manage_users.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/manage_users.html'));
 });
@@ -2165,6 +2182,36 @@ app.get('/api/farmer-details/:id', (req, res) => {
 
         res.json(farmer[0]);
     });
+});
+
+
+// ✅ POST delivery request
+app.post('/api/delivery-requests', (req, res) => {
+  if (!req.session || !req.session.userId || req.session.role !== 'farmer') {
+    return res.status(403).json({ message: 'Unauthorized access' });
+  }
+
+  const farmerId = req.session.userId;
+  const { pickup_date, pickup_time, estimated_quantity, collection_center, notes } = req.body;
+
+  if (!pickup_date || !pickup_time || !estimated_quantity || !collection_center) {
+    return res.status(400).json({ message: 'Missing required fields' });
+  }
+
+  const sql = `
+    INSERT INTO delivery_requests 
+    (farmer_id, pickup_date, pickup_time, estimated_quantity, collection_center, notes) 
+    VALUES (?, ?, ?, ?, ?, ?)
+  `;
+
+  db.query(sql, [farmerId, pickup_date, pickup_time, estimated_quantity, collection_center, notes], (err, result) => {
+    if (err) {
+      console.error('❌ Delivery insert error:', err);
+      return res.status(500).json({ message: 'Failed to submit request' });
+    }
+
+    res.json({ success: true, request_id: result.insertId });
+  });
 });
 
 
