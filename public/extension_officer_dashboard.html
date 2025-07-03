@@ -30,7 +30,6 @@
       <li><a href="/upload_training.html">Upload Training Materials</a></li>
       <li><a href="/extension_complaints.html">Respond to Complaints</a></li>
       <li><a href="/all_visit_requests.html">Manage All Visit Requests</a></li>
-
     </ul>
   </div>
 
@@ -51,11 +50,11 @@
       </div>
       <div class="stat-card">
         <p>Training Materials</p>
-        <h2>0</h2>
+        <h2 id="trainingMaterialsCount">0</h2>
       </div>
       <div class="stat-card">
         <p>Open Complaints</p>
-        <h2>0</h2>
+        <h2 id="openComplaintsCount">0</h2>
       </div>
     </div>
 
@@ -83,11 +82,9 @@
       <div class = "card">
         <h3>Load Visit Requests</h3>
         <p>View Requests by various farmers to visit their farms</p>
-        <button onclick="location.href='/all_visit_requests.html'">Load Visit Requests
-        </button>
+        <button onclick="location.href='/all_visit_requests.html'">Load Visit Requests</button>
       </div>
     </div>
-
 
     <div class="recent-farmers">
       <h3>Recently Assigned Farmers</h3>
@@ -114,30 +111,20 @@
   </div>
 
   <script>
-    // Fetch officer data and populate dashboard
     fetch('/api/me')
       .then(res => res.json())
       .then(data => {
         document.getElementById('officerName').textContent = data.name;
-        
-        // Fetch assigned farmers count
+
         fetch('/api/my-assigned-farmers')
           .then(res => res.json())
           .then(farmers => {
             document.getElementById('farmerCount').textContent = farmers.length;
-            
-            // Display recent farmers (last 5)
             const recentFarmers = farmers.slice(0, 5);
             const tableBody = document.querySelector('#recentFarmersTable tbody');
-            
+
             if (recentFarmers.length === 0) {
-              tableBody.innerHTML = `
-                <tr>
-                  <td colspan="4" style="text-align: center; color: #666; padding: 20px;">
-                    No farmers assigned yet
-                  </td>
-                </tr>
-              `;
+              tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #666; padding: 20px;">No farmers assigned yet</td></tr>`;
             } else {
               recentFarmers.forEach(farmer => {
                 const row = document.createElement('tr');
@@ -156,21 +143,22 @@
           });
       });
 
-    function viewFarmers() {
-      window.location.href = '/assigned_farmers.html';
-    }
+    fetch('/api/extension/complaints')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          const openCount = data.complaints.filter(c => c.status === 'open').length;
+          document.getElementById('openComplaintsCount').textContent = openCount;
+        }
+      });
 
-    function scheduleVisit() {
-      window.location.href = '/schedule_visit.html';
-    }
-
-    function uploadMaterial() {
-      window.location.href = '/upload_training.html';
-    }
-
-    function respondToComplaints() {
-      window.location.href = '/extension_complaints.html';
-    }
+    fetch('/api/training-materials/count')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          document.getElementById('trainingMaterialsCount').textContent = data.count;
+        }
+      });
 
     function logout() {
       fetch('/logout', { method: 'POST' })
