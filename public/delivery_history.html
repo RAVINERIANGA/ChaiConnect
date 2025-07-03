@@ -68,42 +68,6 @@
       </a>
     </div>
 
-    <div class="row mb-4 g-3">
-      <div class="col-md-3">
-        <select class="form-select" id="statusFilter">
-          <option value="">All Statuses</option>
-          <option value="pending">Pending</option>
-          <option value="scheduled">Scheduled</option>
-          <option value="completed">Completed</option>
-          <option value="cancelled">Cancelled</option>
-        </select>
-      </div>
-      <div class="col-md-3">
-        <select class="form-select" id="monthFilter">
-          <option value="">All Months</option>
-          <option value="01">January</option>
-          <option value="02">February</option>
-          <option value="03">March</option>
-          <option value="04">April</option>
-          <option value="05">May</option>
-          <option value="06">June</option>
-          <option value="07">July</option>
-          <option value="08">August</option>
-          <option value="09">September</option>
-          <option value="10">October</option>
-          <option value="11">November</option>
-          <option value="12">December</option>
-        </select>
-      </div>
-      <div class="col-md-3">
-        <select class="form-select" id="yearFilter"></select>
-      </div>
-      <div class="col-md-3">
-        <button class="btn btn-outline-secondary w-100" onclick="applyFilters()">
-          <i class="fas fa-filter me-2"></i> Filter
-        </button>
-      </div>
-    </div>
 
     <div class="table-responsive">
       <table class="table table-hover align-middle">
@@ -161,214 +125,118 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    let allDeliveries = [];
-    let cancelModal = null;
-    let currentRequestId = null;
+  let cancelModal = null;
+  let currentRequestId = null;
+  let allDeliveries = [];
 
-    document.addEventListener("DOMContentLoaded", async () => {
-      cancelModal = new bootstrap.Modal(document.getElementById('cancelModal'));
-      populateYears();
-      await loadDeliveries();
-    });
+  document.addEventListener("DOMContentLoaded", async () => {
+    cancelModal = new bootstrap.Modal(document.getElementById('cancelModal'));
+    await loadDeliveries();
+  });
 
-    async function loadDeliveries() {
-      try {
-        const response = await fetch('/api/delivery-history', {
-          credentials: 'include'
-        });
-        
-        if (!response.ok) throw new Error('Failed to load deliveries');
-        
-        allDeliveries = await response.json();
-        applyFilters();
-      } catch (error) {
-        console.error('Error loading deliveries:', error);
-        document.getElementById('deliveryTableBody').innerHTML = `
-          <tr>
-            <td colspan="8" class="text-center py-4 text-danger">
-              <i class="fas fa-exclamation-circle me-2"></i>
-              ${error.message || 'Failed to load delivery history. Please try again later.'}
-            </td>
-          </tr>
-        `;
-      }
-    }
+  async function loadDeliveries() {
+    try {
+      console.log("Fetching all delivery history...");
+      const response = await fetch('/api/delivery-history', {
+        credentials: 'include'
+      });
 
-    function renderTable(data) {
-      const tbody = document.getElementById('deliveryTableBody');
-      
-      if (data.length === 0) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="8" class="text-center py-4 text-muted">
-              <i class="fas fa-inbox me-2"></i>
-              No delivery requests found
-            </td>
-          </tr>
-        `;
-        document.getElementById('resultCount').textContent = 'Showing 0 results';
-        return;
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Error response:", errorText);
+        throw new Error(`Server returned ${response.status}: ${errorText}`);
       }
 
-      tbody.innerHTML = data.map(delivery => `
+      const deliveries = await response.json();
+      console.log("All deliveries from server:", deliveries);
+
+      allDeliveries = deliveries;
+      deliveries.sort((a, b) => new Date(b.pickup_date || b.created_at) - new Date(a.pickup_date || a.created_at));
+      renderTable(deliveries);
+    } catch (error) {
+      console.error('Full error:', error);
+      document.getElementById('deliveryTableBody').innerHTML = `
         <tr>
-          <td>${new Date(delivery.created_at).toLocaleDateString()}</td>
-          <td>${delivery.pickup_date ? new Date(delivery.pickup_date).toLocaleDateString() : 'N/A'}</td>
-          <td>
-            <span class="status-badge status-${delivery.status}">
-              ${delivery.status.charAt(0).toUpperCase() + delivery.status.slice(1)}
-            </span>
-          </td>
-          <td>${delivery.estimated_quantity || 'N/A'}</td>
-          <td>${delivery.actual_quantity || 'N/A'}</td>
-          <td>${delivery.collection_center || 'N/A'}</td>
-          <td>${delivery.quality_grade || 'N/A'}</td>
-          <td>
-            <div class="dropdown actions-dropdown">
-              <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
-                      data-bs-toggle="dropdown" aria-expanded="false">
-                Actions
-              </button>
-              <ul class="dropdown-menu">
-                <li>
-                  <a class="dropdown-item" href="#" onclick="viewDetails('${delivery.id}')">
-                    <i class="fas fa-eye me-2"></i> View Details
-                  </a>
-                </li>
-                ${delivery.status === 'pending' || delivery.status === 'scheduled' ? `
-                <li>
-                  <a class="dropdown-item text-danger" href="#" 
-                     onclick="showCancelModal('${delivery.id}')">
-                    <i class="fas fa-times-circle me-2"></i> Cancel Request
-                  </a>
-                </li>
-                ` : ''}
-              </ul>
-            </div>
+          <td colspan="8" class="text-center py-4 text-danger">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            ${error.message || 'Failed to load delivery history. Please try again later.'}
           </td>
         </tr>
-      `).join('');
+      `;
+    }
+  }
 
-      document.getElementById('resultCount').textContent = `Showing ${data.length} of ${allDeliveries.length} results`;
+  function renderTable(data) {
+    const tbody = document.getElementById('deliveryTableBody');
+    document.getElementById('resultCount').textContent = `Showing ${data.length} results`;
+    tbody.innerHTML = '';
+
+    if (data.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" class="text-center py-4 text-muted">
+            <i class="fas fa-info-circle me-2"></i>
+            No delivery records found.
+          </td>
+        </tr>
+      `;
+      return;
     }
 
-    function applyFilters() {
-      const status = document.getElementById('statusFilter').value;
-      const month = document.getElementById('monthFilter').value;
-      const year = document.getElementById('yearFilter').value;
+    data.forEach(d => {
+      const paymentBadge = d.payment_status === 'paid'
+        ? `<i class="fas fa-check-circle text-success me-1"></i> Paid`
+        : `<i class="fas fa-exclamation-circle text-warning me-1"></i> ${d.payment_status || 'Unpaid'}`;
 
-      const filtered = allDeliveries.filter(d => {
-        const dDate = new Date(d.pickup_date || d.created_at);
-        const dYear = dDate.getFullYear().toString();
-        const dMonth = (dDate.getMonth() + 1).toString().padStart(2, '0');
-        
-        return (!status || d.status === status) &&
-               (!month || dMonth === month) &&
-               (!year || dYear === year);
-      });
+      const statusClass = d.status ? `status-${d.status}` : '';
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${new Date(d.created_at).toLocaleDateString()}</td>
+        <td>${d.pickup_date ? new Date(d.pickup_date).toLocaleDateString() : '—'}</td>
+        <td><span class="status-badge ${statusClass}">${d.status || '—'}</span></td>
+        <td>${d.estimated_quantity} kg</td>
+        <td>${d.quantity_kg || '—'} kg</td>
+        <td>${d.collection_center || '—'}</td>
+        <td>${d.quality_grade || '—'}</td>
+        <td>${paymentBadge}</td>
+      `;
+      tbody.appendChild(row);
+    });
+  }
 
-      // Sort by date (newest first)
-      filtered.sort((a, b) => new Date(b.pickup_date || b.created_at) - new Date(a.pickup_date || a.created_at));
-      
-      renderTable(filtered);
+  function downloadCSV() {
+    if (allDeliveries.length === 0) {
+      alert('No data available to export');
+      return;
     }
 
-    function populateYears() {
-      const yearFilter = document.getElementById("yearFilter");
-      const currentYear = new Date().getFullYear();
-      
-      yearFilter.innerHTML = '<option value="">All Years</option>';
-      
-      for (let y = currentYear; y >= 2020; y--) {
-        const option = document.createElement("option");
-        option.value = y;
-        option.textContent = y;
-        yearFilter.appendChild(option);
-      }
-    }
+    const headers = [
+      "Request Date", "Pickup Date", "Status", "Estimated Qty (kg)",
+      "Actual Qty (kg)", "Collection Center", "Quality Grade", "Payment Status"
+    ];
 
-    function showCancelModal(requestId) {
-      currentRequestId = requestId;
-      document.getElementById('cancelReason').value = '';
-      cancelModal.show();
-    }
+    const rows = allDeliveries.map(del => [
+      new Date(del.created_at).toLocaleDateString(),
+      del.pickup_date ? new Date(del.pickup_date).toLocaleDateString() : '',
+      del.status || '',
+      del.estimated_quantity || '',
+      del.quantity_kg || '',
+      del.collection_center || '',
+      del.quality_grade || '',
+      del.payment_status || ''
+    ]);
 
-    async function confirmCancel() {
-      const reason = document.getElementById('cancelReason').value;
-      
-      try {
-        const response = await fetch(`/api/delivery-requests/${currentRequestId}/cancel`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ reason }),
-          credentials: 'include'
-        });
+    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'delivery_history.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+</script>
 
- const result = await response.json();
-
-        if (!response.ok) throw new Error('Failed to cancel request');
-
-        cancelModal.hide();
-        await loadDeliveries(); // Refresh the list
-        
-        // Show success message (you could add a toast here)
-        alert('Delivery request cancelled successfully');
-      } catch (error) {
-        console.error('Error cancelling request:', error);
-         alert(error.message || 'Failed to cancel delivery request');
-      }
-    }
-
-    function viewDetails(requestId) {
-      // In a real app, you might show a modal with full details
-      const delivery = allDeliveries.find(d => d.id === requestId);
-      if (delivery) {
-        alert(`Delivery Details:\n\n` +
-              `Status: ${delivery.status}\n` +
-              `Request Date: ${new Date(delivery.created_at).toLocaleString()}\n` +
-              `Pickup Date: ${delivery.pickup_date ? new Date(delivery.pickup_date).toLocaleDateString() : 'Not scheduled'}\n` +
-              `Collection Center: ${delivery.collection_center || 'Not specified'}\n` +
-              `Notes: ${delivery.notes || 'None'}`);
-      }
-    }
-
-    function downloadCSV() {
-      const filteredRows = document.querySelectorAll("#deliveryTableBody tr");
-      if (filteredRows.length === 0) {
-        alert('No data to export');
-        return;
-      }
-
-      let csv = "Request Date,Pickup Date,Status,Estimated Qty,Actual Qty,Collection Center,Quality Grade\n";
-      
-      filteredRows.forEach(row => {
-        const cols = row.querySelectorAll("td");
-        if (cols.length >= 7) { // Ensure we have enough columns
-          const rowData = [
-            cols[0].textContent.trim(),
-            cols[1].textContent.trim(),
-            cols[2].textContent.trim(),
-            cols[3].textContent.trim(),
-            cols[4].textContent.trim(),
-            cols[5].textContent.trim(),
-            cols[6].textContent.trim()
-          ].map(field => field.includes(',') ? `"${field}"` : field);
-          
-          csv += rowData.join(',') + '\n';
-        }
-      });
-
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `delivery_history_${new Date().toISOString().slice(0,10)}.csv`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-  </script>
 </body>
 </html>
