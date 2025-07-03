@@ -122,10 +122,16 @@
           const farmerId = data.userId;
 
           fetch(`/api/farmer/${farmerId}/profile`)
-            .then(res => res.json())
-            .then(data => {
-              document.getElementById('accountStatus').textContent = data.active ? 'Active' : 'Inactive';
-            });
+  .then(res => res.json())
+  .then(data => {
+    if (data.is_suspended) {
+      document.getElementById('accountStatus').textContent = 'Suspended';
+    } else if (data.is_flagged) {
+      document.getElementById('accountStatus').textContent = 'Under Review';
+    } else {
+      document.getElementById('accountStatus').textContent = 'Active';
+    }
+  });
 
           fetch(`/api/farmer/${farmerId}/deliveries`)
             .then(res => res.json())
