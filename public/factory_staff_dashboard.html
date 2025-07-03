@@ -25,10 +25,10 @@
         <h3>Factory Staff Dashboard</h3>
         <ul>
             <li><a href="#" class="active">Home</a></li>
+            <li><a href="view_profile.html">View My Profile</a></li>
             <li><a href="record_delivery.html">Record Delivery</a></li>
             <li><a href="update_delivery.html">Update Delivery</a></li>
-            <li><a href="grade_tea.html">Grade Tea</a></li>
-            <li><a href="view_profile.html">View My Profile</a></li>
+            <li><a href="validate_farmers.html">Validate Farmers</a></li>
         </ul>
     </div>
 
@@ -37,6 +37,25 @@
             <h1 id="welcomeMessage">Welcome, Factory Staff</h1>
             <p>Oversee the delivery and grading of tea, manage farmer data, and monitor factory activities.</p>
         </section>
+        <div class="dashboard-cards">
+            <div class="stat-card">
+                <p>Today's Deliveries</p>
+                <h2 id="deliveriesToday">Loading...</h2>
+            </div>
+            <div class="stat-card">
+                <p>Total Tea (KG) Today</p>
+                <h2 id="kgToday">Loading...</h2>
+            </div>
+            <div class="stat-card">
+                <p>Farmers Flagged</p>
+                <h2 id="flaggedFarmers">Loading...</h2>
+            </div>
+            <div class="stat-card">
+                <p>Assigned Farmers</p>
+                <h2 id="assignedFarmers">Loading...</h2>
+            </div>
+        </div>
+
 
         <div class="card-actions">
             <div class="card">
@@ -87,10 +106,27 @@
                     document.getElementById('welcomeMessage').textContent = 'Welcome, Factory Staff';
                 });
         });
+
+        fetch('/factory-dashboard-stats')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('deliveriesToday').textContent = data.deliveriesToday || '0';
+                document.getElementById('kgToday').textContent = `${data.kgToday || '0'} kg`;
+                document.getElementById('flaggedFarmers').textContent = data.flaggedFarmers || '0';
+                document.getElementById('assignedFarmers').textContent = data.assignedFarmers || '0';
+            })
+            .catch(err => {
+                console.error("Failed to load factory stats", err);
+                // Set default values when API fails
+                document.getElementById('deliveriesToday').textContent = '0';
+                document.getElementById('kgToday').textContent = '0 kg';
+                document.getElementById('flaggedFarmers').textContent = '0';
+                document.getElementById('assignedFarmers').textContent = '0';
+            });
+
     </script>
     <script src="/logout.js"></script>
     <script src="/alertCount.js"></script>
-    
 
 
 </body>

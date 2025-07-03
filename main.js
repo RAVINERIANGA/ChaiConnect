@@ -2421,10 +2421,77 @@ app.post('/api/farmer/submit-complaint', (req, res) => {
   });
 });
 
+//Factory Staff Stats
+app.get('/factory-dashboard-stats', (req, res) => {
+  const staffId = req.session.userId;
+  const today = new Date().toISOString().split('T')[0]; 
 
+  // Initialize stats object
+  const stats = {
+    deliveriesToday: 0,
+    kgToday: 0,
+    flaggedFarmers: 0,
+    assignedFarmers: 0
+  };
 
+  let completedQueries = 0;
+  const totalQueries = 4;
 
+  function checkComplete() {
+    completedQueries++;
+    if (completedQueries === totalQueries) {
+      res.json(stats);
+    }
+  }
 
+  function handleError(err) {
+    console.error('Error loading factory staff stats:', err);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+
+  // Deliveries Handled Today
+  db.query(
+    `SELECT COUNT(*) AS total FROM deliveries WHERE staff_id = ? AND delivery_date = ?`,
+    [staffId, today],
+    (err, results) => {
+      if (err) return handleError(err);
+      stats.deliveriesToday = results[0].total;
+      checkComplete();
+    }
+  );
+
+  // Total KG Received Today
+  db.query(
+    `SELECT COALESCE(SUM(quantity_kg), 0) AS total_kg FROM deliveries WHERE staff_id = ? AND delivery_date = ?`,
+    [staffId, today],
+    (err, results) => {
+      if (err) return handleError(err);
+      stats.kgToday = results[0].total_kg;
+      checkComplete();
+    }
+  );
+
+  // Flagged Farmers Today
+  db.query(
+    `SELECT COUNT(*) AS total FROM farmer_mismatch_flags WHERE staff_id = ? AND DATE(flagged_at) = ?`,
+    [staffId, today],
+    (err, results) => {
+      if (err) return handleError(err);
+      stats.flaggedFarmers = results[0].total;
+      checkComplete();
+    }
+  );
+
+  // Farmers Assigned
+  db.query(
+    `SELECT COUNT(*) AS total FROM farmer_assignments`,
+    (err, results) => {
+      if (err) return handleError(err);
+      stats.assignedFarmers = results[0].total;
+      checkComplete();
+    }
+  );
+});
 
 
 
