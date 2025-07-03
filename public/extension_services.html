@@ -114,33 +114,37 @@
     <h2 class="text-center mb-4 text-success">Extension Services</h2>
 
     <!-- Visit Booking Section -->
-    <div class="visit-booking">
-      <h2><i class="fas fa-calendar-plus"></i> Request Extension Visit</h2>
-      <form id="visitRequestForm">
-        <div class="form-group">
-          <label for="preferredDate">Preferred Date:</label>
-          <input type="datetime-local" id="preferredDate" required>
-        </div>
-        <div class="form-group">
-          <label for="purpose">Purpose:</label>
-          <select id="purpose" required>
-            <option value="">Select purpose</option>
-            <option value="Disease inspection">Disease inspection</option>
-            <option value="Soil testing">Soil testing</option>
-            <option value="Training">Training</option>
-            <option value="Harvest planning">Harvest planning</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="notes">Additional Notes:</label>
-          <textarea id="notes" rows="3"></textarea>
-        </div>
-        <button type="submit" class="btn btn-primary">
-          <i class="fas fa-paper-plane"></i> Submit Request
-        </button>
-      </form>
+<div class="visit-booking">
+  <h2><i class="fas fa-calendar-plus"></i> Request Extension Visit</h2>
+  <form id="visitRequestForm">
+    <div class="form-group">
+      <label for="preferredDate">Preferred Date:</label>
+      <input type="datetime-local" id="preferredDate" required>
     </div>
+    <div class="form-group">
+      <label for="purpose">Purpose:</label>
+      <select id="purpose" required>
+        <option value="">Select purpose</option>
+        <option value="Disease inspection">Disease inspection</option>
+        <option value="Soil testing">Soil testing</option>
+        <option value="Training">Training</option>
+        <option value="Harvest planning">Harvest planning</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="notes">Additional Notes:</label>
+      <textarea id="notes" rows="3"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">
+      <i class="fas fa-paper-plane"></i> Submit Request
+    </button>
+    <div class="error-message" id="form-error"></div>
+    <div class="success-message" id="form-success">Visit request submitted!</div>
+  </form>
+</div>
+
+    
 
     <div class="upcoming-visits">
       <h2><i class="fas fa-calendar-alt"></i> Your Scheduled Visits</h2>
@@ -161,183 +165,56 @@
   </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Load visits
-    loadVisits();
-    
-    // Handle visit request form submission
-    document.getElementById('visitRequestForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        // Clear previous errors
-        document.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
-        
-        // Get form values
-        const preferredDate = document.getElementById('preferredDate').value;
-        const purpose = document.getElementById('purpose').value;
-        const notes = document.getElementById('notes').value;
-        
-        // Validate inputs
-        if (!preferredDate || !purpose) {
-            showError('Please fill in all required fields');
-            return;
-        }
-        
-        // Create request data with proper date formatting
-        const requestData = {
-            preferredDate: new Date(preferredDate).toISOString(),
-            purpose: purpose,
-            notes: notes || null
-        };
-        
-        try {
-            const response = await fetch('/api/request-visit', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}` // Add auth token if using
-                },
-                body: JSON.stringify(requestData)
-            });
-            
-            const data = await response.json();
-            
-            if (!response.ok) {
-                throw new Error(data.message || 'Failed to submit request');
-            }
-            
-            if (data.success) {
-                alert('Visit request submitted successfully!');
-                loadVisits();
-                document.getElementById('visitRequestForm').reset();
-            } else {
-                showError(data.message || 'Request failed');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            showError(error.message || 'Failed to submit request');
-        }
-    });
+document.addEventListener('DOMContentLoaded', function () {
+  document.getElementById('visitRequestForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
 
-    // Load training sessions
-    fetch('/api/trainings')
-        .then(res => {
-            if (!res.ok) throw new Error('Failed to load trainings');
-            return res.json();
-        })
-        .then(trainings => {
-            const list = document.getElementById('trainingList');
-            list.innerHTML = ''; // Clear existing items
-            
-            if (trainings.length === 0) {
-                list.innerHTML = '<li class="list-group-item">No upcoming training sessions scheduled.</li>';
-                return;
-            }
-            
-            trainings.forEach(t => {
-                const item = document.createElement('li');
-                item.className = "list-group-item";
-                item.innerHTML = `
-                    <strong>${t.title}</strong><br>
-                    <small class="text-muted">
-                        <i class="far fa-calendar-alt"></i> ${t.date} 
-                        <i class="fas fa-map-marker-alt"></i> ${t.location}
-                    </small>
-                    ${t.description ? `<p class="mt-2">${t.description}</p>` : ''}
-                `;
-                list.appendChild(item);
-            });
-        })
-        .catch(err => {
-            console.error(err);
-            document.getElementById('trainingList').innerHTML = 
-                '<li class="list-group-item text-danger">Failed to load training sessions. Please try again later.</li>';
-        });
-});
+    const preferredDate = document.getElementById('preferredDate').value;
+    const purpose = document.getElementById('purpose').value;
+    const notes = document.getElementById('notes').value;
+    const errorDiv = document.getElementById('form-error');
+    const successDiv = document.getElementById('form-success');
 
-function loadVisits() {
-    fetch('/api/my-visits', {
+    if (!preferredDate || !purpose) {
+      errorDiv.textContent = "Please fill in all required fields.";
+      errorDiv.style.display = 'block';
+      return;
+    }
+
+    errorDiv.style.display = 'none';
+
+    try {
+      const response = await fetch('/api/farmer/schedule-visit', {
+        method: 'POST',
         headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}` // Add auth token if using
-        }
-    })
-        .then(response => {
-            if (!response.ok) throw new Error('Network response was not ok');
-            return response.json();
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          preferredDate: new Date(preferredDate).toISOString(),
+          purpose,
+          notes
         })
-        .then(data => {
-            if (data.success) {
-                renderVisits(data.visits);
-            } else {
-                throw new Error(data.message || 'Failed to load visits');
-            }
-        })
-        .catch(error => {
-            console.error('Error loading visits:', error);
-            document.getElementById('visitsContainer').innerHTML = 
-                `<p class="text-danger">${error.message || 'Failed to load visits'}</p>`;
-        });
-}
+      });
 
-function renderVisits(visits) {
-    const container = document.getElementById('visitsContainer');
-    
-    if (!visits || visits.length === 0) {
-        container.innerHTML = '<p>No upcoming visits scheduled.</p>';
-        return;
-    }
-    
-    let html = '<div class="visits-list">';
-    
-    visits.forEach(visit => {
-        try {
-            const date = visit.scheduled_date ? new Date(visit.scheduled_date) : new Date(visit.preferred_date);
-            const statusClass = visit.status === 'scheduled' ? 'status-scheduled' : 
-                              visit.status === 'completed' ? 'status-completed' : 'status-requested';
-            
-            html += `
-            <div class="visit-card">
-                <div class="visit-header">
-                    <span class="visit-date">
-                        <i class="far fa-calendar"></i> ${date.toLocaleDateString()} 
-                        <i class="far fa-clock"></i> ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                    </span>
-                    <span class="visit-status ${statusClass}">${visit.status}</span>
-                </div>
-                <div class="visit-body">
-                    <p><strong><i class="fas fa-tasks"></i> Purpose:</strong> ${visit.purpose}</p>
-                    ${visit.notes ? `<p><strong><i class="fas fa-sticky-note"></i> Notes:</strong> ${visit.notes}</p>` : ''}
-                    ${visit.officer_name ? `
-                    <p>
-                        <strong><i class="fas fa-user-tie"></i> Officer:</strong> 
-                        ${visit.officer_name} 
-                        ${visit.officer_phone ? `(<i class="fas fa-phone"></i> ${visit.officer_phone})` : ''}
-                    </p>` : ''}
-                </div>
-            </div>
-            `;
-        } catch (error) {
-            console.error('Error rendering visit:', visit, error);
-        }
-    });
-    
-    html += '</div>';
-    container.innerHTML = html;
-}
+      const result = await response.json();
 
-function showError(message) {
-    // Create or find error message element
-    let errorEl = document.getElementById('form-error');
-    if (!errorEl) {
-        errorEl = document.createElement('div');
-        errorEl.id = 'form-error';
-        errorEl.className = 'error-message';
-        document.getElementById('visitRequestForm').appendChild(errorEl);
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || "Failed to submit request.");
+      }
+
+      successDiv.style.display = 'block';
+      this.reset();
+      setTimeout(() => {
+        successDiv.style.display = 'none';
+      }, 5000);
+
+    } catch (err) {
+      console.error(err);
+      errorDiv.textContent = err.message || "An unexpected error occurred.";
+      errorDiv.style.display = 'block';
     }
-    
-    errorEl.textContent = message;
-    errorEl.style.display = 'block';
-}
+  });
+});
 
 </script>
 

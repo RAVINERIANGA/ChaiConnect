@@ -2024,6 +2024,47 @@ app.get('/api/my-assigned-farmers', (req, res) => {
   });
 });
 
+// POST: /api/request-visit
+app.post('/api/farmer/schedule-visit', async (req, res) => {
+  const userId = req.session.userId; // Or get from token if using JWT
+  const { preferredDate, purpose, notes } = req.body;
+
+  if (!userId) {
+    return res.status(401).json({ success: false, message: 'Not logged in' });
+  }
+
+  if (!preferredDate || !purpose) {
+    return res.status(400).json({ success: false, message: 'Missing required fields' });
+  }
+
+  try {
+    // Get assigned officer_id for this farmer
+    const [assignment] = await db.query(
+      'SELECT officer_id FROM farmer_assignments WHERE farmer_id = ?',
+      [userId]
+    );
+
+    if (assignment.length === 0) {
+      return res.status(400).json({ success: false, message: 'No assigned extension officer found' });
+    }
+
+    const officerId = assignment[0].officer_id;
+
+    // Insert into farmer_visits table
+    await db.query(
+      `INSERT INTO farmer_visits 
+        (farmer_id, officer_id, preferred_date, purpose, notes, status) 
+        VALUES (?, ?, ?, ?, ?, 'requested')`,
+      [userId, officerId, preferredDate, purpose, notes]
+    );
+
+    res.json({ success: true, message: 'Visit request submitted' });
+  } catch (err) {
+    console.error('Error submitting visit request:', err);
+    res.status(500).json({ success: false, message: 'Server error while submitting request' });
+  }
+});
+
 // Farmer: Request a visit
 app.post('/api/request-visit', (req, res) => {
     if (!req.session.userId || req.session.role !== 'farmer') {
