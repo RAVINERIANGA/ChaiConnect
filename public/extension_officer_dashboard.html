@@ -501,15 +501,6 @@ document.addEventListener('DOMContentLoaded', loadVisitData);
       loadVisitRequests();
     });
 
-    // Fetch training materials count
-fetch('/api/training-materials/count')
-  .then(res => res.json())
-  .then(data => {
-    if (data.success) {
-      document.querySelectorAll('.stat-card .stat-value')[2].textContent = data.count;
-    }
-  });
-
   </script>
   <script src="logout.js"></script>
   <script src="/alertCount.js"></script>
