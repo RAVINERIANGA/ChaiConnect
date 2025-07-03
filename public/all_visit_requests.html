@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>All Visit Requests | chaiConnect</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <style>
+    body {
+      padding: 20px;
+      background: #f7f7f7;
+    }
+    .request-card {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .status-badge {
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-size: 0.8rem;
+    }
+    .status-pending { background: #fff3cd; color: #856404; }
+    .status-scheduled { background: #d1ecf1; color: #0c5460; }
+    .status-completed { background: #d4edda; color: #155724; }
+    .status-cancelled { background: #f8d7da; color: #721c24; }
+    .action-buttons button {
+      margin-right: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2 class="mb-4">All Visit Requests</h2>
+    <div id="visitRequestsContainer">
+      <div class="text-center text-muted">Loading visit requests...</div>
+    </div>
+  </div>
+
+  <script>
+    async function fetchVisitRequests() {
+      try {
+        const res = await fetch('/api/visit-requests/all');
+        const data = await res.json();
+
+        const container = document.getElementById('visitRequestsContainer');
+        container.innerHTML = '';
+
+        if (!data.success || data.requests.length === 0) {
+          container.innerHTML = '<div class="text-muted">No visit requests found.</div>';
+          return;
+        }
+
+        data.requests.forEach(req => {
+          const card = document.createElement('div');
+          card.className = 'request-card';
+
+          const date = req.preferred_date ? new Date(req.preferred_date).toLocaleString() : 'N/A';
+          const scheduled = req.scheduled_date ? new Date(req.scheduled_date).toLocaleString() : 'Not scheduled';
+
+          card.innerHTML = `
+            <h5>${req.farmer_name} (${req.farmer_phone})</h5>
+            <p><strong>Preferred Date:</strong> ${date}</p>
+            <p><strong>Purpose:</strong> ${req.purpose}</p>
+            <p><strong>Notes:</strong> ${req.notes || '—'}</p>
+            <p><strong>Scheduled:</strong> ${scheduled}</p>
+            <p><strong>Status:</strong> 
+              <span class="status-badge status-${req.status}">
+                ${req.status.charAt(0).toUpperCase() + req.status.slice(1)}
+              </span>
+            </p>
+            <div class="action-buttons">
+              ${req.status !== 'completed' ? `<button class="btn btn-success btn-sm" onclick="updateStatus(${req.visit_id}, 'completed')">Mark Completed</button>` : ''}
+              ${req.status !== 'cancelled' ? `<button class="btn btn-danger btn-sm" onclick="updateStatus(${req.visit_id}, 'cancelled')">Cancel</button>` : ''}
+            </div>
+          `;
+
+          container.appendChild(card);
+        });
+      } catch (err) {
+        console.error('Failed to fetch requests:', err);
+        document.getElementById('visitRequestsContainer').innerHTML =
+          '<div class="text-danger">Error loading requests.</div>';
+      }
+    }
+
+    function updateStatus(visitId, newStatus) {
+      if (!confirm(`Are you sure you want to mark this as ${newStatus}?`)) return;
+
+      fetch(`/api/visit-requests/${visitId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          alert(`Status updated to ${newStatus}`);
+          fetchVisitRequests();
+        } else {
+          alert('Failed to update status');
+        }
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', fetchVisitRequests);
+  </script>
+</body>
+</html>
