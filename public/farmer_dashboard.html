@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Farmer Dashboard | chaiConnect</title>
   <link rel="stylesheet" href="/css/dashboards_style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 
 <body>
@@ -46,16 +47,12 @@
 
     <div class="dashboard-cards">
       <div class="stat-card">
-        <p>Last Delivery</p>
-        <h2 id="lastDelivery">Loading...</h2>
-      </div>
-      <div class="stat-card">
-        <p>Monthly Total Delivered</p>
-        <h2 id="totalDelivery">Loading...</h2>
-      </div>
-      <div class="stat-card">
         <p>Pending Payment</p>
-        <h2 id="pendingPayment">Loading...</h2>
+        <h2 id="pendingPayments">KES 0.00</h2>
+      </div>
+      <div class="stat-card">
+        <p>This Month</p>
+        <h2 id="monthEarnings">KES 0.00</h2>
       </div>
       <div class="stat-card">
         <p>Account Status</p>
@@ -69,39 +66,31 @@
         <p>View and download your full delivery history.</p>
         <button onclick="location.href='/delivery_history.html'">View</button>
       </div>
-
       <div class="card">
         <h3>View Payments</h3>
         <p>See earnings, rates per kg, and past payments.</p>
         <button onclick="location.href='/payment_summary.html'">Payments</button>
       </div>
-
       <div class="card">
         <h3>Tea Grading</h3>
         <p>See moisture level, rejection feedback, and grade status.</p>
         <button onclick="location.href='/quality_feedback.html'">Quality</button>
       </div>
-
       <div class="card">
         <h3>Extension Visits</h3>
         <p>Book agronomist visits and upcoming trainings.</p>
         <button onclick="location.href='/extension_services.html'">Book</button>
       </div>
-
       <div class="card">
         <h3>Submit Complaint</h3>
         <p>Raise complaints or ask questions.</p>
         <button onclick="location.href='farmer_complaint.html'">Support</button>
       </div>
-
       <div class="card">
         <h3>View Profile</h3>
         <p>See your personal details, location and farm info.</p>
         <button onclick="location.href='/profile.html'">Profile</button>
       </div>
-
-      
-
       <div class="card">
         <h3>Delivery Request</h3>
         <p>Request a delivery collection.</p>
@@ -109,11 +98,28 @@
       </div>
     </div>
   </div>
-  </div>
 
   <div id="logoutToast" class="toast">✅ Logged out successfully</div>
 
   <script>
+    function formatCurrency(amount) {
+      return 'KES ' + parseFloat(amount).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+    }
+
+    async function loadDashboardStats() {
+      try {
+        const response = await fetch('/api/farmer/payments/stats', {
+          credentials: 'include'
+        });
+        const stats = await response.json();
+
+        document.getElementById('monthEarnings').textContent = formatCurrency(stats.month_earnings || 0);
+        document.getElementById('pendingPayments').textContent = formatCurrency(stats.pending_amount || 0);
+      } catch (error) {
+        console.error('Error loading dashboard stats:', error);
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       fetch('/api/me')
         .then(res => res.json())
@@ -122,41 +128,20 @@
           const farmerId = data.userId;
 
           fetch(`/api/farmer/${farmerId}/profile`)
-  .then(res => res.json())
-  .then(data => {
-    if (data.is_suspended) {
-      document.getElementById('accountStatus').textContent = 'Suspended';
-    } else if (data.is_flagged) {
-      document.getElementById('accountStatus').textContent = 'Under Review';
-    } else {
-      document.getElementById('accountStatus').textContent = 'Active';
-    }
-  });
-
-          fetch(`/api/farmer/${farmerId}/deliveries`)
             .then(res => res.json())
-            .then(data => {
-              if (data.length > 0) {
-                const last = data[data.length - 1];
-                document.getElementById('lastDelivery').textContent = `${last.date} - ${last.quality_grade}`;
-                const total = data.reduce((sum, d) => sum + parseFloat(d.quantity_kg), 0);
-                document.getElementById('totalDelivery').textContent = `${total} kg`;
+            .then(profile => {
+              if (profile.is_suspended) {
+                document.getElementById('accountStatus').textContent = 'Suspended';
+              } else if (profile.is_flagged) {
+                document.getElementById('accountStatus').textContent = 'Under Review';
               } else {
-                document.getElementById('lastDelivery').textContent = 'No deliveries';
-                document.getElementById('totalDelivery').textContent = '0 kg';
+                document.getElementById('accountStatus').textContent = 'Active';
               }
             });
 
-          fetch(`/api/farmer/${farmerId}/payments`)
-            .then(res => res.json())
-            .then(data => {
-              let total = 0;
-              data.forEach(p => total += parseFloat(p.amount_paid));
-              document.getElementById('pendingPayment').textContent = `KES ${total.toFixed(2)}`;
-            });
+          loadDashboardStats();
         });
 
-      // Fetch alert count
       fetch('/alerts/count')
         .then(res => res.json())
         .then(data => {
@@ -166,67 +151,62 @@
             alertCount.style.display = 'flex';
           }
         });
+
+      loadFarmerVisitData();
     });
 
-    // Load farmer's visit data
-function loadFarmerVisitData() {
-  // Load scheduled visits
-  fetch('/api/my-visits')
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        renderFarmerVisits(data.visits);
+    function loadFarmerVisitData() {
+      fetch('/api/my-visits')
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            renderFarmerVisits(data.visits);
+          }
+        });
+
+      fetch('/api/training-sessions')
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            renderTrainingSessions(data.sessions);
+          }
+        });
+    }
+
+    function renderFarmerVisits(visits) {
+      const container = document.getElementById('visitsContainer');
+      if (!container) return;
+
+      if (visits.length === 0) {
+        container.innerHTML = '<p>No visits scheduled yet.</p>';
+        return;
       }
-    });
 
-  // Load training sessions
-  fetch('/api/training-sessions')
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        renderTrainingSessions(data.sessions);
-      }
-    });
-}
+      let html = '<div class="list-group">';
+      visits.forEach(visit => {
+        const date = visit.scheduled_date ? new Date(visit.scheduled_date) : new Date(visit.preferred_date);
+        const statusClass = `status-${visit.status}`;
 
-// Render farmer's visits
-function renderFarmerVisits(visits) {
-  const container = document.getElementById('visitsContainer');
-  
-  if (visits.length === 0) {
-    container.innerHTML = '<p>No visits scheduled yet.</p>';
-    return;
-  }
+        html += `
+          <div class="list-group-item">
+            <div class="d-flex justify-content-between">
+              <h5>${visit.purpose}</h5>
+              <span class="badge ${statusClass}">${visit.status.charAt(0).toUpperCase() + visit.status.slice(1)}</span>
+            </div>
+            <p><i class="far fa-calendar"></i> ${date.toLocaleDateString()} 
+               <i class="far fa-clock"></i> ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+            ${visit.notes ? `<p><i class="fas fa-sticky-note"></i> ${visit.notes}</p>` : ''}
+            ${visit.officer_name ? `
+            <p><i class="fas fa-user-tie"></i> Officer: ${visit.officer_name} 
+               ${visit.officer_phone ? `(<i class="fas fa-phone"></i> ${visit.officer_phone})` : ''}
+            </p>` : ''}
+          </div>
+        `;
+      });
 
-  let html = '<div class="list-group">';
-  
-  visits.forEach(visit => {
-    const date = visit.scheduled_date ? new Date(visit.scheduled_date) : new Date(visit.preferred_date);
-    const statusClass = `status-${visit.status}`;
-    
-    html += `
-    <div class="list-group-item">
-      <div class="d-flex justify-content-between">
-        <h5>${visit.purpose}</h5>
-        <span class="badge ${statusClass}">${visit.status.charAt(0).toUpperCase() + visit.status.slice(1)}</span>
-      </div>
-      <p><i class="far fa-calendar"></i> ${date.toLocaleDateString()} 
-         <i class="far fa-clock"></i> ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
-      ${visit.notes ? `<p><i class="fas fa-sticky-note"></i> ${visit.notes}</p>` : ''}
-      ${visit.officer_name ? `
-      <p><i class="fas fa-user-tie"></i> Officer: ${visit.officer_name} 
-         ${visit.officer_phone ? `(<i class="fas fa-phone"></i> ${visit.officer_phone})` : ''}
-      </p>` : ''}
-    </div>
-    `;
-  });
-  
-  html += '</div>';
-  container.innerHTML = html;
-}
-
-// Load data when page loads
-document.addEventListener('DOMContentLoaded', loadFarmerVisitData);
+      html += '</div>';
+      container.innerHTML = html;
+    }
 
     function logout() {
       fetch('/logout', { method: 'POST' })
@@ -239,6 +219,7 @@ document.addEventListener('DOMContentLoaded', loadFarmerVisitData);
         });
     }
   </script>
+
   <script src="logout.js"></script>
   <script src="/alertCount.js"></script>
 </body>
