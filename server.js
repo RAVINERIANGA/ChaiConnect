@@ -1285,6 +1285,68 @@ app.get('/admin/unpaid-deliveries', (req, res) => {
   });
 });
 
+// GET: Payment stats for the summary cards
+app.get('/api/farmer/payments/stats', (req, res) => {
+  const farmerId = req.session.userId;
+
+  if (!farmerId || req.session.role !== 'farmer') {
+    return res.status(403).json({ success: false, message: 'Unauthorized' });
+  }
+
+  const stats = {
+    total_earnings: 0,
+    month_earnings: 0,
+    pending_amount: 0
+  };
+
+  // Query 1: Total completed earnings (all time)
+  const totalEarningsQuery = `
+    SELECT SUM(amount) AS total_earnings
+    FROM payments
+    WHERE farmer_id = ? AND status = 'completed'
+  `;
+
+  // Query 2: Completed earnings this month
+  const monthEarningsQuery = `
+    SELECT SUM(amount) AS month_earnings
+    FROM payments
+    WHERE farmer_id = ? AND status = 'completed'
+      AND MONTH(payment_date) = MONTH(CURDATE())
+      AND YEAR(payment_date) = YEAR(CURDATE())
+  `;
+
+  // Query 3: Pending payments (estimated from deliveries)
+  const pendingQuery = `
+    SELECT SUM(d.quantity_kg * pr.price_per_kg) AS pending_amount
+    FROM deliveries d
+    JOIN payment_rates pr ON d.quality_grade = pr.quality_grade
+    LEFT JOIN payments p ON d.delivery_id = p.delivery_id
+    WHERE d.farmer_id = ? AND p.payment_id IS NULL AND d.status = 'completed'
+  `;
+
+  // Execute all 3 queries in sequence
+  db.query(totalEarningsQuery, [farmerId], (err1, res1) => {
+    if (err1) return res.status(500).json({ success: false, message: 'DB error (1)' });
+
+    stats.total_earnings = res1[0].total_earnings || 0;
+
+    db.query(monthEarningsQuery, [farmerId], (err2, res2) => {
+      if (err2) return res.status(500).json({ success: false, message: 'DB error (2)' });
+
+      stats.month_earnings = res2[0].month_earnings || 0;
+
+      db.query(pendingQuery, [farmerId], (err3, res3) => {
+        if (err3) return res.status(500).json({ success: false, message: 'DB error (3)' });
+
+        stats.pending_amount = res3[0].pending_amount || 0;
+
+        res.json(stats);
+      });
+    });
+  });
+});
+
+
 //upload policy documents - admin
 app.post('/admin/upload-policy', upload.single('policyFile'), (req, res) => {
   const { title, description} = req.body;
@@ -1489,62 +1551,62 @@ app.get('/admin/payments', (req, res) => {
   });
 });
 
-// GET: Payment stats for the summary cards
-app.get('/api/farmer/payments/stats', (req, res) => {
+// Farmer Payment Statistics
+app.get('/api/farmer/payment-stats', (req, res) => {
   const farmerId = req.session.userId;
-
+  
   if (!farmerId || req.session.role !== 'farmer') {
     return res.status(403).json({ success: false, message: 'Unauthorized' });
   }
 
   const stats = {
-    total_earnings: 0,
-    month_earnings: 0,
-    pending_amount: 0
+    totalEarnings: 0,
+    monthEarnings: 0,
+    pendingPayments: 0
   };
 
-  // Query 1: Total completed earnings (all time)
-  const totalEarningsQuery = `
-    SELECT SUM(amount) AS total_earnings
-    FROM payments
+  // Query 1: Total completed payments
+  const totalQuery = `
+    SELECT IFNULL(SUM(amount), 0) AS total 
+    FROM payments 
     WHERE farmer_id = ? AND status = 'completed'
   `;
 
-  // Query 2: Completed earnings this month
-  const monthEarningsQuery = `
-    SELECT SUM(amount) AS month_earnings
-    FROM payments
+  // Query 2: This month's payments
+  const monthQuery = `
+    SELECT IFNULL(SUM(amount), 0) AS total 
+    FROM payments 
     WHERE farmer_id = ? AND status = 'completed'
-      AND MONTH(payment_date) = MONTH(CURDATE())
-      AND YEAR(payment_date) = YEAR(CURDATE())
+    AND MONTH(payment_date) = MONTH(CURRENT_DATE())
+    AND YEAR(payment_date) = YEAR(CURRENT_DATE())
   `;
 
-  // Query 3: Pending payments (estimated from deliveries)
+  // Query 3: Pending payments (from deliveries not yet paid)
   const pendingQuery = `
-    SELECT SUM(d.quantity_kg * pr.price_per_kg) AS pending_amount
+    SELECT IFNULL(SUM(d.quantity_kg * pr.price_per_kg), 0) AS total
     FROM deliveries d
     JOIN payment_rates pr ON d.quality_grade = pr.quality_grade
     LEFT JOIN payments p ON d.delivery_id = p.delivery_id
     WHERE d.farmer_id = ? AND p.payment_id IS NULL AND d.status = 'completed'
   `;
 
-  // Execute all 3 queries in sequence
-  db.query(totalEarningsQuery, [farmerId], (err1, res1) => {
-    if (err1) return res.status(500).json({ success: false, message: 'DB error (1)' });
+  // Execute queries sequentially
+  db.query(totalQuery, [farmerId], (err, totalResult) => {
+    if (err) return res.status(500).json({ success: false, message: 'Database error (total)' });
+    
+    stats.totalEarnings = parseFloat(totalResult[0].total) || 0;
 
-    stats.total_earnings = res1[0].total_earnings || 0;
+    db.query(monthQuery, [farmerId], (err, monthResult) => {
+      if (err) return res.status(500).json({ success: false, message: 'Database error (month)' });
+      
+      stats.monthEarnings = parseFloat(monthResult[0].total) || 0;
 
-    db.query(monthEarningsQuery, [farmerId], (err2, res2) => {
-      if (err2) return res.status(500).json({ success: false, message: 'DB error (2)' });
+      db.query(pendingQuery, [farmerId], (err, pendingResult) => {
+        if (err) return res.status(500).json({ success: false, message: 'Database error (pending)' });
+        
+        stats.pendingPayments = parseFloat(pendingResult[0].total) || 0;
 
-      stats.month_earnings = res2[0].month_earnings || 0;
-
-      db.query(pendingQuery, [farmerId], (err3, res3) => {
-        if (err3) return res.status(500).json({ success: false, message: 'DB error (3)' });
-
-        stats.pending_amount = res3[0].pending_amount || 0;
-
-        res.json(stats);
+        res.json({ success: true, stats });
       });
     });
   });
