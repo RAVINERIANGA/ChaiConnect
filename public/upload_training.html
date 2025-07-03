@@ -63,41 +63,46 @@
   </div>
 
   <script>
-    document.getElementById('uploadForm').addEventListener('submit', function(e) {
-      e.preventDefault();
+   document.getElementById('uploadForm').addEventListener('submit', function(e) {
+  e.preventDefault();
 
-      const form = e.target;
-      const formData = new FormData(form);
+  const form = e.target;
+  const formData = new FormData(form);
 
-      console.log('Form data:', formData);
-      
-      fetch('/api/upload-training', {
-        method: 'POST',
-        body: formData,
-        credentials: 'include'
-      })
-      then(res => {
-    console.log('Response status:', res.status); // Add this
-    return res.json();
+  fetch('/api/upload-training', {
+    method: 'POST',
+    body: formData,
+    credentials: 'include'
   })
-      .then(data => {
-        console.log('Response data:', data); // Add this
-        const messageBox = document.getElementById('uploadMessage');
-        if (data.success) {
-          messageBox.textContent = "Upload successful!";
-          messageBox.className = 'success-message';
-          form.reset();
-        } else {
-          messageBox.textContent = "Upload failed: " + data.message;
-          messageBox.className = 'error-message';
-        }
-      })
-       .catch(err => {
+  .then(res => {
+    const contentType = res.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+      return res.json();
+    } else {
+      throw new Error("Unexpected response format (likely HTML)");
+    }
+  })
+  .then(data => {
+    const messageBox = document.getElementById('uploadMessage');
+    if (data.success) {
+      messageBox.textContent = "Upload successful!";
+      messageBox.className = 'success-message';
+      form.reset();
+
+      // Optionally trigger dashboard update here (e.g., via WebSocket or API)
+    } else {
+      messageBox.textContent = "Upload failed: " + data.message;
+      messageBox.className = 'error-message';
+    }
+  })
+  .catch(err => {
     console.error('Fetch error:', err); 
-    document.getElementById('uploadMessage').textContent = 'An error occurred: ' + err.message;
-    document.getElementById('uploadMessage').className = 'error-message';
+    const messageBox = document.getElementById('uploadMessage');
+    messageBox.textContent = 'An error occurred: ' + err.message;
+    messageBox.className = 'error-message';
   });
-    });
+});
+
   </script>
 </body>
 </html>
