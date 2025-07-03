@@ -1686,6 +1686,41 @@ app.get('/admin/all-payments-summary', async (req, res) => {
   }
 });
 
+// Get payment history for a farmer
+app.get('/api/farmer/payments', (req, res) => {
+  const farmerId = req.session.userId;
+  
+  if (!farmerId || req.session.role !== 'farmer') {
+    return res.status(403).json({ success: false, message: 'Unauthorized' });
+  }
+
+  const query = `
+    SELECT 
+      p.payment_id,
+      p.payment_date,
+      d.delivery_id,
+      d.quantity_kg,
+      d.quality_grade,
+      pr.price_per_kg,
+      p.amount,
+      p.payment_method,
+      p.status
+    FROM payments p
+    JOIN deliveries d ON p.delivery_id = d.delivery_id
+    JOIN payment_rates pr ON d.quality_grade = pr.quality_grade
+    WHERE p.farmer_id = ?
+    ORDER BY p.payment_date DESC
+  `;
+
+  db.query(query, [farmerId], (err, results) => {
+    if (err) {
+      console.error('Error fetching payments:', err);
+      return res.status(500).json({ success: false, message: 'Database error' });
+    }
+
+    res.json(results);
+  });
+});
 
 //System Logs - Admin side
 app.get('/admin/system-logs', (req, res) => {
