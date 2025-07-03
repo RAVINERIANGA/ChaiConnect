@@ -2488,37 +2488,23 @@ app.post('/api/delivery-requests', (req, res) => {
   });
 });
 
-// GET delivery history for the logged-in farmer
+// Delivery History Endpoint
 app.get('/api/delivery-history', (req, res) => {
-  if (!req.session || !req.session.userId || req.session.role !== 'farmer') {
-    return res.status(403).json({ message: 'Unauthorized' });
+  if (!req.session.userId || req.session.role !== 'farmer') {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
   const farmerId = req.session.userId;
 
   const query = `
-    SELECT 
-      dh.history_id,
-      dr.created_at AS request_date,
-      dr.pickup_date,
-      dr.estimated_quantity,
-      dh.quantity_kg AS actual_quantity,
-      dh.quality_grade,
-      dh.collection_center,
-      dh.notes,
-      dh.delivery_date,
-      dh.status,
-      dh.payment_status
-    FROM delivery_history dh
-    JOIN delivery_requests dr ON dh.request_id = dr.request_id
-    WHERE dh.farmer_id = ?
-    ORDER BY dh.delivery_date DESC
+    SELECT * FROM delivery_requests
+    WHERE farmer_id = ?
   `;
-
+  
   db.query(query, [farmerId], (err, results) => {
     if (err) {
-      console.error('❌ Error fetching delivery history:', err);
-      return res.status(500).json({ message: 'Failed to fetch delivery history' });
+      console.error('DB error:', err);
+      return res.status(500).json({ error: 'Failed to fetch history' });
     }
 
     res.json(results);
