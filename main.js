@@ -203,7 +203,7 @@ app.get('/manage_users.html', (req, res) => {
 // GET all users
 app.get('/admin/users', (req, res) => {
   const query = `
-    SELECT user_id, name, email, phone, role 
+    SELECT id_number, name, email, phone, role 
     FROM users 
     WHERE role != 'admin'
   `;
@@ -2225,13 +2225,13 @@ app.get('/admin/complaints', async (req, res) => {
   }
 });
 
+
 // Admin updates complaint status
 app.put('/admin/complaints/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { status, adminNotes } = req.body;
     
-    // Verify admin role here
     
     const query = `UPDATE complaints 
       SET status = ?, 
@@ -2249,7 +2249,6 @@ app.put('/admin/complaints/:id', async (req, res) => {
         return res.status(404).json({ success: false, message: 'Complaint not found' });
       }
       
-      // In a real app, you might notify the farmer about status change
       res.json({ success: true });
     });
   } catch (error) {
@@ -2360,13 +2359,67 @@ app.post('/api/delivery-requests/:id/cancel', async (req, res) => {
 
 
 
+// Get complaints for the extension officer (assuming all open ones for now)
+app.get('/api/extension/complaints', (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) return res.status(403).json({ success: false, message: 'Not logged in' });
+
+  const query = `
+    SELECT complaint_id, farmer_id, complaint_text, complaint_date, status, category, admin_notes
+    FROM complaints
+    WHERE status != 'resolved'
+    ORDER BY complaint_date DESC
+  `;
+  db.query(query, (err, results) => {
+    if (err) return res.status(500).json({ success: false, message: 'Database error' });
+    res.json({ success: true, complaints: results });
+  });
+});
+
+// Update complaint status and notes
+app.put('/api/extension/complaints/:id', (req, res) => {
+  const userId = req.session.userId;
+  const { id } = req.params;
+  const { admin_notes, status } = req.body;
+
+  if (!userId) return res.status(403).json({ success: false, message: 'Unauthorized' });
+
+  const query = `
+    UPDATE complaints
+    SET admin_notes = ?, status = ?
+    WHERE complaint_id = ?
+  `;
+  db.query(query, [admin_notes, status, id], (err, result) => {
+    if (err) return res.status(500).json({ success: false, message: 'Database error' });
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Complaint not found' });
+    }
+    res.json({ success: true });
+  });
+});
 
 
+app.post('/api/farmer/submit-complaint', (req, res) => {
+  const farmerId = req.session.userId; // Should be set during login
+  const { category, complaint_text } = req.body;
 
+  if (!farmerId || !category || !complaint_text) {
+    return res.status(400).json({ success: false, message: 'Missing required fields' });
+  }
 
+  const sql = `
+    INSERT INTO complaints (farmer_id, category, complaint_text)
+    VALUES (?, ?, ?)
+  `;
 
-
-
+  db.query(sql, [farmerId, category, complaint_text], (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ success: false, message: 'Database error' });
+    }
+    res.json({ success: true });
+  });
+});
 
 
 
