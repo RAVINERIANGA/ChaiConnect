@@ -2595,6 +2595,33 @@ app.get('/api/training-materials/count', (req, res) => {
   });
 });
 
+//Shows account status on farmers dashboard
+
+app.get('/api/farmer/:farmerId/profile', (req, res) => {
+  const farmerId = req.params.farmerId;
+  const query = `
+    SELECT u.user_id, u.name, u.active,
+           COALESCE(fm.is_flagged, 0) AS is_flagged,
+           COALESCE(fm.is_suspended, 0) AS is_suspended
+    FROM users u
+    LEFT JOIN flagged_mismatches fm ON u.user_id = fm.user_id
+    WHERE u.user_id = ?
+  `;
+  db.query(query, [farmerId], (err, results) => {
+    if (err) return res.status(500).json({ success: false, error: err.message });
+    if (results.length === 0) return res.status(404).json({ success: false, message: 'Farmer not found' });
+
+    const farmer = results[0];
+    res.json({
+      success: true,
+      name: farmer.name,
+      active: farmer.active,
+      is_flagged: farmer.is_flagged,
+      is_suspended: farmer.is_suspended
+    });
+  });
+});
+
 // Get complaints for the extension officer (assuming all open ones for now)
 app.get('/api/extension/complaints', (req, res) => {
   const userId = req.session.userId;
