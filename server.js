@@ -2626,7 +2626,8 @@ app.get('/api/training-materials/count', (req, res) => {
 
 app.get('/api/farmer/:farmerId/profile', (req, res) => {
   const farmerId = req.params.farmerId;
-  const query = `
+
+  const profileQuery = `
     SELECT u.user_id, u.name, u.active,
            COALESCE(fm.is_flagged, 0) AS is_flagged,
            COALESCE(fm.is_suspended, 0) AS is_suspended
@@ -2634,20 +2635,45 @@ app.get('/api/farmer/:farmerId/profile', (req, res) => {
     LEFT JOIN flagged_mismatches fm ON u.user_id = fm.user_id
     WHERE u.user_id = ?
   `;
-  db.query(query, [farmerId], (err, results) => {
-    if (err) return res.status(500).json({ success: false, error: err.message });
-    if (results.length === 0) return res.status(404).json({ success: false, message: 'Farmer not found' });
 
-    const farmer = results[0];
-    res.json({
-      success: true,
-      name: farmer.name,
-      active: farmer.active,
-      is_flagged: farmer.is_flagged,
-      is_suspended: farmer.is_suspended
+  const summaryQuery = `
+    SELECT 
+      (SELECT COUNT(*) FROM deliveries WHERE farmer_id = ?) AS total_deliveries,
+      (SELECT COALESCE(SUM(quantity_kg), 0) FROM deliveries WHERE farmer_id = ? AND MONTH(pickup_date) = MONTH(CURRENT_DATE()) AND YEAR(pickup_date) = YEAR(CURRENT_DATE())) AS month_total,
+      (SELECT CONCAT(pickup_date, ' - ', quality_grade) FROM deliveries WHERE farmer_id = ? ORDER BY pickup_date DESC LIMIT 1) AS last_delivery,
+      (SELECT COALESCE(SUM(amount), 0) FROM payments WHERE farmer_id = ? AND status = 'pending') AS pending_payment
+  `;
+
+  // First get profile
+  db.query(profileQuery, [farmerId], (err, profileResults) => {
+    if (err) return res.status(500).json({ success: false, error: err.message });
+    if (profileResults.length === 0) return res.status(404).json({ success: false, message: 'Farmer not found' });
+
+    const farmer = profileResults[0];
+
+    // Then get dashboard summary
+    db.query(summaryQuery, [farmerId, farmerId, farmerId, farmerId], (err, summaryResults) => {
+      if (err) return res.status(500).json({ success: false, error: err.message });
+
+      const summary = summaryResults[0];
+
+      // Combine results
+      res.json({
+        success: true,
+        user_id: farmer.user_id,
+        name: farmer.name,
+        active: farmer.active,
+        is_flagged: farmer.is_flagged,
+        is_suspended: farmer.is_suspended,
+        last_delivery: summary.last_delivery,
+        total_deliveries: summary.total_deliveries,
+        month_total: summary.month_total,
+        pending_payment: summary.pending_payment
+      });
     });
   });
 });
+
 
 // Get complaints for the extension officer (assuming all open ones for now)
 app.get('/api/extension/complaints', (req, res) => {
