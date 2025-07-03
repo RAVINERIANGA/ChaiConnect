@@ -436,19 +436,24 @@ async function loadPaymentRates() {
 }
 
 
-    // Load payment statistics
-    async function loadPaymentStats() {
-      try {
-        const response = await fetch('/api/farmer/payments/stats');
-        const stats = await response.json();
-        
-        totalEarningsEl.textContent = formatCurrency(stats.total_earnings || 0);
-        monthEarningsEl.textContent = formatCurrency(stats.month_earnings || 0);
-        pendingPaymentsEl.textContent = formatCurrency(stats.pending_amount || 0);
-      } catch (error) {
-        console.error('Error loading payment stats:', error);
-      }
-    }
+    // Fetch and display payment stats
+
+async function loadPaymentStats() {
+  try {
+    const response = await fetch('/api/farmer/payments/stats');  // ✅ correct endpoint
+    const stats = await response.json(); // ✅ flat object
+
+    totalEarningsEl.textContent = formatCurrency(stats.total_earnings || 0);
+    monthEarningsEl.textContent = formatCurrency(stats.month_earnings || 0);
+    pendingPaymentsEl.textContent = formatCurrency(stats.pending_amount || 0);
+  } catch (error) {
+    console.error('Error loading payment stats:', error);
+  }
+}
+
+
+// Call the function when the page loads
+document.addEventListener('DOMContentLoaded', loadPaymentStats);
 
     // Load payment history
     async function loadPayments() {
