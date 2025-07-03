@@ -1612,6 +1612,80 @@ app.get('/api/farmer/payment-stats', (req, res) => {
   });
 });
 
+// GET all payments (issued + unpaid)
+app.get('/admin/all-payments-summary', async (req, res) => {
+  const db = require('./db'); // Adjust path to your DB connection
+  const { search, region, paymentMethod, startDate, endDate } = req.query;
+
+  try {
+    // Build filters for issued payments
+    let issuedFilters = [];
+    if (search) {
+      issuedFilters.push(`(u.full_name LIKE ? OR fp.id_number LIKE ?)`);
+    }
+    if (region) {
+      issuedFilters.push(`fp.region LIKE ?`);
+    }
+    if (paymentMethod) {
+      issuedFilters.push(`p.payment_method = ?`);
+    }
+    if (startDate) {
+      issuedFilters.push(`DATE(p.payment_date) >= ?`);
+    }
+    if (endDate) {
+      issuedFilters.push(`DATE(p.payment_date) <= ?`);
+    }
+
+    const issuedWhere = issuedFilters.length ? `WHERE ${issuedFilters.join(' AND ')}` : '';
+
+    const issuedParams = [];
+    if (search) {
+      issuedParams.push(`%${search}%`, `%${search}%`);
+    }
+    if (region) issuedParams.push(`%${region}%`);
+    if (paymentMethod) issuedParams.push(paymentMethod);
+    if (startDate) issuedParams.push(startDate);
+    if (endDate) issuedParams.push(endDate);
+
+    // Query: Issued Payments
+    const [issued] = await db.promise().query(`
+      SELECT u.full_name AS farmer_name,
+             fp.id_number,
+             fp.region AS farmer_region,
+             p.amount,
+             p.payment_method,
+             p.payment_date,
+             'completed' AS status
+      FROM payments p
+      JOIN users u ON u.user_id = p.farmer_id
+      JOIN farmer_profile fp ON fp.user_id = p.farmer_id
+      ${issuedWhere}
+    `, issuedParams);
+
+    // Query: Unpaid Deliveries
+    const [unpaid] = await db.promise().query(`
+      SELECT u.full_name AS farmer_name,
+             fp.id_number,
+             fp.region AS farmer_region,
+             d.quantity_kg * r.price_per_kg AS amount,
+             NULL AS payment_method,
+             NULL AS payment_date,
+             'pending' AS status
+      FROM deliveries d
+      JOIN users u ON u.user_id = d.farmer_id
+      JOIN farmer_profile fp ON fp.user_id = d.farmer_id
+      JOIN payment_rates r ON r.quality_grade = d.quality_grade
+      WHERE d.delivery_id NOT IN (SELECT delivery_id FROM payments)
+    `);
+
+    const allPayments = [...issued, ...unpaid];
+    res.json(allPayments);
+  } catch (err) {
+    console.error('Error loading all payments summary:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 
 //System Logs - Admin side
 app.get('/admin/system-logs', (req, res) => {
