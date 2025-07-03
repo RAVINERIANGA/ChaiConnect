@@ -2214,7 +2214,117 @@ app.post('/api/delivery-requests', (req, res) => {
   });
 });
 
+// GET delivery history for the logged-in farmer
+app.get('/api/delivery-history', (req, res) => {
+  if (!req.session || !req.session.userId || req.session.role !== 'farmer') {
+    return res.status(403).json({ message: 'Unauthorized' });
+  }
 
+  const farmerId = req.session.userId;
+
+  const query = `
+    SELECT 
+      dh.history_id,
+      dr.created_at AS request_date,
+      dr.pickup_date,
+      dr.estimated_quantity,
+      dh.quantity_kg AS actual_quantity,
+      dh.quality_grade,
+      dh.collection_center,
+      dh.notes,
+      dh.delivery_date,
+      dh.status,
+      dh.payment_status
+    FROM delivery_history dh
+    JOIN delivery_requests dr ON dh.request_id = dr.request_id
+    WHERE dh.farmer_id = ?
+    ORDER BY dh.delivery_date DESC
+  `;
+
+  db.query(query, [farmerId], (err, results) => {
+    if (err) {
+      console.error('❌ Error fetching delivery history:', err);
+      return res.status(500).json({ message: 'Failed to fetch delivery history' });
+    }
+
+    res.json(results);
+  });
+});
+
+
+// POST cancel a delivery request
+app.post('/api/delivery-requests/:id/cancel', (req, res) => {
+  if (!req.session || !req.session.userId || req.session.role !== 'farmer') {
+    return res.status(403).json({ message: 'Unauthorized' });
+  }
+
+  const farmerId = req.session.userId;
+  const requestId = req.params.id;
+  const reason = req.body.reason || null;
+
+  const sql = `
+    UPDATE delivery_requests 
+    SET status = 'cancelled', cancellation_reason = ?, updated_at = NOW()
+    WHERE request_id = ? AND farmer_id = ? AND status IN ('pending', 'scheduled')
+  `;
+
+  db.query(sql, [reason, requestId, farmerId], (err, result) => {
+    if (err) {
+      console.error('❌ Cancel error:', err);
+      return res.status(500).json({ message: 'Cancellation failed' });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(400).json({ message: 'Invalid or already processed request' });
+    }
+
+    res.json({ success: true });
+  });
+});
+
+// Get all visit requests
+app.get('/api/visit-requests/all', (req, res) => {
+  if (!req.session || req.session.role !== 'extension_officer') {
+    return res.status(403).json({ success: false, message: 'Unauthorized' });
+  }
+
+  const sql = `
+    SELECT v.visit_id, v.farmer_id, u.name AS farmer_name, u.phone AS farmer_phone,
+           v.preferred_date, v.scheduled_date, v.purpose, v.notes, v.status
+    FROM visit_requests v
+    JOIN users u ON v.farmer_id = u.user_id
+    WHERE v.officer_id = ?
+    ORDER BY v.created_at DESC
+  `;
+
+  db.query(sql, [req.session.userId], (err, results) => {
+    if (err) return res.status(500).json({ success: false, message: 'DB error' });
+    res.json({ success: true, requests: results });
+  });
+});
+
+// Update visit status
+app.put('/api/visit-requests/:id/status', (req, res) => {
+  if (!req.session || req.session.role !== 'extension_officer') {
+    return res.status(403).json({ success: false, message: 'Unauthorized' });
+  }
+
+  const visitId = req.params.id;
+  const { status } = req.body;
+
+  if (!['completed', 'cancelled'].includes(status)) {
+    return res.status(400).json({ success: false, message: 'Invalid status' });
+  }
+
+  db.query(
+    `UPDATE visit_requests SET status = ? WHERE visit_id = ? AND officer_id = ?`,
+    [status, visitId, req.session.userId],
+    (err, result) => {
+      if (err) return res.status(500).json({ success: false, message: 'Update failed' });
+      res.json({ success: true });
+    }
+  );
+});
 
 // Upload training materials route
 app.post('/api/upload-training', uploadTraining.single('file'), (req, res) => {
