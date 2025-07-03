@@ -325,32 +325,6 @@
 
     <h2 class="section-title"><i class="fas fa-history"></i> Payment History</h2>
     
-    <div class="filters">
-      <div class="filter-group">
-        <label for="search">Search</label>
-        <input type="text" id="search" placeholder="Search by delivery ID...">
-      </div>
-      
-      <div class="filter-group">
-        <label for="status">Status</label>
-        <select id="status">
-          <option value="all">All Statuses</option>
-          <option value="completed">Completed</option>
-          <option value="pending">Pending</option>
-        </select>
-      </div>
-      
-      <div class="filter-group">
-        <label for="startDate">From Date</label>
-        <input type="date" id="startDate">
-      </div>
-      
-      <div class="filter-group">
-        <label for="endDate">To Date</label>
-        <input type="date" id="endDate">
-      </div>
-    </div>
-
     <table>
       <thead>
         <tr>
@@ -375,149 +349,146 @@
     </div>
   </div>
 
-  <script>
-    // DOM Elements
-    const searchInput = document.getElementById('search');
-    const statusFilter = document.getElementById('status');
-    const startDateFilter = document.getElementById('startDate');
-    const endDateFilter = document.getElementById('endDate');
-    const paymentsTable = document.getElementById('paymentsTable');
-    const noPaymentsMsg = document.getElementById('noPayments');
-    const priceRatesContainer = document.getElementById('priceRates');
-    const totalEarningsEl = document.getElementById('totalEarnings');
-    const monthEarningsEl = document.getElementById('monthEarnings');
-    const pendingPaymentsEl = document.getElementById('pendingPayments');
+<script>
+  const paymentsTable = document.getElementById('paymentsTable');
+  const noPaymentsMsg = document.getElementById('noPayments');
+  const priceRatesContainer = document.getElementById('priceRates');
+  const totalEarningsEl = document.getElementById('totalEarnings');
+  const monthEarningsEl = document.getElementById('monthEarnings');
+  const pendingPaymentsEl = document.getElementById('pendingPayments');
 
-    // Format currency
-    function formatCurrency(amount) {
-      return 'KES ' + parseFloat(amount).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+  function formatCurrency(amount) {
+    return 'KES ' + parseFloat(amount).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+  }
+
+  async function loadPaymentRates() {
+    try {
+      const response = await fetch('/admin/payment-rates');
+      const rates = await response.json();
+
+      priceRatesContainer.innerHTML = '';
+      if (rates.length === 0) {
+        priceRatesContainer.innerHTML = `
+          <tr><td colspan="3" style="text-align: center; color: #888;">No payment rates available</td></tr>
+        `;
+        return;
+      }
+
+      rates.forEach(rate => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>Grade ${rate.quality_grade}</td>
+          <td class="rate-value">${formatCurrency(rate.price_per_kg)}/kg</td>
+          <td>${new Date(rate.effective_date).toLocaleDateString()}</td>
+        `;
+        priceRatesContainer.appendChild(row);
+      });
+    } catch (error) {
+      console.error('Error loading payment rates:', error);
+      priceRatesContainer.innerHTML = `
+        <tr><td colspan="3" style="text-align: center; color: #ff4444;">Error loading payment rates</td></tr>
+      `;
+    }
+  }
+
+  async function loadPaymentStats() {
+    try {
+      const response = await fetch('/api/farmer/payments/stats');
+      const stats = await response.json();
+      totalEarningsEl.textContent = formatCurrency(stats.total_earnings || 0);
+      monthEarningsEl.textContent = formatCurrency(stats.month_earnings || 0);
+      pendingPaymentsEl.textContent = formatCurrency(stats.pending_amount || 0);
+    } catch (error) {
+      console.error('Error loading payment stats:', error);
+    }
+  }
+
+  async function loadPayments() {
+    try {
+      const response = await fetch('/api/farmer/payments'); // No filters
+      const data = await response.json();
+
+      paymentsTable.innerHTML = '';
+      if (data.length === 0) {
+        noPaymentsMsg.style.display = 'block';
+        return;
+      }
+
+      noPaymentsMsg.style.display = 'none';
+
+      data.forEach(p => {
+        const row = document.createElement('tr');
+        const statusClass = p.status === 'completed' ? 'badge-paid' : 'badge-pending';
+        row.innerHTML = `
+          <td>${p.payment_date ? new Date(p.payment_date).toLocaleDateString() : 'Pending'}</td>
+          <td>${p.delivery_id}</td>
+          <td>${p.quantity_kg} kg</td>
+          <td>${p.quality_grade}</td>
+          <td>${formatCurrency(p.price_per_kg)}</td>
+          <td>${formatCurrency(p.amount)}</td>
+          <td>${p.payment_method || '—'}</td>
+          <td><span class="badge ${statusClass}">${p.status}</span></td>
+        `;
+        paymentsTable.appendChild(row);
+      });
+    } catch (error) {
+      console.error('Error loading payments:', error);
+      noPaymentsMsg.style.display = 'block';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    loadPayments();
+    loadPaymentStats();
+    loadPaymentRates();
+  });
+  async function loadPayments() {
+  try {
+    const response = await fetch('/api/farmer/payments', {
+      credentials: 'include' // Important for session cookies
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to load payments');
     }
 
-// Load payment rates
-async function loadPaymentRates() {
-  try {
-    const response = await fetch('/admin/payment-rates');
-    const rates = await response.json();
+    const payments = await response.json();
+    paymentsTable.innerHTML = '';
     
-    const ratesTable = document.getElementById('priceRates');
-    ratesTable.innerHTML = '';
-    
-    if (rates.length === 0) {
-      ratesTable.innerHTML = `
-        <tr>
-          <td colspan="3" style="text-align: center; color: #888;">
-            No payment rates available
-          </td>
-        </tr>
-      `;
+    if (payments.length === 0) {
+      noPaymentsMsg.style.display = 'block';
       return;
     }
-    
-    rates.forEach(rate => {
+
+    noPaymentsMsg.style.display = 'none';
+
+    payments.forEach(payment => {
       const row = document.createElement('tr');
+      const statusClass = payment.status === 'completed' ? 'badge-paid' : 'badge-pending';
+      
       row.innerHTML = `
-        <td>Grade ${rate.quality_grade}</td>
-        <td class="rate-value">${formatCurrency(rate.price_per_kg)}/kg</td>
-        <td>${new Date(rate.effective_date).toLocaleDateString()}</td>
+        <td>${payment.payment_date ? new Date(payment.payment_date).toLocaleDateString() : 'N/A'}</td>
+        <td>${payment.delivery_id || 'N/A'}</td>
+        <td>${payment.quantity_kg || '0'} kg</td>
+        <td>${payment.quality_grade || 'N/A'}</td>
+        <td>${formatCurrency(payment.price_per_kg || 0)}</td>
+        <td>${formatCurrency(payment.amount || 0)}</td>
+        <td>${payment.payment_method || 'N/A'}</td>
+        <td><span class="badge ${statusClass}">${payment.status || 'N/A'}</span></td>
       `;
-      ratesTable.appendChild(row);
+      
+      paymentsTable.appendChild(row);
     });
+
   } catch (error) {
-    console.error('Error loading payment rates:', error);
-    const ratesTable = document.getElementById('priceRates');
-    ratesTable.innerHTML = `
-      <tr>
-        <td colspan="3" style="text-align: center; color: #ff4444;">
-          Error loading payment rates. Please try again later.
-        </td>
-      </tr>
+    console.error('Error loading payments:', error);
+    noPaymentsMsg.style.display = 'block';
+    noPaymentsMsg.innerHTML = `
+      <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-bottom: 10px;"></i>
+      <p>${error.message || 'Failed to load payment history'}</p>
     `;
   }
 }
-
-
-    // Fetch and display payment stats
-
-async function loadPaymentStats() {
-  try {
-    const response = await fetch('/api/farmer/payments/stats');  // ✅ correct endpoint
-    const stats = await response.json(); // ✅ flat object
-
-    totalEarningsEl.textContent = formatCurrency(stats.total_earnings || 0);
-    monthEarningsEl.textContent = formatCurrency(stats.month_earnings || 0);
-    pendingPaymentsEl.textContent = formatCurrency(stats.pending_amount || 0);
-  } catch (error) {
-    console.error('Error loading payment stats:', error);
-  }
-}
-
-
-// Call the function when the page loads
-document.addEventListener('DOMContentLoaded', loadPaymentStats);
-
-    // Load payment history
-    async function loadPayments() {
-      try {
-        const params = new URLSearchParams();
-        
-        if (searchInput.value) params.append('search', searchInput.value);
-        if (statusFilter.value !== 'all') params.append('status', statusFilter.value);
-        if (startDateFilter.value) params.append('start_date', startDateFilter.value);
-        if (endDateFilter.value) params.append('end_date', endDateFilter.value);
-        
-        const response = await fetch(`/api/farmer/payments?${params.toString()}`);
-        const payments = await response.json();
-        
-        paymentsTable.innerHTML = '';
-        
-        if (payments.length === 0) {
-          noPaymentsMsg.style.display = 'block';
-          return;
-        }
-        
-        noPaymentsMsg.style.display = 'none';
-        
-        payments.forEach(payment => {
-          const row = document.createElement('tr');
-          const statusClass = payment.status === 'completed' ? 'badge-paid' : 'badge-pending';
-          
-          row.innerHTML = `
-            <td>${payment.payment_date ? new Date(payment.payment_date).toLocaleDateString() : 'Pending'}</td>
-            <td>${payment.delivery_id}</td>
-            <td>${payment.quantity_kg} kg</td>
-            <td>${payment.quality_grade}</td>
-            <td>${formatCurrency(payment.price_per_kg)}</td>
-            <td>${formatCurrency(payment.amount)}</td>
-            <td>${payment.payment_method || '—'}</td>
-            <td><span class="badge ${statusClass}">${payment.status}</span></td>
-          `;
-          paymentsTable.appendChild(row);
-        });
-      } catch (error) {
-        console.error('Error loading payments:', error);
-        noPaymentsMsg.style.display = 'block';
-      }
-    }
-
-    // Event listeners for filters
-    [searchInput, statusFilter, startDateFilter, endDateFilter].forEach(filter => {
-      filter.addEventListener('change', loadPayments);
-    });
-
-    // Initialize page
-    document.addEventListener('DOMContentLoaded', () => {
-      loadPaymentRates();
-      loadPaymentStats();
-      loadPayments();
-      
-      // Set default date range (last 3 months)
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setMonth(endDate.getMonth() - 3);
-      
-      startDateFilter.valueAsDate = startDate;
-      endDateFilter.valueAsDate = endDate;
-    });
-  </script>
+</script>
 </body>
 </html>
