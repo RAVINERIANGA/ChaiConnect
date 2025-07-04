@@ -1480,6 +1480,178 @@ app.get('/admin/payments', (req, res) => {
   });
 });
 
+// Farmer Payment Statistics
+app.get('/api/farmer/payment-stats', (req, res) => {
+  const farmerId = req.session.userId;
+  
+  if (!farmerId || req.session.role !== 'farmer') {
+    return res.status(403).json({ success: false, message: 'Unauthorized' });
+  }
+
+  const stats = {
+    totalEarnings: 0,
+    monthEarnings: 0,
+    pendingPayments: 0
+  };
+
+  // Query 1: Total completed payments
+  const totalQuery = `
+    SELECT IFNULL(SUM(amount), 0) AS total 
+    FROM payments 
+    WHERE farmer_id = ? AND status = 'completed'
+  `;
+
+  // Query 2: This month's payments
+  const monthQuery = `
+    SELECT IFNULL(SUM(amount), 0) AS total 
+    FROM payments 
+    WHERE farmer_id = ? AND status = 'completed'
+    AND MONTH(payment_date) = MONTH(CURRENT_DATE())
+    AND YEAR(payment_date) = YEAR(CURRENT_DATE())
+  `;
+
+  // Query 3: Pending payments (from deliveries not yet paid)
+  const pendingQuery = `
+    SELECT IFNULL(SUM(d.quantity_kg * pr.price_per_kg), 0) AS total
+    FROM deliveries d
+    JOIN payment_rates pr ON d.quality_grade = pr.quality_grade
+    LEFT JOIN payments p ON d.delivery_id = p.delivery_id
+    WHERE d.farmer_id = ? AND p.payment_id IS NULL AND d.status = 'completed'
+  `;
+
+  // Execute queries sequentially
+  db.query(totalQuery, [farmerId], (err, totalResult) => {
+    if (err) return res.status(500).json({ success: false, message: 'Database error (total)' });
+    
+    stats.totalEarnings = parseFloat(totalResult[0].total) || 0;
+
+    db.query(monthQuery, [farmerId], (err, monthResult) => {
+      if (err) return res.status(500).json({ success: false, message: 'Database error (month)' });
+      
+      stats.monthEarnings = parseFloat(monthResult[0].total) || 0;
+
+      db.query(pendingQuery, [farmerId], (err, pendingResult) => {
+        if (err) return res.status(500).json({ success: false, message: 'Database error (pending)' });
+        
+        stats.pendingPayments = parseFloat(pendingResult[0].total) || 0;
+
+        res.json({ success: true, stats });
+      });
+    });
+  });
+});
+
+// GET all payments (issued + unpaid)
+app.get('/admin/all-payments-summary', async (req, res) => {
+  const db = require('./db'); // Adjust path to your DB connection
+  const { search, region, paymentMethod, startDate, endDate } = req.query;
+
+  try {
+    // Build filters for issued payments
+    let issuedFilters = [];
+    if (search) {
+      issuedFilters.push(`(u.full_name LIKE ? OR fp.id_number LIKE ?)`);
+    }
+    if (region) {
+      issuedFilters.push(`fp.region LIKE ?`);
+    }
+    if (paymentMethod) {
+      issuedFilters.push(`p.payment_method = ?`);
+    }
+    if (startDate) {
+      issuedFilters.push(`DATE(p.payment_date) >= ?`);
+    }
+    if (endDate) {
+      issuedFilters.push(`DATE(p.payment_date) <= ?`);
+    }
+
+    const issuedWhere = issuedFilters.length ? `WHERE ${issuedFilters.join(' AND ')}` : '';
+
+    const issuedParams = [];
+    if (search) {
+      issuedParams.push(`%${search}%`, `%${search}%`);
+    }
+    if (region) issuedParams.push(`%${region}%`);
+    if (paymentMethod) issuedParams.push(paymentMethod);
+    if (startDate) issuedParams.push(startDate);
+    if (endDate) issuedParams.push(endDate);
+
+    // Query: Issued Payments
+    const [issued] = await db.promise().query(`
+      SELECT u.full_name AS farmer_name,
+             fp.id_number,
+             fp.region AS farmer_region,
+             p.amount,
+             p.payment_method,
+             p.payment_date,
+             'completed' AS status
+      FROM payments p
+      JOIN users u ON u.user_id = p.farmer_id
+      JOIN farmer_profile fp ON fp.user_id = p.farmer_id
+      ${issuedWhere}
+    `, issuedParams);
+
+    // Query: Unpaid Deliveries
+    const [unpaid] = await db.promise().query(`
+      SELECT u.full_name AS farmer_name,
+             fp.id_number,
+             fp.region AS farmer_region,
+             d.quantity_kg * r.price_per_kg AS amount,
+             NULL AS payment_method,
+             NULL AS payment_date,
+             'pending' AS status
+      FROM deliveries d
+      JOIN users u ON u.user_id = d.farmer_id
+      JOIN farmer_profile fp ON fp.user_id = d.farmer_id
+      JOIN payment_rates r ON r.quality_grade = d.quality_grade
+      WHERE d.delivery_id NOT IN (SELECT delivery_id FROM payments)
+    `);
+
+    const allPayments = [...issued, ...unpaid];
+    res.json(allPayments);
+  } catch (err) {
+    console.error('Error loading all payments summary:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get payment history for a farmer
+app.get('/api/farmer/payments', (req, res) => {
+  const farmerId = req.session.userId;
+  
+  if (!farmerId || req.session.role !== 'farmer') {
+    return res.status(403).json({ success: false, message: 'Unauthorized' });
+  }
+
+  const query = `
+    SELECT 
+      p.payment_id,
+      p.payment_date,
+      d.delivery_id,
+      d.quantity_kg,
+      d.quality_grade,
+      pr.price_per_kg,
+      p.amount,
+      p.payment_method,
+      p.status
+    FROM payments p
+    JOIN deliveries d ON p.delivery_id = d.delivery_id
+    JOIN payment_rates pr ON d.quality_grade = pr.quality_grade
+    WHERE p.farmer_id = ?
+    ORDER BY p.payment_date DESC
+  `;
+
+  db.query(query, [farmerId], (err, results) => {
+    if (err) {
+      console.error('Error fetching payments:', err);
+      return res.status(500).json({ success: false, message: 'Database error' });
+    }
+
+    res.json(results);
+  });
+});
+
+
 //System Logs - Admin side
 app.get('/admin/system-logs', (req, res) => {
   const page = parseInt(req.query.page) || 1;
@@ -1782,6 +1954,55 @@ app.get('/api/my-assigned-farmers', (req, res) => {
   });
 });
 
+// POST: /api/request-visit
+app.post('/api/farmer/schedule-visit', (req, res) => {
+  const userId = req.session.userId;
+  const { preferredDate, purpose, notes } = req.body;
+  
+  if (!userId) {
+    return res.status(401).json({ success: false, message: 'Not logged in' });
+  }
+  
+  if (!preferredDate || !purpose) {
+    return res.status(400).json({ success: false, message: 'Missing required fields' });
+  }
+  
+  // Get assigned officer_id for this farmer
+  db.query(
+    'SELECT officer_id FROM farmer_assignments WHERE farmer_id = ?',
+    [userId],
+    (err, assignment) => {
+      if (err) {
+        console.error('Error getting assignment:', err);
+        return res.status(500).json({ success: false, message: 'Server error while getting assignment' });
+      }
+      
+      if (!assignment || assignment.length === 0) {
+        return res.status(400).json({ success: false, message: 'No assigned extension officer found' });
+      }
+      
+      const officerId = assignment[0].officer_id;
+      
+      // Insert into farmer_visits table
+      db.query(
+        `INSERT INTO farmer_visits
+          (farmer_id, officer_id, preferred_date, purpose, notes, status)
+          VALUES (?, ?, ?, ?, ?, 'requested')`,
+        [userId, officerId, preferredDate, purpose, notes],
+        (err, result) => {
+          if (err) {
+            console.error('Error submitting visit request:', err);
+            return res.status(500).json({ success: false, message: 'Server error while submitting request' });
+          }
+          
+          res.json({ success: true, message: 'Visit request submitted' });
+        }
+      );
+    }
+  );
+});
+
+
 // Farmer: Request a visit
 app.post('/api/request-visit', (req, res) => {
     if (!req.session.userId || req.session.role !== 'farmer') {
@@ -1877,6 +2098,28 @@ app.get('/api/my-visits', (req, res) => {
         res.json({ success: true, visits: results });
     });
 });
+
+// Training sessions endpoint
+app.get('/api/trainings', (req, res) => {
+    const mockTrainings = [
+        {
+            title: "Tea Plantation Best Practices",
+            date: "2023-12-15",
+            location: "Community Hall",
+            description: "Learn modern techniques for tea plantation management"
+        },
+        {
+            title: "Organic Fertilizer Workshop",
+            date: "2024-01-10",
+            location: "Agricultural Center",
+            description: "How to make and use organic fertilizers"
+        }
+    ];
+    
+    res.json(mockTrainings);
+});
+
+
 
 // Extension Officer: Get visit requests
 app.get('/api/visit-requests', (req, res) => {
@@ -2129,6 +2372,179 @@ app.get('/api/farmer-details/:id', (req, res) => {
     });
 });
 
+// ✅ POST delivery request
+app.post('/api/delivery-requests', (req, res) => {
+  if (!req.session || !req.session.userId || req.session.role !== 'farmer') {
+    return res.status(403).json({ message: 'Unauthorized access' });
+  }
+
+  const farmerId = req.session.userId;
+  const { pickup_date, pickup_time, estimated_quantity, collection_center, notes } = req.body;
+
+  if (!pickup_date || !pickup_time || !estimated_quantity || !collection_center) {
+    return res.status(400).json({ message: 'Missing required fields' });
+  }
+
+  const sql = `
+    INSERT INTO delivery_requests 
+    (farmer_id, pickup_date, pickup_time, estimated_quantity, collection_center, notes) 
+    VALUES (?, ?, ?, ?, ?, ?)
+  `;
+
+  db.query(sql, [farmerId, pickup_date, pickup_time, estimated_quantity, collection_center, notes], (err, result) => {
+    if (err) {
+      console.error('❌ Delivery insert error:', err);
+      return res.status(500).json({ message: 'Failed to submit request' });
+    }
+
+    res.json({ success: true, request_id: result.insertId });
+  });
+});
+
+// GET delivery history for the logged-in farmer
+app.get('/api/delivery-history', (req, res) => {
+  if (!req.session || !req.session.userId || req.session.role !== 'farmer') {
+    return res.status(403).json({ message: 'Unauthorized' });
+  }
+
+  const farmerId = req.session.userId;
+
+  const query = `
+    SELECT 
+      dh.history_id,
+      dr.created_at AS request_date,
+      dr.pickup_date,
+      dr.estimated_quantity,
+      dh.quantity_kg AS actual_quantity,
+      dh.quality_grade,
+      dh.collection_center,
+      dh.notes,
+      dh.delivery_date,
+      dh.status,
+      dh.payment_status
+    FROM delivery_history dh
+    JOIN delivery_requests dr ON dh.request_id = dr.request_id
+    WHERE dh.farmer_id = ?
+    ORDER BY dh.delivery_date DESC
+  `;
+
+  db.query(query, [farmerId], (err, results) => {
+    if (err) {
+      console.error('❌ Error fetching delivery history:', err);
+      return res.status(500).json({ message: 'Failed to fetch delivery history' });
+    }
+
+    res.json(results);
+  });
+});
+
+
+// POST cancel a delivery request
+app.post('/api/delivery-requests/:id/cancel', (req, res) => {
+  if (!req.session || !req.session.userId || req.session.role !== 'farmer') {
+    return res.status(403).json({ message: 'Unauthorized' });
+  }
+
+  const farmerId = req.session.userId;
+  const requestId = req.params.id;
+  const reason = req.body.reason || null;
+
+  const sql = `
+    UPDATE delivery_requests 
+    SET status = 'cancelled', cancellation_reason = ?, updated_at = NOW()
+    WHERE request_id = ? AND farmer_id = ? AND status IN ('pending', 'scheduled')
+  `;
+
+  db.query(sql, [reason, requestId, farmerId], (err, result) => {
+    if (err) {
+      console.error('❌ Cancel error:', err);
+      return res.status(500).json({ message: 'Cancellation failed' });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(400).json({ message: 'Invalid or already processed request' });
+    }
+
+    res.json({ success: true });
+  });
+});
+
+// Get all visit requests
+app.get('/api/visit-requests/all', (req, res) => {
+  if (!req.session || req.session.role !== 'extension_officer') {
+    return res.status(403).json({ success: false, message: 'Unauthorized' });
+  }
+
+  const sql = `
+    SELECT v.visit_id, v.farmer_id, u.name AS farmer_name, u.phone AS farmer_phone,
+           v.preferred_date, v.scheduled_date, v.purpose, v.notes, v.status
+    FROM visit_requests v
+    JOIN users u ON v.farmer_id = u.user_id
+    WHERE v.officer_id = ?
+    ORDER BY v.created_at DESC
+  `;
+
+  db.query(sql, [req.session.userId], (err, results) => {
+    if (err) return res.status(500).json({ success: false, message: 'DB error' });
+    res.json({ success: true, requests: results });
+  });
+});
+
+// Update visit status
+app.put('/api/visit-requests/:id/status', (req, res) => {
+  if (!req.session || req.session.role !== 'extension_officer') {
+    return res.status(403).json({ success: false, message: 'Unauthorized' });
+  }
+
+  const visitId = req.params.id;
+  const { status } = req.body;
+
+  if (!['completed', 'cancelled'].includes(status)) {
+    return res.status(400).json({ success: false, message: 'Invalid status' });
+  }
+
+  db.query(
+    `UPDATE visit_requests SET status = ? WHERE visit_id = ? AND officer_id = ?`,
+    [status, visitId, req.session.userId],
+    (err, result) => {
+      if (err) return res.status(500).json({ success: false, message: 'Update failed' });
+      res.json({ success: true });
+    }
+  );
+});
+
+
+//Shows account status on farmers dashboard
+app.get('/api/farmer/:farmerId/profile', (req, res) => {
+  const farmerId = req.params.farmerId;
+  const query = `
+    SELECT u.user_id, u.name, u.active,
+           COALESCE(fm.is_flagged, 0) AS is_flagged,
+           COALESCE(fm.is_suspended, 0) AS is_suspended
+    FROM users u
+    LEFT JOIN flagged_mismatches fm ON u.user_id = fm.user_id
+    WHERE u.user_id = ?
+  `;
+  db.query(query, [farmerId], (err, results) => {
+    if (err) return res.status(500).json({ success: false, error: err.message });
+    if (results.length === 0) return res.status(404).json({ success: false, message: 'Farmer not found' });
+
+    const farmer = results[0];
+    res.json({
+      success: true,
+      name: farmer.name,
+      active: farmer.active,
+      is_flagged: farmer.is_flagged,
+      is_suspended: farmer.is_suspended
+    });
+  });
+});
+
+
+
+
+
+
 // Upload training materials route
 app.post('/api/upload-training', uploadTraining.single('file'), (req, res) => {
   console.log('Upload request received:', req.body, req.file);
@@ -2255,106 +2671,6 @@ app.put('/admin/complaints/:id', async (req, res) => {
     console.error('Error in complaint update:', error);
     res.status(500).json({ success: false });
   }
-});
-
-// Create delivery request
-app.post('/api/delivery-requests', async (req, res) => {
-    try {
-        const farmerId = req.session.userId;
-        if (!farmerId) {
-            return res.status(401).json({ success: false, message: 'Unauthorized' });
-        }
-
-        const {
-            pickup_date,
-            pickup_time,
-            estimated_quantity,
-            collection_center,
-            notes = ''
-        } = req.body;
-
-        if (!pickup_date || !pickup_time || !estimated_quantity || !collection_center) {
-            return res.status(400).json({ success: false, message: 'Missing required fields' });
-        }
-
-        const insertResult = await query(
-            `INSERT INTO delivery_requests 
-            (farmer_id, pickup_date, pickup_time, estimated_quantity, collection_center, notes)
-            VALUES (?, ?, ?, ?, ?, ?)`,
-            [farmerId, pickup_date, pickup_time, estimated_quantity, collection_center, notes]
-        );
-
-        const rows = await query(
-            `SELECT * FROM delivery_requests WHERE request_id = ?`,
-            [insertResult.insertId]
-        );
-
-        res.json({ success: true, data: rows[0] });
-    } catch (error) {
-        console.error('Error creating delivery request:', error);
-        res.status(500).json({ success: false, message: 'Failed to submit delivery request' });
-    }
-});
-
-// Get farmer's delivery requests
-app.get('/api/delivery-requests', async (req, res) => {
-    try {
-        const farmerId = req.session.userId;
-        if (!farmerId) {
-            return res.status(401).json({ success: false, message: 'Unauthorized' });
-        }
-
-        const rows = await query(
-            `SELECT * FROM delivery_requests 
-             WHERE farmer_id = ? 
-             ORDER BY created_at DESC`,
-            [farmerId]
-        );
-
-        res.json({ success: true, data: rows });
-    } catch (error) {
-        console.error('Error fetching delivery requests:', error);
-        res.status(500).json({ success: false, message: 'Failed to fetch delivery requests' });
-    }
-});
-
-
-// Cancel delivery request
-app.post('/api/delivery-requests/:id/cancel', async (req, res) => {
-    try {
-        const farmerId = req.session.userId;
-        if (!farmerId) {
-            return res.status(401).json({ success: false, message: 'Unauthorized' });
-        }
-
-        const { reason = 'No reason provided' } = req.body;
-        const requestId = req.params.id;
-
-        const result = await query(
-            `UPDATE delivery_requests 
-             SET status = 'cancelled', cancellation_reason = ?
-             WHERE request_id = ? AND farmer_id = ? 
-             AND status IN ('pending', 'scheduled')`,
-            [reason, requestId, farmerId]
-        );
-
-        if (result.affectedRows === 0) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Request not found or cannot be cancelled' 
-            });
-        }
-
-        const rows = await query(
-            `SELECT * FROM delivery_requests WHERE request_id = ?`,
-            [requestId]
-        );
-
-        res.json({ success: true, data: rows[0] });
-    } catch (error) {
-        console.error('Error cancelling delivery request:', error);
-        res.status(500).json({ success: false, message: 'Failed to cancel delivery request' });
-    }
 });
 
 

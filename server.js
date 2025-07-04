@@ -2738,6 +2738,143 @@ app.post('/api/farmer/submit-complaint', (req, res) => {
 });
 
 
+//Factory Staff Stats
+app.get('/factory-dashboard-stats', (req, res) => {
+  const staffId = req.session.userId;
+  const today = new Date().toISOString().split('T')[0]; 
+
+  // Initialize stats object
+  const stats = {
+    deliveriesToday: 0,
+    kgToday: 0,
+    flaggedFarmers: 0,
+    assignedFarmers: 0
+  };
+
+  let completedQueries = 0;
+  const totalQueries = 4;
+
+  function checkComplete() {
+    completedQueries++;
+    if (completedQueries === totalQueries) {
+      res.json(stats);
+    }
+  }
+
+  function handleError(err) {
+    console.error('Error loading factory staff stats:', err);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+
+  // Deliveries Handled Today
+  db.query(
+    `SELECT COUNT(*) AS total FROM deliveries WHERE staff_id = ? AND delivery_date = ?`,
+    [staffId, today],
+    (err, results) => {
+      if (err) return handleError(err);
+      stats.deliveriesToday = results[0].total;
+      checkComplete();
+    }
+  );
+
+  // Total KG Received Today
+  db.query(
+    `SELECT COALESCE(SUM(quantity_kg), 0) AS total_kg FROM deliveries WHERE staff_id = ? AND delivery_date = ?`,
+    [staffId, today],
+    (err, results) => {
+      if (err) return handleError(err);
+      stats.kgToday = results[0].total_kg;
+      checkComplete();
+    }
+  );
+
+  // Flagged Farmers Today
+  db.query(
+    `SELECT COUNT(*) AS total FROM farmer_mismatch_flags WHERE staff_id = ? AND DATE(flagged_at) = ?`,
+    [staffId, today],
+    (err, results) => {
+      if (err) return handleError(err);
+      stats.flaggedFarmers = results[0].total;
+      checkComplete();
+    }
+  );
+
+  // Farmers Assigned
+  db.query(
+    `SELECT COUNT(*) AS total FROM farmer_assignments`,
+    (err, results) => {
+      if (err) return handleError(err);
+      stats.assignedFarmers = results[0].total;
+      checkComplete();
+    }
+  );
+});
+
+
+// Admin updates complaint status
+app.put('/admin/complaints/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, adminNotes } = req.body;
+    
+    
+    const query = `UPDATE complaints 
+      SET status = ?, 
+          admin_notes = IFNULL(?, admin_notes),
+          updated_at = CURRENT_TIMESTAMP
+      WHERE complaint_id = ?`;
+    
+    db.query(query, [status, adminNotes, id], (err, result) => {
+      if (err) {
+        console.error('Error updating complaint:', err);
+        return res.status(500).json({ success: false });
+      }
+      
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ success: false, message: 'Complaint not found' });
+      }
+      
+      res.json({ success: true });
+    });
+  } catch (error) {
+    console.error('Error in complaint update:', error);
+    res.status(500).json({ success: false });
+  }
+});
+// Admin gets all complaints
+app.get('/admin/complaints', async (req, res) => {
+  try {
+    // Verify admin role here
+    const query = `SELECT 
+      c.complaint_id, 
+      u.name, 
+      c.complaint_text, 
+      c.complaint_date, 
+      c.status,
+      c.category,
+      c.updated_at
+      FROM admin_complaints_view c
+      JOIN users u ON c.farmer_id = u.user_id
+      ORDER BY 
+        CASE WHEN c.status = 'open' THEN 1
+             WHEN c.status = 'in_progress' THEN 2
+             ELSE 3 END,
+        c.complaint_date DESC`;
+    
+    db.query(query, (err, results) => {
+      if (err) {
+        console.error('Error fetching complaints:', err);
+        return res.status(500).json({ success: false });
+      }
+      res.json(results);
+    });
+  } catch (error) {
+    console.error('Error in complaints route:', error);
+    res.status(500).json({ success: false });
+  }
+});
+
+
 
 
 
