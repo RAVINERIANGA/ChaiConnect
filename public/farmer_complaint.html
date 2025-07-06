@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Submit Complaint | ChaiConnect</title>
+  <title>Farmer Complaints | ChaiConnect</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
   <style>
     body {
@@ -18,6 +18,7 @@
       padding: 30px;
       border-radius: 10px;
       box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      margin-bottom: 40px;
     }
     h2 {
       color: #2c3e50;
@@ -36,7 +37,6 @@
       border-radius: 6px;
       border: 1px solid #ccc;
       font-size: 15px;
-      font-family: 'Poppins', sans-serif;
     }
     button {
       background: #27ae60;
@@ -61,36 +61,64 @@
     .message.error {
       color: #e74c3c;
     }
+    .history-card {
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+    .history-card p {
+      margin: 5px 0;
+    }
+    .status-open {
+      color: #d35400;
+      font-weight: bold;
+    }
+    .status-in_progress {
+      color: #f39c12;
+      font-weight: bold;
+    }
+    .status-resolved {
+      color: #27ae60;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
 
-<div class="container">
-  <h2>Submit a Complaint</h2>
+  <!-- Submit Complaint -->
+  <div class="container">
+    <h2>Submit a Complaint</h2>
+    <form id="complaintForm">
+      <label for="category">Category</label>
+      <select id="category" required>
+        <option value="">-- Select Category --</option>
+        <option value="account">Account</option>
+        <option value="delivery">Delivery</option>
+        <option value="payment">Payment</option>
+        <option value="extension">Extension Services</option>
+        <option value="other">Other</option>
+      </select>
 
-  <form id="complaintForm">
-    <label for="category">Category</label>
-    <select id="category" required>
-      <option value="">-- Select Category --</option>
-      <option value="account">Account</option>
-      <option value="delivery">Delivery</option>
-      <option value="payment">Payment</option>
-      <option value="other">Other</option>
-    </select>
+      <label for="complaintText">Complaint</label>
+      <textarea id="complaintText" rows="5" placeholder="Describe your complaint here..." required></textarea>
 
-    <label for="complaintText">Complaint</label>
-    <textarea id="complaintText" rows="5" placeholder="Describe your complaint here..." required></textarea>
+      <button type="submit">Submit Complaint</button>
+    </form>
+    <div id="responseMessage" class="message"></div>
+  </div>
 
-    <button type="submit">Submit Complaint</button>
-  </form>
-
-  <div id="responseMessage" class="message"></div>
-</div>
+  <!-- Complaint History -->
+  <div class="container">
+    <h2>My Complaint History</h2>
+    <div id="complaintHistory">Loading...</div>
+  </div>
 
 <script>
+  // Handle form submission
   document.getElementById('complaintForm').addEventListener('submit', async function(e) {
     e.preventDefault();
-
     const category = document.getElementById('category').value;
     const complaint_text = document.getElementById('complaintText').value;
     const message = document.getElementById('responseMessage');
@@ -101,13 +129,13 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ category, complaint_text })
       });
-
       const data = await res.json();
 
       if (data.success) {
         message.textContent = 'Complaint submitted successfully.';
         message.className = 'message success';
         document.getElementById('complaintForm').reset();
+        loadComplaintHistory(); // reload history
       } else {
         message.textContent = data.message || 'Something went wrong.';
         message.className = 'message error';
@@ -117,6 +145,39 @@
       message.className = 'message error';
     }
   });
+
+  // Load previous complaints
+  async function loadComplaintHistory() {
+    const container = document.getElementById('complaintHistory');
+    container.innerHTML = 'Loading...';
+    try {
+      const res = await fetch('/api/farmer/my-complaints');
+      const data = await res.json();
+      if (!data.success || data.complaints.length === 0) {
+        container.innerHTML = '<p>No complaints found.</p>';
+        return;
+      }
+
+      container.innerHTML = '';
+      data.complaints.forEach(complaint => {
+        const div = document.createElement('div');
+        div.className = 'history-card';
+        div.innerHTML = `
+          <p><strong>Category:</strong> ${complaint.category}</p>
+          <p><strong>Status:</strong> <span class="status-${complaint.status}">${complaint.status.replace('_', ' ')}</span></p>
+          <p><strong>Submitted:</strong> ${new Date(complaint.complaint_date).toLocaleString()}</p>
+          <p><strong>Complaint:</strong> ${complaint.complaint_text}</p>
+          <p><strong>Admin Notes:</strong> ${complaint.admin_notes || '—'}</p>
+        `;
+        container.appendChild(div);
+      });
+    } catch (err) {
+      container.innerHTML = '<p class="message error">Failed to load complaint history.</p>';
+    }
+  }
+
+  // Initial load
+  loadComplaintHistory();
 </script>
 
 </body>
