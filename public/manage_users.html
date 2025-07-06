@@ -161,6 +161,7 @@
     <thead>
       <tr>
         <th>User's ID Number</th>
+        <th>user_id</th>
         <th>Name</th>
         <th>Email</th>
         <th>Phone</th>
@@ -208,6 +209,7 @@
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>${user.id_number}</td>
+          <td>${user.user_id}</td>
           <td>${user.name}</td>
           <td>${user.email}</td>
           <td>${user.phone}</td>
@@ -224,6 +226,7 @@
     function showEditForm(user) {
       document.getElementById('editUserContainer').style.display = 'block';
       document.getElementById('editUserId').value = user.id_number;
+      document.getElementById('editUserId').value = user.user_id;
       document.getElementById('editName').value = user.name;
       document.getElementById('editEmail').value = user.email;
       document.getElementById('editPhone').value = user.phone;

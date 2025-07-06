@@ -203,7 +203,7 @@ app.get('/manage_users.html', (req, res) => {
 // GET all users
 app.get('/admin/users', (req, res) => {
   const query = `
-    SELECT id_number, name, email, phone, role 
+    SELECT id_number,user_id , name, email, phone, role 
     FROM users 
     WHERE role != 'admin'
   `;
@@ -238,7 +238,6 @@ app.put('/admin/users/:id', (req, res) => {
 });
 
 // DELETE user
-
 app.delete('/admin/users/:id', (req, res) => {
   const userId = req.params.id;
 
