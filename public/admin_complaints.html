@@ -1,191 +1,64 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Review Complaints - ChaiConnect Admin</title>
-  <link rel="stylesheet" href="/css/admin_style.css">
-  <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      margin: 0;
-      background-color: #f9f9f9;
-      padding: 20px;
-    }
-
-    .container {
-      max-width: 1200px;
-      margin: auto;
-      background-color: #fff;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-
-    h2 {
-      text-align: center;
-      color: #333;
-      margin-bottom: 20px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
-
-    th, td {
-      padding: 14px;
-      text-align: left;
-      border-bottom: 1px solid #e0e0e0;
-    }
-
-    th {
-      background-color: #f1f1f1;
-      color: #444;
-    }
-
-    tr:hover {
-      background-color: #f9f9f9;
-    }
-
-    .badge {
-      padding: 5px 12px;
-      border-radius: 20px;
-      font-size: 0.85em;
-      font-weight: 600;
-      text-transform: capitalize;
-    }
-
-    .open {
-      background-color: #fce4ec;
-      color: #d81b60;
-    }
-
-    .in_progress {
-      background-color: #fff3e0;
-      color: #fb8c00;
-    }
-
-    .resolved {
-      background-color: #e8f5e9;
-      color: #43a047;
-    }
-
-    select {
-      padding: 6px 10px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 14px;
-      background-color: #fff;
-    }
-
-    button.back-btn {
-      margin-top: 20px;
-      padding: 10px 20px;
-      background-color: #00796b;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      float: right;
-    }
-
-    button.back-btn:hover {
-      background-color: #004d40;
-    }
-
-    .status-select {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin - Respond to Complaints</title>
+  <link rel="stylesheet" href="css/complaints.css" />
 </head>
 <body>
-  <div class="container">
-    <h2>📝 Farmer Complaints Review</h2>
-    <table>
-      <thead>
-       <tr>
-      <th>Farmer Name</th>
-      <th>Category</th>
-      <th>Complaint</th>
-      <th>Submitted</th>
-      <th>Last Updated</th>
-      <th>Status</th>
-      <th>Actions</th>
-    </tr>
-      </thead>
-      <tbody id="complaintsTableBody">
-        <!-- Complaints will load here -->
-      </tbody>
-    </table>
-    <button class="back-btn" onclick="window.location.href='/admin_dashboard.html'">← Back to Dashboard</button>
-  </div>
 
- <script>
-  // Update your loadComplaints function
-  async function loadComplaints() {
-    const res = await fetch('/admin/complaints');
-    const complaints = await res.json();
-    const tbody = document.getElementById('complaintsTableBody');
-    tbody.innerHTML = '';
+  <h2>Admin Complaint Management</h2>
+  <div id="complaintsContainer">Loading complaints...</div>
 
-    complaints.forEach(complaint => {
-      const row = document.createElement('tr');
-      const badgeClass = complaint.status.replace(' ', '_');
-      
-      row.innerHTML = `
-        <td>${complaint.name}</td>
-        <td>${complaint.category || 'other'}</td>
-        <td>${complaint.complaint_text}</td>
-        <td>${new Date(complaint.complaint_date).toLocaleString()}</td>
-        <td>${new Date(complaint.updated_at).toLocaleString()}</td>
-        <td><span class="badge ${badgeClass}">${complaint.status}</span></td>
-        <td>
-          <div class="status-actions">
+  <script>
+    fetch('/api/admin/complaints')
+      .then(res => res.json())
+      .then(data => {
+        const container = document.getElementById('complaintsContainer');
+        container.innerHTML = '';
+
+        if (!data.success || data.complaints.length === 0) {
+          container.innerHTML = '<p>No complaints found.</p>';
+          return;
+        }
+
+        data.complaints.forEach(complaint => {
+          const div = document.createElement('div');
+          div.className = 'complaint-card';
+          div.innerHTML = `
+            <p><strong>Farmer ID:</strong> ${complaint.farmer_id}</p>
+            <p><strong>Category:</strong> ${complaint.category}</p>
+            <p><strong>Date:</strong> ${new Date(complaint.complaint_date).toLocaleString()}</p>
+            <p><strong>Status:</strong> <span class="status-${complaint.status}">${complaint.status}</span></p>
+            <p><strong>Complaint:</strong> ${complaint.complaint_text}</p>
+            <p><strong>Admin Notes:</strong> ${complaint.admin_notes || '—'}</p>
             ${complaint.status !== 'resolved' ? `
-              <select onchange="updateStatus(${complaint.complaint_id}, this.value)" class="status-select">
-                <option value="">Change status</option>
-                <option value="in_progress" ${complaint.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
-                <option value="resolved">Resolved</option>
-              </select>
-              <button onclick="showNotesModal(${complaint.complaint_id})" class="notes-btn">
-                <i class="fas fa-edit"></i> Notes
-              </button>
-            ` : '<em>Resolved</em>'}
-          </div>
-        </td>
-      `;
-      tbody.appendChild(row);
-    });
-  }
+              <textarea>${complaint.admin_notes || ''}</textarea>
+              <div class="actions">
+                <button class="btn-progress" onclick="updateComplaint(${complaint.complaint_id}, this, 'in_progress')">In Progress</button>
+                <button class="btn-resolve" onclick="updateComplaint(${complaint.complaint_id}, this, 'resolved')">Resolve</button>
+              </div>
+            ` : ''}
+          `;
+          container.appendChild(div);
+        });
+      });
 
-  // Add this new function for admin notes
-  async function showNotesModal(complaintId) {
-    // In a real app, you would implement a modal to view/edit admin notes
-    const notes = prompt('Enter admin notes for this complaint:');
-    if (notes !== null) {
-      await updateStatus(complaintId, null, notes);
+    function updateComplaint(id, btn, status) {
+      const card = btn.closest('.complaint-card');
+      const notes = card.querySelector('textarea').value;
+
+      fetch(`/api/admin/complaints/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ admin_notes: notes, status })
+      }).then(res => res.json())
+        .then(data => {
+          alert(data.success ? 'Updated' : 'Failed: ' + data.message);
+          if (data.success) location.reload();
+        });
     }
-  }
-
-  // Update the updateStatus function
-  async function updateStatus(id, status, notes = null) {
-    const res = await fetch(`/admin/complaints/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status, adminNotes: notes })
-    });
-
-    const data = await res.json();
-    if (data.success) {
-      alert('Complaint updated successfully');
-      loadComplaints();
-    } else {
-      alert(data.message || 'Failed to update complaint');
-    }
-  }
-</script>
+  </script>
 </body>
 </html>
