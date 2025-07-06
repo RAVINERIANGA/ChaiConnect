@@ -2,83 +2,15 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Extension Officer - Respond to Complaints</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <style>
-    body {
-      font-family: 'Poppins', sans-serif;
-      background: #f4f4f4;
-      padding: 20px;
-    }
-    h2 {
-      color: #2c3e50;
-      margin-bottom: 20px;
-    }
-    .complaint-card {
-      background: #fff;
-      padding: 20px;
-      margin-bottom: 20px;
-      border-radius: 10px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-    .complaint-card p {
-      margin: 6px 0;
-    }
-    .status-open {
-      color: #d35400;
-      font-weight: bold;
-    }
-    .status-in_progress {
-      color: #f39c12;
-      font-weight: bold;
-    }
-    .status-resolved {
-      color: #27ae60;
-      font-weight: bold;
-    }
-    textarea {
-      width: 100%;
-      margin-top: 10px;
-      padding: 10px;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-      resize: vertical;
-    }
-    .actions {
-      margin-top: 10px;
-    }
-    .actions button {
-      padding: 8px 12px;
-      border: none;
-      border-radius: 5px;
-      margin-right: 10px;
-      cursor: pointer;
-      font-weight: bold;
-      color: white;
-    }
-    .btn-progress {
-      background: #f39c12;
-    }
-    .btn-resolve {
-      background: #27ae60;
-    }
-    .btn-progress:hover {
-      background: #e67e22;
-    }
-    .btn-resolve:hover {
-      background: #219653;
-    }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Extension Officer - Complaints</title>
+  <link rel="stylesheet" href="css/complaints.css">
 </head>
 <body>
-
-  <h2>Respond to Farmer Complaints</h2>
+  <h2>Extension Services Complaints</h2>
   <div id="complaintsContainer">Loading complaints...</div>
 
   <script>
-    // Fetch complaints
     fetch('/api/extension/complaints')
       .then(res => res.json())
       .then(data => {
@@ -109,6 +41,7 @@
               </div>
             ` : ''}
           `;
+
           container.appendChild(div);
         });
       });
@@ -125,10 +58,10 @@
       .then(res => res.json())
       .then(data => {
         if (data.success) {
-          alert("Complaint updated successfully");
+          alert('Complaint updated successfully');
           location.reload();
         } else {
-          alert("Error: " + data.message);
+          alert('Error: ' + (data.message || 'Could not update complaint'));
         }
       });
     }
