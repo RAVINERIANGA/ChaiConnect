@@ -1650,6 +1650,66 @@ app.get('/api/farmer/payments', (req, res) => {
     res.json(results);
   });
 });
+// GET: Payment stats for the summary cards
+app.get('/api/farmer/payments/stats', (req, res) => {
+  const farmerId = req.session.userId;
+
+  if (!farmerId || req.session.role !== 'farmer') {
+    return res.status(403).json({ success: false, message: 'Unauthorized' });
+  }
+
+  const stats = {
+    total_earnings: 0,
+    month_earnings: 0,
+    pending_amount: 0
+  };
+
+  // Query 1: Total completed earnings (all time)
+  const totalEarningsQuery = `
+    SELECT SUM(amount) AS total_earnings
+    FROM payments
+    WHERE farmer_id = ? AND status = 'completed'
+  `;
+
+  // Query 2: Completed earnings this month
+  const monthEarningsQuery = `
+    SELECT SUM(amount) AS month_earnings
+    FROM payments
+    WHERE farmer_id = ? AND status = 'completed'
+      AND MONTH(payment_date) = MONTH(CURDATE())
+      AND YEAR(payment_date) = YEAR(CURDATE())
+  `;
+
+  // Query 3: Pending payments (estimated from deliveries)
+  const pendingQuery = `
+    SELECT SUM(d.quantity_kg * pr.price_per_kg) AS pending_amount
+    FROM deliveries d
+    JOIN payment_rates pr ON d.quality_grade = pr.quality_grade
+    LEFT JOIN payments p ON d.delivery_id = p.delivery_id
+    WHERE d.farmer_id = ? AND p.payment_id IS NULL AND d.status = 'completed'
+  `;
+
+  // Execute all 3 queries in sequence
+  db.query(totalEarningsQuery, [farmerId], (err1, res1) => {
+    if (err1) return res.status(500).json({ success: false, message: 'DB error (1)' });
+
+    stats.total_earnings = res1[0].total_earnings || 0;
+
+    db.query(monthEarningsQuery, [farmerId], (err2, res2) => {
+      if (err2) return res.status(500).json({ success: false, message: 'DB error (2)' });
+
+      stats.month_earnings = res2[0].month_earnings || 0;
+
+      db.query(pendingQuery, [farmerId], (err3, res3) => {
+        if (err3) return res.status(500).json({ success: false, message: 'DB error (3)' });
+
+        stats.pending_amount = res3[0].pending_amount || 0;
+
+        res.json(stats);
+      });
+    });
+  });
+});
 
 
 //System Logs - Admin side
@@ -2411,21 +2471,28 @@ app.get('/api/delivery-history', (req, res) => {
 
   const query = `
     SELECT 
-      dh.history_id,
-      dr.created_at AS request_date,
-      dr.pickup_date,
-      dr.estimated_quantity,
-      dh.quantity_kg AS actual_quantity,
-      dh.quality_grade,
-      dh.collection_center,
-      dh.notes,
-      dh.delivery_date,
-      dh.status,
-      dh.payment_status
-    FROM delivery_history dh
-    JOIN delivery_requests dr ON dh.request_id = dr.request_id
-    WHERE dh.farmer_id = ?
-    ORDER BY dh.delivery_date DESC
+      d.delivery_id,
+      d.delivery_date as created_at,
+      d.delivery_date as pickup_date,
+      d.quantity_kg as estimated_quantity,
+      d.quantity_kg,
+      d.quality_grade,
+      d.status,
+      d.photo_url,
+      -- Get payment status from payments table
+      CASE 
+        WHEN p.status = 'completed' THEN 'paid'
+        WHEN p.status = 'pending' THEN 'pending'
+        ELSE 'unpaid'
+      END as payment_status,
+      -- Default collection center (you might want to add this to deliveries table)
+      'Collection Center' as collection_center,
+      -- Notes from deliveries or payments
+      '' as notes
+    FROM deliveries d
+    LEFT JOIN payments p ON d.delivery_id = p.delivery_id
+    WHERE d.farmer_id = ?
+    ORDER BY d.delivery_date DESC
   `;
 
   db.query(query, [farmerId], (err, results) => {
@@ -2434,6 +2501,7 @@ app.get('/api/delivery-history', (req, res) => {
       return res.status(500).json({ message: 'Failed to fetch delivery history' });
     }
 
+    console.log('✅ Delivery history results:', results);
     res.json(results);
   });
 });
@@ -2583,7 +2651,8 @@ app.get('/api/training-materials/count', (req, res) => {
 
 
 // Farmer submits a complaint
-app.post('/api/farmer/complaints', async (req, res) => {
+
+/*app.post('/api/farmer/complaints', async (req, res) => {
   try {
     const farmerId = req.session.userId;
     const { complaintText, category = 'other' } = req.body;
@@ -2606,7 +2675,141 @@ app.post('/api/farmer/complaints', async (req, res) => {
     console.error('Error in complaint submission:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
+});*/
+
+
+//Farmer submits a complaint
+app.post('/api/farmer/submit-complaint', (req, res) => {
+  const farmerId = req.session.userId;
+  const { category, complaint_text } = req.body;
+
+  if (!farmerId || !category || !complaint_text) {
+    return res.status(400).json({ success: false, message: 'Missing required fields' });
+  }
+
+  const sql = `INSERT INTO complaints (farmer_id, category, complaint_text) VALUES (?, ?, ?)`;
+  db.query(sql, [farmerId, category, complaint_text], (err) => {
+    if (err) return res.status(500).json({ success: false, message: 'Database error' });
+    res.json({ success: true });
+  });
 });
+
+// --- FARMER views all their complaints ---
+app.get('/api/farmer/my-complaints', (req, res) => {
+  const farmerId = req.session.userId;
+  if (!farmerId) return res.status(403).json({ success: false, message: 'Not logged in' });
+
+  const sql = `SELECT * FROM complaints WHERE farmer_id = ? ORDER BY complaint_date DESC`;
+  db.query(sql, [farmerId], (err, results) => {
+    if (err) return res.status(500).json({ success: false, message: 'Database error' });
+    res.json({ success: true, complaints: results });
+  });
+});
+
+// --- Extension Officer gets extension complaints only ---
+app.get('/api/extension/complaints', (req, res) => {
+  if (req.session.role !== 'extension_officer') {
+    return res.status(403).json({ success: false, message: 'Not authorized' });
+  }
+
+  const query = `
+    SELECT * FROM complaints
+    WHERE category = 'extension' AND status != 'resolved'
+    ORDER BY complaint_date DESC
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) return res.status(500).json({ success: false, message: 'Database error' });
+    res.json({ success: true, complaints: results });
+  });
+});
+
+app.put('/api/extension/complaints/:id', (req, res) => {
+  const { id } = req.params;
+  const { admin_notes, status } = req.body;
+  if (req.session.role !== 'extension_officer') {
+    return res.status(403).json({ success: false, message: 'Unauthorized' });
+  }
+
+  db.query('SELECT category FROM complaints WHERE complaint_id = ?', [id], (err, rows) => {
+    if (err || rows.length === 0) return res.status(404).json({ success: false, message: 'Complaint not found' });
+    const allowed = ['extension'];
+    if (!allowed.includes(rows[0].category)) return res.status(403).json({ success: false, message: 'Not allowed' });
+
+    db.query('UPDATE complaints SET admin_notes = ?, status = ? WHERE complaint_id = ?',
+      [admin_notes, status, id],
+      err2 => {
+        if (err2) return res.status(500).json({ success: false });
+        res.json({ success: true });
+      }
+    );
+  });
+});
+
+// --- Admin handles: account, payment, other ---
+app.get('/api/admin/complaints', (req, res) => {
+  if (req.session.role !== 'admin') return res.status(403).json({ success: false });
+
+  db.query(`
+    SELECT * FROM complaints
+    WHERE category IN ('account', 'payment', 'other') AND status != 'resolved'
+    ORDER BY complaint_date DESC
+  `, (err, results) => {
+    if (err) return res.status(500).json({ success: false });
+    res.json({ success: true, complaints: results });
+  });
+});
+
+app.put('/api/admin/complaints/:id', (req, res) => {
+  const { id } = req.params;
+  const { admin_notes, status } = req.body;
+  if (req.session.role !== 'admin') return res.status(403).json({ success: false });
+
+  db.query('SELECT category FROM complaints WHERE complaint_id = ?', [id], (err, rows) => {
+    if (err || rows.length === 0) return res.status(404).json({ success: false });
+    const allowed = ['account', 'payment', 'other'];
+    if (!allowed.includes(rows[0].category)) return res.status(403).json({ success: false });
+
+    db.query('UPDATE complaints SET admin_notes = ?, status = ? WHERE complaint_id = ?',
+      [admin_notes, status, id], err2 => {
+        if (err2) return res.status(500).json({ success: false });
+        res.json({ success: true });
+      });
+  });
+});
+
+
+// --- Factory Staff handles: delivery ---
+app.get('/api/factory/complaints', (req, res) => {
+  if (req.session.role !== 'factory_staff') return res.status(403).json({ success: false });
+
+  db.query(`
+    SELECT * FROM complaints
+    WHERE category = 'delivery' AND status != 'resolved'
+    ORDER BY complaint_date DESC
+  `, (err, results) => {
+    if (err) return res.status(500).json({ success: false });
+    res.json({ success: true, complaints: results });
+  });
+});
+
+app.put('/api/factory/complaints/:id', (req, res) => {
+  const { id } = req.params;
+  const { admin_notes, status } = req.body;
+  if (req.session.role !== 'factory_staff') return res.status(403).json({ success: false });
+
+  db.query('SELECT category FROM complaints WHERE complaint_id = ?', [id], (err, rows) => {
+    if (err || rows.length === 0) return res.status(404).json({ success: false });
+    if (rows[0].category !== 'delivery') return res.status(403).json({ success: false });
+
+    db.query('UPDATE complaints SET admin_notes = ?, status = ? WHERE complaint_id = ?',
+      [admin_notes, status, id], err2 => {
+        if (err2) return res.status(500).json({ success: false });
+        res.json({ success: true });
+      });
+  });
+});
+
 
 // Admin gets all complaints
 app.get('/admin/complaints', async (req, res) => {
