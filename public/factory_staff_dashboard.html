@@ -3,21 +3,33 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Factory Staff Dashboard</title>
     <link rel="stylesheet" href="/css/dashboards_style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
 </head>
 
 <body>
     <!-- Top Floating Header -->
     <div class="top-header">
-        <div class="right-icons">
+        <div class="left-section">
+            <button class="menu-toggle" onclick="toggleSidebar()">
+                <i class="fas fa-bars"></i>
+            </button>
             <h2>chaiConnect</h2>
         </div>
         <div class="right-icons">
-            <a href="/alerts.html" title="View Alerts" style="position: relative;">
-                <img src="/images/system_alert_symbol.jpg" class="alert-icon" alt="Alerts">
+            <a href="/alerts.html" title="View Alerts" class="alert-link">
+                <i class="fas fa-bell"></i>
                 <span id="alertCount">0</span>
             </a>
+
+            <label class="theme-switch">
+                <input type="checkbox" id="themeToggle">
+                <span class="slider"></span>
+            </label>
+
             <button class="logout-button" onclick="logout()">Logout</button>
         </div>
     </div>
@@ -41,11 +53,11 @@
         </section>
         <div class="dashboard-cards">
             <div class="stat-card">
-                <p>Today's Deliveries</p>
+                <p>Today's Deliveries Recorded By You</p>
                 <h2 id="deliveriesToday">Loading...</h2>
             </div>
             <div class="stat-card">
-                <p>Total Tea (KG) Today</p>
+                <p>Total Tea (KG) Handled By You Today</p>
                 <h2 id="kgToday">Loading...</h2>
             </div>
             <div class="stat-card">
@@ -53,7 +65,7 @@
                 <h2 id="flaggedFarmers">Loading...</h2>
             </div>
             <div class="stat-card">
-                <p>Assigned Farmers</p>
+                <p>Total No of Assigned Farmers To Extension Officer</p>
                 <h2 id="assignedFarmers">Loading...</h2>
             </div>
         </div>
@@ -126,9 +138,15 @@
                 document.getElementById('assignedFarmers').textContent = '0';
             });
 
+            function toggleSidebar() {
+  document.querySelector('.sidebar').classList.toggle('active');
+}
+
     </script>
     <script src="/logout.js"></script>
     <script src="/alertCount.js"></script>
+    <script src="/darkLight.js"></script>
+
 
 
 </body>

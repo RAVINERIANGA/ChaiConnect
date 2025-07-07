@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <title>Grading Summary | ChaiConnect</title>
@@ -11,36 +12,58 @@
       margin: 0;
       padding: 0;
     }
+
     .container {
       max-width: 800px;
       margin: 40px auto;
       background: #fff;
       padding: 30px;
       border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
     }
+
     h2 {
       text-align: center;
       color: #2c3e50;
     }
+
     table {
       width: 100%;
       margin-top: 20px;
       border-collapse: collapse;
     }
-    th, td {
+
+    th,
+    td {
       padding: 12px;
       text-align: center;
       border: 1px solid #ccc;
     }
+
     thead {
       background-color: #34495e;
       color: white;
     }
+
+    .back-button {
+      display: inline-block;
+      margin-bottom: 15px;
+      color: #3b7a57;
+      font-weight: bold;
+      text-decoration: none;
+      transition: color 0.3s ease;
+    }
+
+    .back-button:hover {
+      color: #2e5c44;
+      text-decoration: underline;
+    }
   </style>
 </head>
+
 <body>
   <div class="container">
+    <a href="/factory_staff_dashboard.html" class="back-button">← Back to Dashboard</a>
     <h2>Grading Summary</h2>
     <p style="text-align: center; color: #7f8c8d;">View reports of graded tea by quality level.</p>
 
@@ -81,4 +104,5 @@
     window.onload = loadGradingSummary;
   </script>
 </body>
+
 </html>

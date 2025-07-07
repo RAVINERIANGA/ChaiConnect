@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Assign Farmers</title>
   <link href="https://fonts.googleapis.com/css2?family=Segoe+UI&display=swap" rel="stylesheet">
   <style>
@@ -28,21 +29,6 @@
       font-size: 26px;
     }
 
-    .back-btn {
-      display: block;
-      margin: 0 auto 30px auto;
-      padding: 10px 16px;
-      background-color: #607d8b;
-      color: white;
-      border: none;
-      font-size: 15px;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    .back-btn:hover {
-      background-color: #455a64;
-    }
 
     .section {
       margin-bottom: 40px;
@@ -130,13 +116,25 @@
     .filters input {
       flex: 1;
     }
+    .back-button {
+    display: inline-block;
+    margin-bottom: 15px;
+    color: #3b7a57;
+    font-weight: bold;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.back-button:hover {
+    color: #2e5c44;
+    text-decoration: underline;
+}
   </style>
 </head>
 <body>
   <div class="container">
     <h2>Assign Farmers to Extension Officers</h2>
-    <button class="back-btn" onclick="window.location.href='/factory_staff_dashboard.html'">← Back to Dashboard</button>
-
+    <a href="/factory_staff_dashboard.html" class="back-button">← Back to Dashboard</a>
     <div class="section">
       <h3>Search Farmer</h3>
       <input type="text" id="farmerSearch" placeholder="Search by name or region">

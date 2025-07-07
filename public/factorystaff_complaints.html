@@ -4,10 +4,26 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Factory Staff - Complaints</title>
+  <style>
+    .back-button {
+    display: inline-block;
+    margin-bottom: 15px;
+    color: #3b7a57;
+    font-weight: bold;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.back-button:hover {
+    color: #2e5c44;
+    text-decoration: underline;
+}
+  </style>
   <link rel="stylesheet" href="css/complaints.css">
 </head>
 <body>
   <h2>Delivery Complaints</h2>
+  <a href="/factory_staff_dashboard.html" class="back-button">← Back to Dashboard</a>
   <div id="complaintsContainer">Loading complaints...</div>
 
   <script>
