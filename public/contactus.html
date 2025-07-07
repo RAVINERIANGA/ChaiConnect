@@ -5,13 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Contact Us | ChaiConnect</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <link rel="stylesheet" href="/css/style.css"/>
 </head>
 <body>
     <header>
     <nav class="navbar">
       <div class="logo">ChaiConnect</div>
-      <ul class="nav-links">
+      <button class="hamburger" onclick="toggleNav()">
+          <i class="fas fa-bars"></i>
+      </button>
+      <ul class="nav-links" id="navLinks">
         <li><a href="index.html">Home</a></li>
         <li><a href="aboutus.html">About Us</a></li>
         <li><a href="faqs.html">FAQs</a></li>
@@ -103,5 +107,11 @@
       <p>&copy; 2025 ChaiConnect. All rights reserved. | Privacy Policy | Terms of Service</p>
     </div>
   </footer>
+
+  <script>
+  function toggleNav() {
+    document.getElementById('navLinks').classList.toggle('show');
+  }
+</script>
 </body>
 </html>

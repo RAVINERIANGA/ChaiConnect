@@ -6,13 +6,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ChaiConnect Tea Management System</title>
   <link rel="stylesheet" href="./css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 
 <body>
   <header>
     <nav class="navbar">
       <div class="logo">ChaiConnect</div>
-      <ul class="nav-links">
+      <button class="hamburger" onclick="toggleNav()">
+          <i class="fas fa-bars"></i>
+      </button>
+      <ul class="nav-links" id="navLinks">
         <li><a href="#">Home</a></li>
         <li><a href="aboutus.html">About Us</a></li>
         <li><a href="faqs.html">FAQs</a></li>
@@ -26,8 +30,7 @@
   <section class="hero">
     <div class="hero-content">
       <h1>Digitizing Kenya's Tea Supply Chain</h1>
-      <p>Connect farmers, factories and officers with real-time delivery, payment, and quality data—on web, mobile &
-        USSD.</p>
+      <p>Connect farmers, factories and officers with real-time delivery, payment, and quality data—on web</p>
       <a href="login.html" class="btn hero-btn">Get Started</a>
     </div>
   </section>
@@ -116,6 +119,12 @@
     </div>
   </footer>
   <script src="main.js"></script>
+  <script>
+  function toggleNav() {
+    document.getElementById('navLinks').classList.toggle('show');
+  }
+</script>
+
 </body>
 
 </html>

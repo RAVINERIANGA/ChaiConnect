@@ -604,3 +604,49 @@ button[type="submit"]:hover {
   border-radius: 6px;
   font-size: 1rem;
 }
+
+.hamburger {
+  display: none;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+/* Show hamburger and collapse nav on small screens */
+@media (max-width: 768px) {
+  .nav-links {
+    display: none;
+    flex-direction: column;
+    background: #004d40;
+    position: absolute;
+    top: 65px;
+    right: 0;
+    width: 100%;
+    text-align: center;
+    z-index: 1000;
+    padding: 1rem 0;
+  }
+
+  .nav-links.show {
+    display: flex;
+  }
+
+  .hamburger {
+    display: block;
+  }
+
+  .navbar {
+    flex-wrap: wrap;
+    position: relative;
+  }
+
+  .nav-links li {
+    margin: 0.5rem 0;
+  }
+
+  .nav-links .btn {
+    margin: 0.5rem auto;
+  }
+}
