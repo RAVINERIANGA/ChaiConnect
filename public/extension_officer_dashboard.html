@@ -10,7 +10,10 @@
 
 <body>
   <div class="top-header">
-        <div class="right-icons">
+        <div class="left-section">
+          <button class="menu-toggle" onclick="toggleSidebar()">
+                <i class="fas fa-bars"></i>
+            </button>
             <h2>chaiConnect</h2>
         </div>
         <div class="right-icons">
@@ -506,6 +509,11 @@ document.addEventListener('DOMContentLoaded', loadVisitData);
     document.addEventListener('DOMContentLoaded', function() {
       loadVisitRequests();
     });
+
+
+    function toggleSidebar() {
+  document.querySelector('.sidebar').classList.toggle('active');
+}
 
   </script>
   <script src="logout.js"></script>

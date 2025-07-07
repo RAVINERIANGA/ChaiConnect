@@ -783,6 +783,6 @@ input:checked + .slider::after {
 }
 
 .dark-mode .stat-card h2 {
-  color: #ffb347 !important;
+  color: #f97316 !important;
 }
 
