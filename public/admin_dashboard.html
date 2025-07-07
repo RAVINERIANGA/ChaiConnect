@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <title>Admin Dashboard</title>
   <link rel="stylesheet" href="/css/dashboards_style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 
 <body>
@@ -14,10 +15,14 @@
       <h2>chaiConnect</h2>
     </div>
     <div class="right-icons">
-      <a href="/alerts.html" title="View Alerts" style="position: relative;">
-        <img src="/images/system_alert_symbol.jpg" class="alert-icon" alt="Alerts">
+      <a href="/alerts.html" title="View Alerts" class="alert-link">
+        <i class="fas fa-bell"></i>
         <span id="alertCount">0</span>
       </a>
+      <label class="theme-switch">
+        <input type="checkbox" id="themeToggle">
+        <span class="slider"></span>
+      </label>
       <button class="logout-button" onclick="logout()">Logout</button>
     </div>
   </div>
@@ -201,5 +206,6 @@
 
 
 <script src="/logout.js"></script>
+<script src="/darkLight.js"></script>
 
 </html>
