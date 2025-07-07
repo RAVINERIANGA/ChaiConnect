@@ -2,221 +2,149 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Extension Services | ChaiConnect</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Extension Services | chaiConnect</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"/>
+  <link rel="stylesheet" href="/css/farmer_dashboard.css"/>
   <style>
-    body {
-      background-color: #f7f9fb;
-      font-family: 'Segoe UI', sans-serif;
-    }
-    .card {
+    .container {
+      max-width: 800px;
+      margin: 40px auto;
+      background: #fff;
       border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-      margin-bottom: 20px;
+      padding: 30px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      font-family: 'Poppins', sans-serif;
     }
-    .visit-booking {
-      background: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      margin-bottom: 30px;
-    }
-    .upcoming-visits {
-      background: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-    .visit-card {
-      border: 1px solid #ddd;
+    h2 { margin-bottom: 20px; }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { font-weight: 500; display: block; margin-bottom: 8px; }
+    .form-control { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; }
+    textarea.form-control { min-height: 100px; resize: vertical; }
+    .btn-submit {
+      background-color: #28a745;
+      color: #fff;
+      padding: 12px 24px;
+      border: none;
       border-radius: 6px;
-      padding: 15px;
-      margin-bottom: 15px;
-      background: #f9f9f9;
+      font-weight: 600;
+      cursor: pointer;
     }
-    .visit-header {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 10px;
-      border-bottom: 1px solid #eee;
-      padding-bottom: 8px;
-    }
-    .visit-date {
-      font-weight: bold;
-      color: #333;
-    }
-    .visit-status {
-      padding: 3px 8px;
-      border-radius: 4px;
-      font-size: 0.8em;
-      font-weight: bold;
-    }
-    .status-requested {
-      background: #fff3cd;
-      color: #856404;
-    }
-    .status-scheduled {
+    .btn-submit:hover { background-color: #218838; }
+    table { width: 100%; border-collapse: collapse; margin-top: 30px; }
+    th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+    th { background-color: #f5f5f5; }
+    .success-message {
       background: #d4edda;
       color: #155724;
-    }
-    .status-completed {
-      background: #d1ecf1;
-      color: #0c5460;
-    }
-    .visit-body p {
-      margin: 5px 0;
-      color: #555;
-    }
-    .btn-primary {
-      background-color: #28a745;
-      border-color: #28a745;
-    }
-    .btn-primary:hover {
-      background-color: #218838;
-      border-color: #1e7e34;
-    }
-    .form-group {
-      margin-bottom: 1rem;
-    }
-    label {
-      display: block;
-      margin-bottom: 0.5rem;
-    }
-    input[type="datetime-local"], select, textarea {
-      width: 100%;
-      padding: 0.375rem 0.75rem;
-      border: 1px solid #ced4da;
-      border-radius: 0.25rem;
-    }
-    textarea {
-      min-height: 100px;
-    }
-    /* Add this new style for error messages */
-    .error-message {
-      color: #dc3545;
-      margin-top: 10px;
-      display: none;
-    }
-     .success-message {
-      color: #155724;
-      margin-top: 10px;
-      padding: 10px;
-      background-color: #d4edda;
-      border-radius: 4px;
+      padding: 15px;
+      border-radius: 6px;
+      margin-bottom: 20px;
       display: none;
     }
   </style>
 </head>
 <body>
-  <div class="container py-4">
-    <h2 class="text-center mb-4 text-success">Extension Services</h2>
-
-    <!-- Visit Booking Section -->
-<div class="visit-booking">
-  <h2><i class="fas fa-calendar-plus"></i> Request Extension Visit</h2>
-  <form id="visitRequestForm">
-    <div class="form-group">
-      <label for="preferredDate">Preferred Date:</label>
-      <input type="datetime-local" id="preferredDate" required>
+  <div class="container">
+    <h2>Request Extension Visit</h2>
+    <div class="success-message" id="successMessage">
+      <i class="fas fa-check-circle"></i> Visit request submitted successfully!
     </div>
-    <div class="form-group">
-      <label for="purpose">Purpose:</label>
-      <select id="purpose" required>
-        <option value="">Select purpose</option>
-        <option value="Disease inspection">Disease inspection</option>
-        <option value="Soil testing">Soil testing</option>
-        <option value="Training">Training</option>
-        <option value="Harvest planning">Harvest planning</option>
-        <option value="Other">Other</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label for="notes">Additional Notes:</label>
-      <textarea id="notes" rows="3"></textarea>
-    </div>
-    <button type="submit" class="btn btn-primary">
-      <i class="fas fa-paper-plane"></i> Submit Request
-    </button>
-    <div class="error-message" id="form-error"></div>
-    <div class="success-message" id="form-success">Visit request submitted!</div>
-  </form>
-</div>
-
-    
-
-    <div class="upcoming-visits">
-      <h2><i class="fas fa-calendar-alt"></i> Your Scheduled Visits</h2>
-      <div id="visitsContainer">
-        <!-- Visits will be loaded here -->
+    <form id="visitRequestForm">
+      <div class="form-group">
+        <label for="visitDate">Preferred Visit Date</label>
+        <input type="date" id="visitDate" class="form-control" required>
       </div>
-    </div>
-
-    <!-- Upcoming Trainings -->
-    <div class="card">
-      <div class="card-body">
-        <h5 class="card-title"><i class="fas fa-chalkboard-teacher"></i> Upcoming Training Sessions</h5>
-        <ul class="list-group" id="trainingList">
-          <!-- Filled dynamically -->
-        </ul>
+      <div class="form-group">
+        <label for="visitTime">Preferred Visit Time</label>
+        <input type="time" id="visitTime" class="form-control" required>
       </div>
-    </div>
+      <div class="form-group">
+        <label for="visitPurpose">Purpose</label>
+        <select id="visitPurpose" class="form-control" required>
+          <option value="">-- Select purpose --</option>
+          <option value="routine_check">Routine Check</option>
+          <option value="training">Training</option>
+          <option value="problem_solving">Problem Solving</option>
+          <option value="harvest_advice">Harvest Advice</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="visitNotes">Additional Notes</label>
+        <textarea id="visitNotes" class="form-control"></textarea>
+      </div>
+      <button type="submit" class="btn-submit">Submit Request</button>
+    </form>
+
+  <h2 style="margin-top: 50px;">Your Visit Requests</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Preferred Date</th>
+      <th>Purpose</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody id="visitHistoryTable"></tbody>
+</table>
   </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-  document.getElementById('visitRequestForm').addEventListener('submit', async function (e) {
-    e.preventDefault();
+  <script>
+    document.getElementById('visitRequestForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
 
-    const preferredDate = document.getElementById('preferredDate').value;
-    const purpose = document.getElementById('purpose').value;
-    const notes = document.getElementById('notes').value;
-    const errorDiv = document.getElementById('form-error');
-    const successDiv = document.getElementById('form-success');
+      const visitDate = document.getElementById('visitDate').value;
+      const visitTime = document.getElementById('visitTime').value;
+      const purpose = document.getElementById('visitPurpose').value;
+      const notes = document.getElementById('visitNotes').value;
+      const visit_datetime = `${visitDate}T${visitTime}:00`;
 
-    if (!preferredDate || !purpose) {
-      errorDiv.textContent = "Please fill in all required fields.";
-      errorDiv.style.display = 'block';
-      return;
-    }
-
-    errorDiv.style.display = 'none';
-
-    try {
-      const response = await fetch('/api/farmer/schedule-visit', {
+      const res = await fetch('/api/farmer/request-extension-visit', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          preferredDate: new Date(preferredDate).toISOString(),
-          purpose,
-          notes
-        })
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ visit_datetime, purpose, notes })
       });
 
-      const result = await response.json();
+      const data = await res.json();
 
-      if (!response.ok || !result.success) {
-        throw new Error(result.message || "Failed to submit request.");
+      if (data.success) {
+        document.getElementById('successMessage').style.display = 'block';
+        this.reset();
+        loadVisitHistory();
+        setTimeout(() => {
+          document.getElementById('successMessage').style.display = 'none';
+        }, 5000);
+      } else {
+        alert(data.message || 'Failed to submit request.');
       }
+    });
 
-      successDiv.style.display = 'block';
-      this.reset();
-      setTimeout(() => {
-        successDiv.style.display = 'none';
-      }, 5000);
+    async function loadVisitHistory() {
+      const res = await fetch('/api/farmer/my-visit-requests', { credentials: 'include' });
+      const data = await res.json();
+      const tbody = document.getElementById('visitHistoryTable');
+      tbody.innerHTML = '';
 
-    } catch (err) {
-      console.error(err);
-      errorDiv.textContent = err.message || "An unexpected error occurred.";
-      errorDiv.style.display = 'block';
-    }
+      if (data.success) {
+  data.visits.forEach(v => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${new Date(v.preferred_date).toLocaleString()}</td>
+      <td>${v.purpose.replaceAll('_', ' ')}</td>
+      <td>${v.status}</td>
+    `;
+    tbody.appendChild(tr);
   });
-});
+} else {
+  tbody.innerHTML = '<tr><td colspan="3">No visit requests found</td></tr>';
+}
 
-</script>
+    }
 
+    document.addEventListener('DOMContentLoaded', loadVisitHistory);
+  </script>
 </body>
 </html>
