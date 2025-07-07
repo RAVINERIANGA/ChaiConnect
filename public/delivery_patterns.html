@@ -48,10 +48,24 @@
       font-size: 0.9rem;
       color: #7f8c8d;
     }
+    .back-button {
+    display: inline-block;
+    margin-bottom: 15px;
+    color: #3b7a57;
+    font-weight: bold;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.back-button:hover {
+    color: #2e5c44;
+    text-decoration: underline;
+}
   </style>
 </head>
 <body>
   <div class="container">
+    <a href="/factory_staff_dashboard.html" class="back-button">← Back to Dashboard</a>
     <h2>📈 Tea Delivery Trends (Last 7 Days)</h2>
     <canvas id="deliveryChart"></canvas>
     <div class="footer">Auto-generated based on completed or graded deliveries</div>
