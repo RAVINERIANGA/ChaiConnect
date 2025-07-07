@@ -2404,50 +2404,340 @@ app.post('/api/delivery-requests/:id/cancel', (req, res) => {
   });
 });
 
-// Get all visit requests
+// GET all visit requests assigned to the logged-in extension officer
 app.get('/api/visit-requests/all', (req, res) => {
-  if (!req.session || req.session.role !== 'extension_officer') {
+  const officerUserId = req.session.userId;
+
+  if (!officerUserId || req.session.role !== 'extension_officer') {
     return res.status(403).json({ success: false, message: 'Unauthorized' });
   }
 
-  const sql = `
-    SELECT v.visit_id, v.farmer_id, u.name AS farmer_name, u.phone AS farmer_phone,
-           v.preferred_date, v.scheduled_date, v.purpose, v.notes, v.status
-    FROM visit_requests v
-    JOIN users u ON v.farmer_id = u.user_id
-    WHERE v.officer_id = ?
-    ORDER BY v.created_at DESC
+  const getOfficerIdQuery = `SELECT officer_id FROM extension_officers WHERE user_id = ?`;
+
+  db.query(getOfficerIdQuery, [officerUserId], (err, results) => {
+    if (err || results.length === 0) {
+      console.error('Error fetching officer_id:', err);
+      return res.status(500).json({ success: false, message: 'Could not get officer_id' });
+    }
+
+    const officerId = results[0].officer_id;
+
+    const visitsQuery = `
+      SELECT 
+        fv.visit_id,
+        fv.farmer_id,
+        fv.preferred_date,
+        fv.scheduled_date,
+        fv.actual_date,
+        fv.purpose,
+        fv.notes,
+        fv.status,
+        u.full_name AS farmer_name,
+        u.phone AS farmer_phone
+      FROM farmer_visits fv
+      JOIN users u ON fv.farmer_id = u.user_id
+      WHERE fv.officer_id = ?
+      ORDER BY fv.preferred_date DESC
+    `;
+
+    db.query(visitsQuery, [officerId], (err2, visits) => {
+      if (err2) {
+        console.error('Error fetching visits:', err2);
+        return res.status(500).json({ success: false, message: 'Error loading visits' });
+      }
+
+      res.json({ success: true, requests: visits });
+    });
+  });
+});
+
+// PUT update status of a visit
+app.put('/api/visit-requests/:visitId/status', (req, res) => {
+  const userId = req.session.userId;
+  const role = req.session.role;
+
+  if (!userId || role !== 'extension_officer') {
+    return res.status(403).json({ success: false, message: 'Unauthorized' });
+  }
+
+  const visitId = req.params.visitId;
+  const { status } = req.body;
+
+  if (!['scheduled', 'completed', 'cancelled'].includes(status)) {
+    return res.status(400).json({ success: false, message: 'Invalid status' });
+  }
+
+  const updateQuery = `
+    UPDATE farmer_visits
+    SET status = ?, updated_at = CURRENT_TIMESTAMP
+    WHERE visit_id = ?
   `;
 
-  db.query(sql, [req.session.userId], (err, results) => {
-    if (err) return res.status(500).json({ success: false, message: 'DB error' });
-    res.json({ success: true, requests: results });
+  db.query(updateQuery, [status, visitId], (err, result) => {
+    if (err) {
+      console.error('Error updating visit status:', err);
+      return res.status(500).json({ success: false, message: 'Database error' });
+    }
+
+    res.json({ success: true, message: 'Status updated' });
+  });
+});
+
+// Get officer ID for the logged-in user
+app.get('/api/extension-officer/me', (req, res) => {
+  if (!req.session.userId || req.session.role !== 'extension_officer') {
+    return res.status(403).json({ success: false, message: 'Unauthorized' });
+  }
+
+  const query = `
+    SELECT eo.officer_id 
+    FROM extension_officers eo
+    WHERE eo.user_id = ?
+  `;
+
+  db.query(query, [req.session.userId], (err, results) => {
+    if (err) {
+      console.error('Error fetching officer ID:', err);
+      return res.status(500).json({ success: false });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ success: false, message: 'Officer not found' });
+    }
+
+    res.json({ 
+      success: true,
+      officer_id: results[0].officer_id
+    });
+  });
+});
+
+// Get visits for an officer
+app.get('/api/extension-officer/visits', (req, res) => {
+  const officerId = req.query.officer_id;
+
+  if (!officerId) {
+    return res.status(400).json({ success: false, message: 'Officer ID required' });
+  }
+
+  const query = `
+    SELECT 
+      v.visit_id,
+      v.preferred_date,
+      v.scheduled_date,
+      v.purpose,
+      v.status,
+      u.name AS farmer_name,
+      u.phone AS farmer_phone,
+      fp.location
+    FROM farmer_visits v
+    JOIN users u ON v.farmer_id = u.user_id
+    LEFT JOIN farmer_profile fp ON u.user_id = fp.farmer_id
+    WHERE v.officer_id = ?
+    ORDER BY v.preferred_date DESC
+  `;
+
+  db.query(query, [officerId], (err, results) => {
+    if (err) {
+      console.error('Error fetching visits:', err);
+      return res.status(500).json({ success: false });
+    }
+
+    res.json({
+      success: true,
+      visits: results
+    });
   });
 });
 
 // Update visit status
-app.put('/api/visit-requests/:id/status', (req, res) => {
-  if (!req.session || req.session.role !== 'extension_officer') {
+app.put('/api/extension-officer/visits/:visitId', (req, res) => {
+  const visitId = req.params.visitId;
+  const { action } = req.body;
+
+  if (!['complete', 'cancel'].includes(action)) {
+    return res.status(400).json({ success: false, message: 'Invalid action' });
+  }
+
+  const status = action === 'complete' ? 'completed' : 'cancelled';
+  const query = `
+    UPDATE farmer_visits
+    SET status = ?
+    WHERE visit_id = ?
+  `;
+
+  db.query(query, [status, visitId], (err, result) => {
+    if (err) {
+      console.error('Error updating visit:', err);
+      return res.status(500).json({ success: false });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Visit not found' });
+    }
+
+    res.json({ success: true });
+  });
+});
+
+// Get visit details for scheduling
+app.get('/api/extension-officer/visit-details/:visitId', (req, res) => {
+  if (!req.session.userId || req.session.role !== 'extension_officer') {
     return res.status(403).json({ success: false, message: 'Unauthorized' });
   }
 
-  const visitId = req.params.id;
-  const { status } = req.body;
+  const visitId = req.params.visitId;
+  
+  const query = `
+    SELECT 
+      v.visit_id,
+      v.farmer_id,
+      v.preferred_date,
+      v.scheduled_date,
+      v.purpose,
+      v.notes,
+      v.status,
+      u.name AS farmer_name,
+      u.phone AS farmer_phone,
+      fp.location
+    FROM farmer_visits v
+    JOIN users u ON v.farmer_id = u.user_id
+    LEFT JOIN farmer_profile fp ON u.user_id = fp.farmer_id
+    WHERE v.visit_id = ?
+  `;
 
-  if (!['completed', 'cancelled'].includes(status)) {
-    return res.status(400).json({ success: false, message: 'Invalid status' });
-  }
-
-  db.query(
-    `UPDATE visit_requests SET status = ? WHERE visit_id = ? AND officer_id = ?`,
-    [status, visitId, req.session.userId],
-    (err, result) => {
-      if (err) return res.status(500).json({ success: false, message: 'Update failed' });
-      res.json({ success: true });
+  db.query(query, [visitId], (err, results) => {
+    if (err) {
+      console.error('Error fetching visit details:', err);
+      return res.status(500).json({ success: false });
     }
-  );
+
+    if (results.length === 0) {
+      return res.status(404).json({ success: false, message: 'Visit not found' });
+    }
+
+    res.json({
+      success: true,
+      visit: results[0]
+    });
+  });
 });
 
+// Schedule or reschedule a visit
+app.put('/api/extension-officer/schedule-visit/:visitId', (req, res) => {
+  if (!req.session.userId || req.session.role !== 'extension_officer') {
+    return res.status(403).json({ success: false, message: 'Unauthorized' });
+  }
+
+  const visitId = req.params.visitId;
+  const { scheduled_datetime, notes, status } = req.body;
+
+  const query = `
+    UPDATE farmer_visits
+    SET 
+      scheduled_date = ?,
+      notes = ?,
+      status = ?
+    WHERE visit_id = ?
+  `;
+
+  db.query(query, [scheduled_datetime, notes, status, visitId], (err, result) => {
+    if (err) {
+      console.error('Error scheduling visit:', err);
+      return res.status(500).json({ success: false });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Visit not found' });
+    }
+
+    res.json({ success: true });
+  });
+});
+
+// Mark visit as completed
+app.put('/api/extension-officer/complete-visit/:visitId', (req, res) => {
+  if (!req.session.userId || req.session.role !== 'extension_officer') {
+    return res.status(403).json({ success: false, message: 'Unauthorized' });
+  }
+
+  const visitId = req.params.visitId;
+  
+  const query = `
+    UPDATE farmer_visits
+    SET status = 'completed'
+    WHERE visit_id = ?
+  `;
+
+  db.query(query, [visitId], (err, result) => {
+    if (err) {
+      console.error('Error completing visit:', err);
+      return res.status(500).json({ success: false });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Visit not found' });
+    }
+
+    res.json({ success: true });
+  });
+});
+
+// Cancel visit request
+app.put('/api/extension-officer/cancel-visit/:visitId', (req, res) => {
+  if (!req.session.userId || req.session.role !== 'extension_officer') {
+    return res.status(403).json({ success: false, message: 'Unauthorized' });
+  }
+
+  const visitId = req.params.visitId;
+  
+  const query = `
+    UPDATE farmer_visits
+    SET status = 'cancelled'
+    WHERE visit_id = ?
+  `;
+
+  db.query(query, [visitId], (err, result) => {
+    if (err) {
+      console.error('Error cancelling visit:', err);
+      return res.status(500).json({ success: false });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Visit not found' });
+    }
+
+    res.json({ success: true });
+  });
+});
+
+// Get count of upcoming visits (scheduled but not completed)
+app.get('/api/extension-officer/upcoming-visits-count', (req, res) => {
+  if (!req.session.userId || req.session.role !== 'extension_officer') {
+    return res.status(403).json({ success: false, message: 'Unauthorized' });
+  }
+
+  const query = `
+    SELECT COUNT(*) as count
+    FROM farmer_visits v
+    JOIN extension_officers eo ON v.officer_id = eo.officer_id
+    WHERE eo.user_id = ? 
+    AND v.status = 'scheduled'
+    AND v.scheduled_date >= CURDATE()
+  `;
+
+  db.query(query, [req.session.userId], (err, results) => {
+    if (err) {
+      console.error('Error fetching upcoming visits count:', err);
+      return res.status(500).json({ success: false });
+    }
+
+    res.json({
+      success: true,
+      count: results[0].count
+    });
+  });
+});
 // Upload training materials route
 app.post('/api/upload-training', uploadTraining.single('file'), (req, res) => {
   console.log('Upload request received:', req.body, req.file);
@@ -2688,6 +2978,50 @@ app.post('/api/farmer/update-visit-status', (req, res) => {
     }
 
     res.json({ success: true, message: 'Visit status updated' });
+  });
+});
+
+// Get visits assigned to the logged-in extension officer
+app.get('/api/extension-officer/my-visit-requests', (req, res) => {
+  const userId = req.session.userId;
+  if (!userId || req.session.role !== 'extension_officer') {
+    return res.status(403).json({ success: false, message: 'Unauthorized' });
+  }
+
+  const getOfficerId = `SELECT officer_id FROM extension_officers WHERE user_id = ?`;
+
+  db.query(getOfficerId, [userId], (err, result) => {
+    if (err || result.length === 0) {
+      console.error('Error getting officer ID:', err);
+      return res.status(500).json({ success: false, message: 'Officer not found' });
+    }
+
+    const officerId = result[0].officer_id;
+
+    const visitQuery = `
+      SELECT 
+        fv.visit_id,
+        fv.preferred_date,
+        fv.scheduled_date,
+        fv.purpose,
+        fv.notes,
+        fv.status,
+        u.full_name AS farmer_name,
+        u.phone AS farmer_phone
+      FROM farmer_visits fv
+      JOIN users u ON fv.farmer_id = u.user_id
+      WHERE fv.officer_id = ?
+      ORDER BY fv.preferred_date DESC
+    `;
+
+    db.query(visitQuery, [officerId], (err2, results) => {
+      if (err2) {
+        console.error('Error fetching visit requests:', err2);
+        return res.status(500).json({ success: false, message: 'Could not load visits' });
+      }
+
+      res.json({ success: true, requests: results });
+    });
   });
 });
 
