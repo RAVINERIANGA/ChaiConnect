@@ -2,108 +2,302 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>All Visit Requests | chaiConnect</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Visits | chaiConnect</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
+    :root {
+      --primary-color: #3498db;
+      --success-color: #2ecc71;
+      --danger-color: #e74c3c;
+      --warning-color: #e67e22;
+      --text-color: #2c3e50;
+      --light-gray: #f7f9fc;
+      --border-color: #ddd;
+    }
+    
     body {
+      font-family: 'Poppins', sans-serif;
+      background-color: var(--light-gray);
+      margin: 0;
       padding: 20px;
-      background: #f7f7f7;
     }
-    .request-card {
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
       background: white;
-      border-radius: 10px;
-      padding: 20px;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+    
+    h1 {
+      color: var(--primary-color);
+      margin-bottom: 25px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .notification {
+      padding: 15px;
+      border-radius: 8px;
       margin-bottom: 20px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      display: none;
     }
-    .status-badge {
-      padding: 5px 10px;
-      border-radius: 5px;
-      font-size: 0.8rem;
+    
+    .success {
+      background-color: rgba(46, 204, 113, 0.1);
+      color: var(--success-color);
+      border: 1px solid rgba(46, 204, 113, 0.3);
     }
-    .status-pending { background: #fff3cd; color: #856404; }
-    .status-scheduled { background: #d1ecf1; color: #0c5460; }
-    .status-completed { background: #d4edda; color: #155724; }
-    .status-cancelled { background: #f8d7da; color: #721c24; }
-    .action-buttons button {
-      margin-right: 10px;
+    
+    .error {
+      background-color: rgba(231, 76, 60, 0.1);
+      color: var(--danger-color);
+      border: 1px solid rgba(231, 76, 60, 0.3);
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    th {
+      background-color: var(--light-gray);
+      font-weight: 500;
+    }
+    
+    .status-requested {
+      color: var(--warning-color);
+    }
+    
+    .status-scheduled {
+      color: var(--primary-color);
+    }
+    
+    .status-completed {
+      color: var(--success-color);
+    }
+    
+    .status-cancelled {
+      color: var(--danger-color);
+    }
+    
+    .action-btn {
+      padding: 6px 12px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      font-weight: 500;
+      margin-right: 5px;
+    }
+    
+    .btn-complete {
+      background-color: var(--success-color);
+      color: white;
+    }
+    
+    .btn-cancel {
+      background-color: var(--danger-color);
+      color: white;
+    }
+    
+    .btn-schedule {
+      background-color: var(--primary-color);
+      color: white;
+    }
+    
+    .btn-group {
+      display: flex;
+      gap: 5px;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2 class="mb-4">All Visit Requests</h2>
-    <div id="visitRequestsContainer">
-      <div class="text-center text-muted">Loading visit requests...</div>
-    </div>
+    <h1><i class="fas fa-calendar-alt"></i> Manage Farm Visits</h1>
+    
+    <div id="notification" class="notification"></div>
+    
+    <table id="visitsTable">
+      <thead>
+        <tr>
+          <th>Farmer</th>
+          <th>Phone</th>
+          <th>Preferred Date</th>
+          <th>Scheduled Date</th>
+          <th>Purpose</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Visits will be loaded here -->
+      </tbody>
+    </table>
   </div>
 
   <script>
+    // DOM elements
+    const visitsTable = document.getElementById('visitsTable');
+    const notification = document.getElementById('notification');
+    
+    // Fetch all visit requests for the officer
     async function fetchVisitRequests() {
       try {
-        const res = await fetch('/api/visit-requests/all');
-        const data = await res.json();
-
-        const container = document.getElementById('visitRequestsContainer');
-        container.innerHTML = '';
-
-        if (!data.success || data.requests.length === 0) {
-          container.innerHTML = '<div class="text-muted">No visit requests found.</div>';
-          return;
-        }
-
-        data.requests.forEach(req => {
-          const card = document.createElement('div');
-          card.className = 'request-card';
-
-          const date = req.preferred_date ? new Date(req.preferred_date).toLocaleString() : 'N/A';
-          const scheduled = req.scheduled_date ? new Date(req.scheduled_date).toLocaleString() : 'Not scheduled';
-
-          card.innerHTML = `
-            <h5>${req.farmer_name} (${req.farmer_phone})</h5>
-            <p><strong>Preferred Date:</strong> ${date}</p>
-            <p><strong>Purpose:</strong> ${req.purpose}</p>
-            <p><strong>Notes:</strong> ${req.notes || '—'}</p>
-            <p><strong>Scheduled:</strong> ${scheduled}</p>
-            <p><strong>Status:</strong> 
-              <span class="status-badge status-${req.status}">
-                ${req.status.charAt(0).toUpperCase() + req.status.slice(1)}
-              </span>
-            </p>
-            <div class="action-buttons">
-              ${req.status !== 'completed' ? `<button class="btn btn-success btn-sm" onclick="updateStatus(${req.visit_id}, 'completed')">Mark Completed</button>` : ''}
-              ${req.status !== 'cancelled' ? `<button class="btn btn-danger btn-sm" onclick="updateStatus(${req.visit_id}, 'cancelled')">Cancel</button>` : ''}
-            </div>
-          `;
-
-          container.appendChild(card);
+        showLoading(true);
+        
+        // First get the officer's ID
+        const officerRes = await fetch('/api/extension-officer/me', {
+          credentials: 'include'
         });
-      } catch (err) {
-        console.error('Failed to fetch requests:', err);
-        document.getElementById('visitRequestsContainer').innerHTML =
-          '<div class="text-danger">Error loading requests.</div>';
+        
+        if (!officerRes.ok) throw new Error('Failed to fetch officer data');
+        
+        const officerData = await officerRes.json();
+        
+        if (!officerData.success || !officerData.officer_id) {
+          throw new Error('Officer not found');
+        }
+        
+        const officerId = officerData.officer_id;
+        
+        // Then fetch visits assigned to this officer
+        const visitsRes = await fetch(`/api/extension-officer/visits?officer_id=${officerId}`, {
+          credentials: 'include'
+        });
+        
+        if (!visitsRes.ok) throw new Error('Failed to fetch visits');
+        
+        const visitsData = await visitsRes.json();
+        const tbody = visitsTable.querySelector('tbody');
+        tbody.innerHTML = '';
+        
+        if (visitsData.success && visitsData.visits.length > 0) {
+          visitsData.visits.forEach(visit => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${visit.farmer_name}</td>
+              <td>${visit.farmer_phone}</td>
+              <td>${formatDate(visit.preferred_date)}</td>
+              <td>${visit.scheduled_date ? formatDate(visit.scheduled_date) : 'Not scheduled'}</td>
+              <td>${formatPurpose(visit.purpose)}</td>
+              <td class="status-${visit.status}">${formatStatus(visit.status)}</td>
+              <td>
+                <div class="btn-group">
+                  ${visit.status === 'requested' ? `
+                    <button class="action-btn btn-schedule" data-id="${visit.visit_id}">
+                      <i class="fas fa-calendar-check"></i> Schedule
+                    </button>
+                  ` : ''}
+                  
+                  ${visit.status === 'scheduled' ? `
+                    <button class="action-btn btn-complete" data-id="${visit.visit_id}">
+                      <i class="fas fa-check"></i> Complete
+                    </button>
+                    <button class="action-btn btn-cancel" data-id="${visit.visit_id}">
+                      <i class="fas fa-times"></i> Cancel
+                    </button>
+                  ` : ''}
+                </div>
+              </td>
+            `;
+            tbody.appendChild(tr);
+          });
+          
+          // Add event listeners to action buttons
+          document.querySelectorAll('.action-btn').forEach(btn => {
+            btn.addEventListener('click', handleVisitAction);
+          });
+        } else {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="7">No visit requests found</td>
+            </tr>
+          `;
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showNotification(error.message, 'error');
+      } finally {
+        showLoading(false);
       }
     }
-
-    function updateStatus(visitId, newStatus) {
-      if (!confirm(`Are you sure you want to mark this as ${newStatus}?`)) return;
-
-      fetch(`/api/visit-requests/${visitId}/status`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus })
-      })
-      .then(res => res.json())
-      .then(data => {
+    
+    // Handle visit actions
+    async function handleVisitAction(e) {
+      const visitId = e.target.closest('button').dataset.id;
+      const action = e.target.closest('button').classList.contains('btn-complete') ? 'complete' : 
+                     e.target.closest('button').classList.contains('btn-cancel') ? 'cancel' : 
+                     'schedule';
+      
+      try {
+        if (action === 'schedule') {
+          window.location.href = `schedule_visit.html?visitId=${visitId}`;
+          return;
+        }
+        
+        if (!confirm(`Are you sure you want to ${action} this visit?`)) return;
+        
+        const res = await fetch(`/api/extension-officer/visits/${visitId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ action })
+        });
+        
+        const data = await res.json();
+        
         if (data.success) {
-          alert(`Status updated to ${newStatus}`);
+          showNotification(`Visit ${action}d successfully`, 'success');
           fetchVisitRequests();
         } else {
-          alert('Failed to update status');
+          throw new Error(data.message || `Failed to ${action} visit`);
         }
-      });
+      } catch (error) {
+        showNotification(error.message, 'error');
+        console.error(`Error ${action}ing visit:`, error);
+      }
     }
-
+    
+    // Helper functions
+    function formatDate(dateString) {
+      return dateString ? new Date(dateString).toLocaleString() : '';
+    }
+    
+    function formatPurpose(purpose) {
+      return purpose.replace('_', ' ');
+    }
+    
+    function formatStatus(status) {
+      return status.charAt(0).toUpperCase() + status.slice(1);
+    }
+    
+    function showNotification(message, type) {
+      notification.textContent = message;
+      notification.className = `notification ${type}`;
+      notification.style.display = 'block';
+      
+      setTimeout(() => {
+        notification.style.display = 'none';
+      }, 5000);
+    }
+    
+    function showLoading(show) {
+      // Implement loading indicator if needed
+    }
+    
+    // Initialize on page load
     document.addEventListener('DOMContentLoaded', fetchVisitRequests);
   </script>
 </body>
