@@ -68,6 +68,64 @@
     .backToDB:hover {
       background-color: #263238;
     }
+
+    /* Dark mode styling */
+body.dark-mode {
+  background-color: #0f172a;
+  color: #e2e8f0;
+}
+
+body.dark-mode .container {
+  background-color: #1e293b;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
+}
+
+body.dark-mode h2 {
+  color: #f8fafc;
+}
+
+body.dark-mode table {
+  background-color: #1e293b;
+  color: #e2e8f0;
+  border-color: #475569;
+}
+
+body.dark-mode th {
+  background-color: #b91c1c;
+  color: white;
+}
+
+body.dark-mode td {
+  border-color: #475569;
+}
+
+body.dark-mode tr:nth-child(odd) {
+  background-color: #273549;
+}
+
+body.dark-mode input#searchInput {
+  background-color: #1e293b;
+  color: #e2e8f0;
+  border-color: #475569;
+}
+
+body.dark-mode .unsuspend {
+  background-color: #10b981;
+  color: white;
+}
+
+body.dark-mode .unsuspend:hover {
+  background-color: #059669;
+}
+
+body.dark-mode .backToDB {
+  background-color: #334155;
+}
+
+body.dark-mode .backToDB:hover {
+  background-color: #1e293b;
+}
+
   </style>
 </head>
 
@@ -94,6 +152,29 @@
       <tbody id="suspendedBody"></tbody>
     </table>
   </div>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    fetch('/api/me')
+      .then(res => res.json())
+      .then(data => {
+        const userId = data.userId;
+        if (!userId) return;
+        const theme = localStorage.getItem(`theme_${userId}`);
+        if (theme === 'dark') {
+          document.body.classList.add('dark-mode');
+        } else {
+          document.body.classList.remove('dark-mode');
+        }
+      })
+      .catch(() => {
+        const fallbackTheme = localStorage.getItem('theme');
+        if (fallbackTheme === 'dark') {
+          document.body.classList.add('dark-mode');
+        }
+      });
+  });
+</script>
 
   <script>
     let suspendedUsers = [];

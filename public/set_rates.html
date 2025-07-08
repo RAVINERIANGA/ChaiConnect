@@ -44,6 +44,53 @@
       align-items: center;
       margin-bottom: 25px;
     }
+    body.dark-mode {
+  background-color: #1e293b;
+  color: #e2e8f0;
+}
+
+body.dark-mode .container {
+  background-color: #334155;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode h2,
+body.dark-mode h3,
+body.dark-mode label {
+  color: #f1f5f9;
+}
+
+body.dark-mode select,
+body.dark-mode input {
+  background-color: #475569;
+  color: #f8fafc;
+  border: 1px solid #64748b;
+}
+
+body.dark-mode select option {
+  background-color: #475569;
+  color: #f8fafc;
+}
+
+body.dark-mode table {
+  background-color: #475569;
+  color: #f1f5f9;
+  border-color: #64748b;
+}
+
+body.dark-mode th,
+body.dark-mode td {
+  border: 1px solid #64748b;
+}
+
+body.dark-mode .btn {
+  background-color: #3b82f6;
+}
+
+body.dark-mode .btn:hover {
+  background-color: #2563eb;
+}
+
   </style>
 </head>
 <body>
@@ -84,6 +131,30 @@
       </table>
     </div>
   </div>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    fetch('/api/me')
+      .then(res => res.json())
+      .then(data => {
+        const userId = data.userId;
+        if (!userId) return;
+        const theme = localStorage.getItem(`theme_${userId}`);
+        if (theme === 'dark') {
+          document.body.classList.add('dark-mode');
+        } else {
+          document.body.classList.remove('dark-mode');
+        }
+      })
+      .catch(() => {
+        const fallbackTheme = localStorage.getItem('theme');
+        if (fallbackTheme === 'dark') {
+          document.body.classList.add('dark-mode');
+        }
+      });
+  });
+</script>
+
 
   <script>
     // Submit new rate

@@ -99,6 +99,45 @@
       visibility: visible;
       opacity: 1;
     }
+
+    body.dark-mode {
+  background-color: #0f172a;
+  color: #f1f5f9;
+}
+
+body.dark-mode .container {
+  background-color: #1e293b;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.6);
+}
+
+body.dark-mode h2 {
+  color: #f8fafc;
+}
+
+body.dark-mode label {
+  color: #cbd5e1;
+}
+
+body.dark-mode input,
+body.dark-mode textarea {
+  background-color: #334155;
+  border: 1px solid #475569;
+  color: #e2e8f0;
+}
+
+body.dark-mode input::placeholder,
+body.dark-mode textarea::placeholder {
+  color: #94a3b8;
+}
+
+body.dark-mode .back-btn {
+  background-color: #334155;
+}
+
+body.dark-mode .back-btn:hover {
+  background-color: #475569;
+}
+
   </style>
 </head>
 
@@ -122,6 +161,29 @@
       <button type="button" class="back-btn" onclick="location.href='/admin_dashboard.html'">← Back to Dashboard</button>
     </form>
   </div>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    fetch('/api/me')
+      .then(res => res.json())
+      .then(data => {
+        const userId = data.userId;
+        if (!userId) return;
+        const theme = localStorage.getItem(`theme_${userId}`);
+        if (theme === 'dark') {
+          document.body.classList.add('dark-mode');
+        } else {
+          document.body.classList.remove('dark-mode');
+        }
+      })
+      .catch(() => {
+        const fallbackTheme = localStorage.getItem('theme');
+        if (fallbackTheme === 'dark') {
+          document.body.classList.add('dark-mode');
+        }
+      });
+  });
+</script>
 
   <script>
     document.getElementById('uploadForm').addEventListener('submit', async function (e) {

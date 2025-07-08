@@ -100,6 +100,67 @@
     .back-btn:hover {
       background-color: #455a64;
     }
+
+    body.dark-mode {
+  background-color: #0f172a;
+  color: #f1f5f9;
+}
+
+body.dark-mode .header {
+  background-color: #1e293b;
+  color: #f1f5f9;
+}
+
+body.dark-mode .container {
+  background-color: #1e293b;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.6);
+}
+
+body.dark-mode h2 {
+  color: #f8fafc;
+}
+
+body.dark-mode select,
+body.dark-mode button {
+  background-color: #334155;
+  color: #e2e8f0;
+  border: 1px solid #475569;
+}
+
+body.dark-mode button:hover {
+  background-color: #475569;
+}
+
+body.dark-mode .export-btns button {
+  background-color: #475569;
+}
+
+body.dark-mode .export-btns button:hover {
+  background-color: #64748b;
+}
+
+body.dark-mode table {
+  border-color: #334155;
+}
+
+body.dark-mode th {
+  background-color: #334155;
+  color: #f1f5f9;
+}
+
+body.dark-mode td {
+  background-color: #1e293b;
+  color: #e2e8f0;
+}
+
+body.dark-mode .back-btn {
+  background-color: #334155;
+}
+
+body.dark-mode .back-btn:hover {
+  background-color: #475569;
+}
+
   </style>
 </head>
 <body>
@@ -124,6 +185,29 @@
 
     <button class="back-btn" onclick="location.href='/admin_dashboard.html'">← Back to Dashboard</button>
   </div>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    fetch('/api/me')
+      .then(res => res.json())
+      .then(data => {
+        const userId = data.userId;
+        if (!userId) return;
+        const theme = localStorage.getItem(`theme_${userId}`);
+        if (theme === 'dark') {
+          document.body.classList.add('dark-mode');
+        } else {
+          document.body.classList.remove('dark-mode');
+        }
+      })
+      .catch(() => {
+        const fallbackTheme = localStorage.getItem('theme');
+        if (fallbackTheme === 'dark') {
+          document.body.classList.add('dark-mode');
+        }
+      });
+  });
+</script>
 
   <script>
     let currentData = [];

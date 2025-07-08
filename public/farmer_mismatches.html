@@ -8,89 +8,170 @@
   <link rel="stylesheet" href="/css/admin_style.css" />
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #f9f9f9;
-      margin: 0;
-      padding: 0;
-    }
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #f0f2f5;
+  margin: 0;
+  padding: 0;
+}
 
-    .container {
-      max-width: 1100px;
-      margin: 40px auto;
-      background: #fff;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.08);
-    }
+.container {
+  max-width: 1150px;
+  margin: 40px auto;
+  background: #ffffff;
+  padding: 30px 40px;
+  border-radius: 12px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+}
 
-    h2 {
-      text-align: center;
-      margin-bottom: 20px;
-      color: #2c3e50;
-    }
+h2 {
+  text-align: center;
+  margin-bottom: 30px;
+  color: #2c3e50;
+}
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+  font-size: 15px;
+}
 
-    th,
-    td {
-      padding: 12px;
-      text-align: center;
-      border: 1px solid #ddd;
-    }
+thead {
+  background-color: #c0392b;
+  color: white;
+}
 
-    thead {
-      background-color: #c0392b;
-      color: white;
-    }
+th,
+td {
+  padding: 14px 12px;
+  text-align: center;
+  border: 1px solid #e0e0e0;
+}
 
-    img.profile {
-      width: 50px;
-      height: 50px;
-      object-fit: cover;
-      border-radius: 50%;
-    }
+tbody tr:nth-child(odd) {
+  background-color: #fafafa;
+}
 
-    button {
-      padding: 6px 12px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      margin: 2px;
-    }
+tbody tr:hover {
+  background-color: #f1f1f1;
+}
 
-    .unflag {
-      background-color: #27ae60;
-      color: white;
-    }
+img.profile {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid #ddd;
+}
 
-    .suspend {
-      background-color: #e74c3c;
-      color: white;
-    }
+button {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
 
-    .reason {
-      font-size: 0.9em;
-      color: #7f8c8d;
-    }
-    .backToDB {
-      display: block;
-      margin: 40px auto 0;
-      background-color: #455a64;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 5px;
-      font-size: 16px;
-      cursor: pointer;
-    }
+.unflag {
+  background-color: #27ae60;
+  color: white;
+}
 
-    .backToDB:hover {
-      background-color: #263238;
-    }
+.unflag:hover {
+  background-color: #219150;
+}
+
+.suspend {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.suspend:hover {
+  background-color: #c0392b;
+}
+
+.reason {
+  font-size: 0.9em;
+  color: #7f8c8d;
+}
+
+.backToDB {
+  display: block;
+  margin: 0 auto 20px;
+  background-color: #455a64;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.backToDB:hover {
+  background-color: #263238;
+}
+
+#searchInput {
+  padding: 10px 14px;
+  width: 300px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 15px;
+  transition: box-shadow 0.2s;
+}
+
+#searchInput:focus {
+  outline: none;
+  box-shadow: 0 0 4px rgba(44, 62, 80, 0.3);
+}
+body.dark-mode {
+  background-color: #0f172a;
+  color: #e2e8f0;
+}
+
+body.dark-mode .container {
+  background: #1e293b;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+}
+
+body.dark-mode th {
+  background-color: #b91c1c;
+  color: white;
+}
+
+body.dark-mode td {
+  border-color: #334155;
+}
+
+body.dark-mode tbody tr:nth-child(odd) {
+  background-color: #1e293b;
+}
+
+body.dark-mode tbody tr:hover {
+  background-color: #334155;
+}
+
+body.dark-mode input,
+body.dark-mode button {
+  color: #f8fafc;
+  background-color: #334155;
+  border-color: #475569;
+}
+
+body.dark-mode #searchInput {
+  background-color: #1e293b;
+  color: #e2e8f0;
+  border-color: #475569;
+}
+
+body.dark-mode h2 {
+  color: #e2e8f0;
+}
+
+
+
+
   </style>
 </head>
 
@@ -120,6 +201,29 @@
       </tbody>
     </table>
   </div>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    fetch('/api/me')
+      .then(res => res.json())
+      .then(data => {
+        const userId = data.userId;
+        if (!userId) return;
+        const theme = localStorage.getItem(`theme_${userId}`);
+        if (theme === 'dark') {
+          document.body.classList.add('dark-mode');
+        } else {
+          document.body.classList.remove('dark-mode');
+        }
+      })
+      .catch(() => {
+        const fallbackTheme = localStorage.getItem('theme');
+        if (fallbackTheme === 'dark') {
+          document.body.classList.add('dark-mode');
+        }
+      });
+  });
+</script>
 
   <script>
     let allMismatches = [];

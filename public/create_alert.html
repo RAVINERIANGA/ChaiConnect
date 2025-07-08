@@ -76,6 +76,41 @@
             color: green;
             text-align: center;
         }
+        body.dark-mode {
+  background-color: #1e293b;
+  color: #e2e8f0;
+}
+
+body.dark-mode .container {
+  background-color: #334155;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode h2 {
+  color: #f1f5f9;
+}
+
+body.dark-mode label {
+  color: #e2e8f0;
+}
+
+body.dark-mode input,
+body.dark-mode textarea,
+body.dark-mode select {
+  background-color: #475569;
+  color: #f8fafc;
+  border: 1px solid #64748b;
+}
+
+body.dark-mode input::placeholder,
+body.dark-mode textarea::placeholder {
+  color: #cbd5e1;
+}
+
+body.dark-mode .message {
+  color: #22c55e;
+}
+
     </style>
 </head>
 
@@ -108,6 +143,31 @@
             <div class="message" id="responseMsg"></div>
         </form>
     </div>
+
+
+    <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    fetch('/api/me')
+      .then(res => res.json())
+      .then(data => {
+        const userId = data.userId;
+        if (!userId) return;
+        const theme = localStorage.getItem(`theme_${userId}`);
+        if (theme === 'dark') {
+          document.body.classList.add('dark-mode');
+        } else {
+          document.body.classList.remove('dark-mode');
+        }
+      })
+      .catch(() => {
+        const fallbackTheme = localStorage.getItem('theme');
+        if (fallbackTheme === 'dark') {
+          document.body.classList.add('dark-mode');
+        }
+      });
+  });
+</script>
+
 
     <script>
         const form = document.getElementById('alertForm');

@@ -81,6 +81,37 @@
     .group {
       margin-top: 10px;
     }
+    body.dark-mode {
+  background-color: #1e293b;
+  color: #f1f5f9;
+}
+
+body.dark-mode .container {
+  background-color: #334155;
+  color: #f1f5f9;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+body.dark-mode input,
+body.dark-mode select {
+  background-color: #475569;
+  color: #f1f5f9;
+  border: 1px solid #64748b;
+}
+
+body.dark-mode input:focus,
+body.dark-mode select:focus {
+  border-color: #10b981;
+}
+
+body.dark-mode label {
+  color: #e2e8f0;
+}
+
+body.dark-mode h1 {
+  color: #f8fafc;
+}
+
   </style>
 </head>
 <body>
@@ -132,6 +163,29 @@
       <button type="button" class="btn back-btn" onclick="location.href='/admin_dashboard.html'">← Back to Dashboard</button>
     </form>
   </div>
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    fetch('/api/me')
+      .then(res => res.json())
+      .then(data => {
+        const userId = data.userId;
+        if (!userId) return;
+        const theme = localStorage.getItem(`theme_${userId}`);
+        if (theme === 'dark') {
+          document.body.classList.add('dark-mode');
+        } else {
+          document.body.classList.remove('dark-mode');
+        }
+      })
+      .catch(() => {
+        const theme = localStorage.getItem('theme');
+        if (theme === 'dark') {
+          document.body.classList.add('dark-mode');
+        }
+      });
+  });
+</script>
+
 
   <script>
     const roleSelect = document.getElementById('role');
