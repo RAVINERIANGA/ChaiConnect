@@ -18,6 +18,43 @@
     color: #2e5c44;
     text-decoration: underline;
 }
+
+body.dark-mode {
+      background-color: #0f172a;
+      color: #e2e8f0;
+    }
+
+    body.dark-mode h2 {
+      color: #e2e8f0;
+    }
+
+    body.dark-mode .complaint-card {
+      background: #1e293b;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    body.dark-mode .complaint-card p,
+    body.dark-mode .complaint-card textarea {
+      color: #e2e8f0;
+    }
+
+    body.dark-mode .complaint-card textarea {
+      background-color: #334155;
+      border: 1px solid #475569;
+    }
+
+    body.dark-mode button {
+      color: white;
+    }
+
+    body.dark-mode .status-resolved {
+      color: #90ee90;
+    }
+
+    body.dark-mode .status-in_progress {
+      color: #ffc107;
+    }
+
   </style>
   <link rel="stylesheet" href="css/complaints.css">
 </head>
@@ -25,6 +62,29 @@
   <h2>Delivery Complaints</h2>
   <a href="/factory_staff_dashboard.html" class="back-button">← Back to Dashboard</a>
   <div id="complaintsContainer">Loading complaints...</div>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    fetch('/api/me')
+      .then(res => res.json())
+      .then(data => {
+        const userId = data.userId;
+        if (!userId) return;
+        const theme = localStorage.getItem(`theme_${userId}`);
+        if (theme === 'dark') {
+          document.body.classList.add('dark-mode');
+        } else {
+          document.body.classList.remove('dark-mode');
+        }
+      })
+      .catch(() => {
+        const fallbackTheme = localStorage.getItem('theme');
+        if (fallbackTheme === 'dark') {
+          document.body.classList.add('dark-mode');
+        }
+      });
+  });
+</script>
 
   <script>
     fetch('/api/factory/complaints')

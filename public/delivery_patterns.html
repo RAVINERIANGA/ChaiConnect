@@ -61,6 +61,31 @@
     color: #2e5c44;
     text-decoration: underline;
 }
+body.dark-mode {
+      background-color: #0f172a;
+      color: #e2e8f0;
+    }
+
+    .dark-mode .container {
+      background-color: #1e293b;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .dark-mode h2 {
+      color: #f1f5f9;
+    }
+
+    .dark-mode .footer {
+      color: #94a3b8;
+    }
+
+    .dark-mode .back-button {
+      color: #93c5fd;
+    }
+
+    .dark-mode .back-button:hover {
+      color: #bfdbfe;
+    }
   </style>
 </head>
 <body>
@@ -70,6 +95,29 @@
     <canvas id="deliveryChart"></canvas>
     <div class="footer">Auto-generated based on completed or graded deliveries</div>
   </div>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    fetch('/api/me')
+      .then(res => res.json())
+      .then(data => {
+        const userId = data.userId;
+        if (!userId) return;
+        const theme = localStorage.getItem(`theme_${userId}`);
+        if (theme === 'dark') {
+          document.body.classList.add('dark-mode');
+        } else {
+          document.body.classList.remove('dark-mode');
+        }
+      })
+      .catch(() => {
+        const fallbackTheme = localStorage.getItem('theme');
+        if (fallbackTheme === 'dark') {
+          document.body.classList.add('dark-mode');
+        }
+      });
+  });
+</script>
 
   <script>
     async function loadDeliveryPatterns() {
