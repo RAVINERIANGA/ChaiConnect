@@ -28,33 +28,33 @@
       margin-bottom: 30px;
     }
 
-    .material {
+    .training {
       padding: 20px;
       border-bottom: 1px solid #eee;
     }
 
-    .material h3 {
+    .training h3 {
       margin: 0;
       color: #2c3e50;
     }
 
-    .material p {
+    .training p {
       color: #555;
       margin: 8px 0;
     }
 
-    .material small {
+    .training small {
       color: #888;
     }
 
-    .material a {
+    .training a {
       display: inline-block;
       margin-top: 10px;
-      color: #27ae60;
+      color: #4CAF50;
       text-decoration: none;
     }
 
-    .material a:hover {
+    .training a:hover {
       text-decoration: underline;
     }
 
@@ -74,7 +74,6 @@
       background-color: #455a64;
     }
 
-    /* Dark mode styling */
     body.dark-mode {
       background-color: #0f172a;
       color: #f1f5f9;
@@ -89,27 +88,27 @@
       color: #f8fafc;
     }
 
-    body.dark-mode .material {
+    body.dark-mode .training {
       border-color: #334155;
     }
 
-    body.dark-mode .material h3 {
+    body.dark-mode .training h3 {
       color: #e2e8f0;
     }
 
-    body.dark-mode .material p {
+    body.dark-mode .training p {
       color: #cbd5e1;
     }
 
-    body.dark-mode .material small {
+    body.dark-mode .training small {
       color: #94a3b8;
     }
 
-    body.dark-mode .material a {
+    body.dark-mode .training a {
       color: #38bdf8;
     }
 
-    body.dark-mode .material a:hover {
+    body.dark-mode .training a:hover {
       color: #7dd3fc;
     }
 
@@ -124,9 +123,8 @@
 </head>
 <body>
   <div class="container">
-    <h2>🎓 Training Materials</h2>
-    <div id="materials"></div>
-
+    <h2>📘 Training Materials</h2>
+    <div id="trainings"></div>
     <button class="back-btn" onclick="history.back()">← Back</button>
   </div>
 
@@ -140,24 +138,21 @@
           const theme = localStorage.getItem(`theme_${userId}`);
           if (theme === 'dark') {
             document.body.classList.add('dark-mode');
-          } else {
-            document.body.classList.remove('dark-mode');
           }
         })
         .catch(() => {
-          const fallbackTheme = localStorage.getItem('theme');
-          if (fallbackTheme === 'dark') {
+          if (localStorage.getItem('theme') === 'dark') {
             document.body.classList.add('dark-mode');
           }
         });
 
-      fetchMaterials();
+      fetchTrainingMaterials();
     });
 
-    async function fetchMaterials() {
+    async function fetchTrainingMaterials() {
       const res = await fetch('/training-materials');
       const data = await res.json();
-      const container = document.getElementById('materials');
+      const container = document.getElementById('trainings');
 
       if (!Array.isArray(data) || data.length === 0) {
         container.innerHTML = "<p>No training materials uploaded yet.</p>";
@@ -166,11 +161,11 @@
 
       data.forEach(doc => {
         const div = document.createElement('div');
-        div.className = 'material';
+        div.className = 'training';
         div.innerHTML = `
           <h3>${doc.title}</h3>
           <p>${doc.description || 'No description provided.'}</p>
-          <small>Uploaded on ${new Date(doc.uploaded_at).toLocaleString()}</small><br>
+          <small>Uploaded on ${new Date(doc.upload_date).toLocaleString()}</small><br>
           <a href="${doc.file_path}" target="_blank">📄 View / Download</a>
         `;
         container.appendChild(div);
