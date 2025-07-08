@@ -483,6 +483,7 @@ app.get('/api/me', (req, res) => {
   }
 
   res.json({
+    userId: req.session.userId,
     name: req.session.name,
     role: req.session.role,
   });

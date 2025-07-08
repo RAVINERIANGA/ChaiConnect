@@ -1,17 +1,22 @@
 document.addEventListener('DOMContentLoaded', () => {
   fetch('/api/me')
     .then(res => res.json())
-    .then(user => {
-      const userId = user.id || user.email || 'default'; // adjust depending on your API
-      const themeKey = `theme-${userId}`;
+    .then(data => {
+      const userId = data.userId;
       const toggleSwitch = document.getElementById('themeToggle');
 
-      const savedTheme = localStorage.getItem(themeKey);
-      if (savedTheme === 'dark') {
+      if (!toggleSwitch || !userId) return;
+
+      const themeKey = `theme_${userId}`;
+      const currentTheme = localStorage.getItem(themeKey);
+
+      // Apply saved theme
+      if (currentTheme === 'dark') {
         document.body.classList.add('dark-mode');
         toggleSwitch.checked = true;
       }
 
+      // Listen for toggle changes
       toggleSwitch.addEventListener('change', () => {
         if (toggleSwitch.checked) {
           document.body.classList.add('dark-mode');
@@ -23,6 +28,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     })
     .catch(err => {
-      console.error('Failed to load user info for theme', err);
+      console.error('Failed to load user info for theme:', err);
     });
 });
