@@ -70,6 +70,52 @@
     .edit-btn:hover {
       background-color: #2e5c44;
     }
+
+    body.dark-mode {
+      background-color: #0f172a;
+      color: #e2e8f0;
+    }
+
+    body.dark-mode .container {
+      background-color: #1e293b;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+    }
+
+    body.dark-mode h2 {
+      color: #f1f5f9;
+    }
+
+    body.dark-mode .search-bar input {
+      background-color: #1e293b;
+      color: #f8fafc;
+      border: 1px solid #475569;
+    }
+
+    body.dark-mode .back-button {
+      color: #93c5fd;
+    }
+
+    body.dark-mode table {
+      background-color: transparent;
+    }
+
+    body.dark-mode thead {
+      background-color: #10b981;
+      color: white;
+    }
+
+    body.dark-mode th,
+    body.dark-mode td {
+      border-color: #334155;
+    }
+
+    body.dark-mode .edit-btn {
+      background-color: #10b981;
+    }
+
+    body.dark-mode .edit-btn:hover {
+      background-color: #059669;
+    }
   </style>
 </head>
 
@@ -101,6 +147,29 @@
       </tbody>
     </table>
   </div>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    fetch('/api/me')
+      .then(res => res.json())
+      .then(data => {
+        const userId = data.userId;
+        if (!userId) return;
+        const theme = localStorage.getItem(`theme_${userId}`);
+        if (theme === 'dark') {
+          document.body.classList.add('dark-mode');
+        } else {
+          document.body.classList.remove('dark-mode');
+        }
+      })
+      .catch(() => {
+        const fallbackTheme = localStorage.getItem('theme');
+        if (fallbackTheme === 'dark') {
+          document.body.classList.add('dark-mode');
+        }
+      });
+  });
+</script>
 
   <script>
     async function fetchDeliveries(idNumber = '') {
