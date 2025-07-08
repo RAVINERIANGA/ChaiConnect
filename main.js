@@ -200,13 +200,25 @@ app.get('/manage_users.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/manage_users.html'));
 });
 
-// GET all users
+// GET all non-admin users with suspension status
 app.get('/admin/users', (req, res) => {
   const query = `
-    SELECT id_number,user_id , name, email, phone, role 
-    FROM users 
-    WHERE role != 'admin'
+    SELECT 
+      u.id_number, 
+      u.user_id, 
+      u.name, 
+      u.email, 
+      u.phone, 
+      u.role,
+      sa.user_id IS NOT NULL AS is_suspended
+    FROM 
+      users u
+    LEFT JOIN 
+      suspended_accounts sa ON u.user_id = sa.user_id
+    WHERE 
+      u.role != 'admin'
   `;
+
   db.query(query, (err, results) => {
     if (err) {
       console.error(err);
@@ -215,6 +227,7 @@ app.get('/admin/users', (req, res) => {
     res.json(results);
   });
 });
+
 
 //UPDATE user
 app.put('/admin/users/:id', (req, res) => {
@@ -3010,6 +3023,35 @@ app.get('/factory-dashboard-stats', (req, res) => {
     }
   );
 });
+
+// POST /admin/suspend-user/:userId
+app.post('/admin/suspend-user/:userId', (req, res) => {
+  const userId = req.params.userId;
+  const adminId = req.session.userId;
+  const { reason } = req.body;
+
+  if (!adminId || req.session.role !== 'admin') {
+    return res.status(403).json({ success: false, message: 'Unauthorized' });
+  }
+
+  const checkQuery = 'SELECT * FROM suspended_accounts WHERE user_id = ?';
+  db.query(checkQuery, [userId], (err, results) => {
+    if (err) return res.status(500).json({ success: false, message: 'Database error' });
+    if (results.length > 0) {
+      return res.status(400).json({ success: false, message: 'User already suspended' });
+    }
+
+    const insertQuery = `
+      INSERT INTO suspended_accounts (user_id, suspended_by, reason)
+      VALUES (?, ?, ?)
+    `;
+    db.query(insertQuery, [userId, adminId, reason], (err, result) => {
+      if (err) return res.status(500).json({ success: false, message: 'Insert failed' });
+      res.json({ success: true });
+    });
+  });
+});
+
 
 
 
