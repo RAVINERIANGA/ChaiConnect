@@ -35,7 +35,6 @@
       <li><a href="#" class="active">Home</a></li>
       <li><a href="/view_profile.html">View My Profile</a></li>
       <li><a href="/assigned_farmers.html">Assigned Farmers</a></li>
-      <li><a href="/schedule_visit.html">Schedule Farm Visit</a></li>
       <li><a href="/upload_training.html">Upload Training Materials</a></li>
       <li><a href="/extension_complaints.html">Respond to Complaints</a></li>
       <li><a href="/all_visit_requests.html">Manage All Visit Requests</a></li>
@@ -72,11 +71,6 @@
         <h3>View Assigned Farmers</h3>
         <p>See all farmers under your guidance.</p>
         <button onclick="location.href='/assigned_farmers.html'">View</button>
-      </div>
-      <div class="card">
-        <h3>Schedule Visit</h3>
-        <p>Plan a farm visit with a farmer.</p>
-        <button onclick="location.href='/schedule_visit.html'">Schedule</button>
       </div>
       <div class="card">
         <h3>Upload Training Materials</h3>
@@ -160,6 +154,15 @@
           document.getElementById('openComplaintsCount').textContent = openCount;
         }
       });
+
+       // Fetch upcoming visits count (scheduled but not completed)
+      fetch('/api/extension-officer/upcoming-visits-count')
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            document.getElementById('upcomingVisitsCount').textContent = data.count;
+          }
+        });
 
     fetch('/api/training-materials/count')
       .then(res => res.json())
