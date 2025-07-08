@@ -610,7 +610,9 @@ app.get('/admin/analytics', (req, res) => {
               return row ? parseFloat(row.total) : 0;
             });
 
-            const weekDates = weekRows.map(r => r.delivery_date.toISOString().slice(5)); // MM-DD
+            const weekDates = weekRows.map(r =>
+              new Date(r.delivery_date).toLocaleDateString('en-KE', { month: 'short', day: 'numeric' })
+            );
             const weekDeliveryAmounts = weekRows.map(r => parseFloat(r.total));
 
             const officerNames = feedbackRows.map(r => r.officer);
