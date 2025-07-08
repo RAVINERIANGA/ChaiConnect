@@ -12,6 +12,7 @@
             background: #f2f6f9;
             margin: 0;
             padding: 0;
+            color: #333;
         }
 
         .container {
@@ -20,13 +21,13 @@
             background: #fff;
             padding: 30px;
             border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
         }
 
         h2 {
             text-align: center;
             margin-bottom: 20px;
-            color: #333;
+            color: #2c3e50;
         }
 
         form {
@@ -36,7 +37,8 @@
 
         label {
             margin-top: 15px;
-            font-weight: bold;
+            font-weight: 600;
+            display: block;
         }
 
         input[type="text"],
@@ -45,15 +47,17 @@
         select {
             padding: 10px;
             border: 1px solid #ccc;
-            border-radius: 5px;
+            border-radius: 6px;
             margin-top: 5px;
             font-size: 16px;
+            background-color: #fff;
+            color: #333;
         }
 
         button[type="submit"] {
             margin-top: 25px;
             padding: 12px;
-            background-color: #3b7a57;
+            background-color: #4CAF50;
             color: white;
             border: none;
             font-size: 16px;
@@ -63,13 +67,74 @@
         }
 
         button[type="submit"]:hover {
-            background-color: #2e5c44;
+            background-color: #3e8e41;
+        }
+
+        .back-button {
+            display: inline-block;
+            margin-bottom: 15px;
+            font-size: 14px;
+            text-decoration: none;
+            color: #4CAF50;
+        }
+
+        .back-button:hover {
+            text-decoration: underline;
         }
 
         #deliveryMessage {
             margin-top: 20px;
             font-weight: bold;
             text-align: center;
+        }
+
+        /* -------- DARK MODE -------- */
+        body.dark-mode {
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+
+        body.dark-mode .container {
+            background-color: #1e293b;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+            color: #e2e8f0;
+        }
+
+        body.dark-mode h2 {
+            color: #f8fafc;
+        }
+        body.dark-mode form{
+            color:#0f172a;
+        }
+
+        body.dark-mode label {
+            color: #e2e8f0;
+        }
+
+        body.dark-mode input,
+        body.dark-mode select {
+            background-color: #1e293b;
+            border: 1px solid #475569;
+            color: #f1f5f9;
+        }
+
+        body.dark-mode button[type="submit"] {
+            background-color: #10b981;
+        }
+
+        body.dark-mode button[type="submit"]:hover {
+            background-color: #059669;
+        }
+
+        body.dark-mode .back-button {
+            color: #93c5fd;
+        }
+
+        body.dark-mode .back-button:hover {
+            text-decoration: underline;
+        }
+        .dark-mode form{
+            background-color:#0f172a;
         }
     </style>
 </head>
@@ -110,6 +175,29 @@
 
         <div id="deliveryMessage"></div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            fetch('/api/me')
+                .then(res => res.json())
+                .then(data => {
+                    const userId = data.userId;
+                    if (!userId) return;
+                    const theme = localStorage.getItem(`theme_${userId}`);
+                    if (theme === 'dark') {
+                        document.body.classList.add('dark-mode');
+                    } else {
+                        document.body.classList.remove('dark-mode');
+                    }
+                })
+                .catch(() => {
+                    const fallbackTheme = localStorage.getItem('theme');
+                    if (fallbackTheme === 'dark') {
+                        document.body.classList.add('dark-mode');
+                    }
+                });
+        });
+    </script>
 
     <script>
         document.getElementById('deliveryForm').addEventListener('submit', async (e) => {
