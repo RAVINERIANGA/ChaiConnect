@@ -63,9 +63,6 @@
   <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h2 class="mb-0"><i class="fas fa-history me-2"></i> My Delivery History</h2>
-      <a href="/request_delivery.html" class="btn btn-success">
-        <i class="fas fa-plus me-2"></i> New Request
-      </a>
     </div>
 
 
@@ -73,8 +70,7 @@
       <table class="table table-hover align-middle">
         <thead>
           <tr>
-            <th>Request Date</th>
-            <th>Pickup Date</th>
+            <th>Delivery Date</th>
             <th>Status</th>
             <th>Estimated Qty (kg)</th>
             <th>Actual Qty (kg)</th>
@@ -151,7 +147,7 @@
       console.log("All deliveries from server:", deliveries);
 
       allDeliveries = deliveries;
-      deliveries.sort((a, b) => new Date(b.pickup_date || b.created_at) - new Date(a.pickup_date || a.created_at));
+      deliveries.sort((a, b) => new Date(b.delivery_date) - new Date(a.delivery_date));
       renderTable(deliveries);
     } catch (error) {
       console.error('Full error:', error);
@@ -191,8 +187,7 @@
       const statusClass = d.status ? `status-${d.status}` : '';
       const row = document.createElement('tr');
       row.innerHTML = `
-        <td>${new Date(d.created_at).toLocaleDateString()}</td>
-        <td>${d.pickup_date ? new Date(d.pickup_date).toLocaleDateString() : '—'}</td>
+        <td>${new Date(d.delivery_date).toLocaleDateString()}</td>
         <td><span class="status-badge ${statusClass}">${d.status || '—'}</span></td>
         <td>${d.estimated_quantity} kg</td>
         <td>${d.quantity_kg || '—'} kg</td>
@@ -211,13 +206,12 @@
     }
 
     const headers = [
-      "Request Date", "Pickup Date", "Status", "Estimated Qty (kg)",
+      "Delivery Date", "Status", "Estimated Qty (kg)",
       "Actual Qty (kg)", "Collection Center", "Quality Grade", "Payment Status"
     ];
 
     const rows = allDeliveries.map(del => [
-      new Date(del.created_at).toLocaleDateString(),
-      del.pickup_date ? new Date(del.pickup_date).toLocaleDateString() : '',
+      new Date(del.delivery_date).toLocaleDateString(),
       del.status || '',
       del.estimated_quantity || '',
       del.quantity_kg || '',

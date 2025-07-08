@@ -2287,8 +2287,7 @@ app.get('/api/delivery-history', (req, res) => {
   const query = `
     SELECT 
       d.delivery_id,
-      d.delivery_date as created_at,
-      d.delivery_date as pickup_date,
+      d.delivery_date as delivery_date,
       d.quantity_kg as estimated_quantity,
       d.quantity_kg,
       d.quality_grade,
