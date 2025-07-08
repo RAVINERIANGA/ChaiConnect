@@ -129,6 +129,72 @@
     color: #2e5c44;
     text-decoration: underline;
 }
+body.dark-mode {
+    background-color: #0f172a;
+    color: #e2e8f0;
+  }
+
+  body.dark-mode .container {
+    background-color: #1e293b;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+  }
+
+  body.dark-mode h2,
+  body.dark-mode h3 {
+    color: #f8fafc;
+  }
+
+  body.dark-mode input[type="text"] {
+    background-color: #1e293b;
+    color: #e2e8f0;
+    border: 1px solid #475569;
+  }
+
+  body.dark-mode table {
+    background-color: #1e293b;
+  }
+
+  body.dark-mode th {
+    background-color: #334155;
+    color: #f1f5f9;
+  }
+
+  body.dark-mode td {
+    border-color: #475569;
+    color: #e2e8f0;
+  }
+
+  body.dark-mode tr.selected {
+    background-color: #14532d;
+  }
+
+  body.dark-mode .btn-confirm {
+    background-color: #10b981;
+  }
+
+  body.dark-mode .btn-confirm:disabled {
+    background-color: #047857;
+  }
+
+  body.dark-mode .btn-danger {
+    background-color: #ef4444;
+  }
+
+  body.dark-mode .btn-danger:hover {
+    background-color: #dc2626;
+  }
+
+  body.dark-mode .back-button {
+    color: #93c5fd;
+  }
+
+  body.dark-mode .success {
+    color: #4ade80;
+  }
+
+  body.dark-mode .error {
+    color: #f87171;
+  }
   </style>
 </head>
 <body>
@@ -190,6 +256,29 @@
       </table>
     </div>
   </div>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    fetch('/api/me')
+      .then(res => res.json())
+      .then(data => {
+        const userId = data.userId;
+        if (!userId) return;
+        const theme = localStorage.getItem(`theme_${userId}`);
+        if (theme === 'dark') {
+          document.body.classList.add('dark-mode');
+        } else {
+          document.body.classList.remove('dark-mode');
+        }
+      })
+      .catch(() => {
+        const fallbackTheme = localStorage.getItem('theme');
+        if (fallbackTheme === 'dark') {
+          document.body.classList.add('dark-mode');
+        }
+      });
+  });
+</script>
 
   <script>
     let selectedFarmerId = null;
