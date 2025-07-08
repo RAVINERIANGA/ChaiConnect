@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>View Training Materials</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Segoe+UI&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f6f8;
+      padding: 40px;
+      margin: 0;
+    }
+
+    .container {
+      max-width: 900px;
+      background: #fff;
+      margin: auto;
+      padding: 30px 40px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 30px;
+    }
+
+    .material {
+      padding: 20px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .material h3 {
+      margin: 0;
+      color: #2c3e50;
+    }
+
+    .material p {
+      color: #555;
+      margin: 8px 0;
+    }
+
+    .material small {
+      color: #888;
+    }
+
+    .material a {
+      display: inline-block;
+      margin-top: 10px;
+      color: #27ae60;
+      text-decoration: none;
+    }
+
+    .material a:hover {
+      text-decoration: underline;
+    }
+
+    .back-btn {
+      display: block;
+      margin: 30px auto 0;
+      padding: 10px 20px;
+      background-color: #607d8b;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .back-btn:hover {
+      background-color: #455a64;
+    }
+
+    /* Dark mode styling */
+    body.dark-mode {
+      background-color: #0f172a;
+      color: #f1f5f9;
+    }
+
+    body.dark-mode .container {
+      background-color: #1e293b;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.6);
+    }
+
+    body.dark-mode h2 {
+      color: #f8fafc;
+    }
+
+    body.dark-mode .material {
+      border-color: #334155;
+    }
+
+    body.dark-mode .material h3 {
+      color: #e2e8f0;
+    }
+
+    body.dark-mode .material p {
+      color: #cbd5e1;
+    }
+
+    body.dark-mode .material small {
+      color: #94a3b8;
+    }
+
+    body.dark-mode .material a {
+      color: #38bdf8;
+    }
+
+    body.dark-mode .material a:hover {
+      color: #7dd3fc;
+    }
+
+    body.dark-mode .back-btn {
+      background-color: #334155;
+    }
+
+    body.dark-mode .back-btn:hover {
+      background-color: #475569;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>🎓 Training Materials</h2>
+    <div id="materials"></div>
+
+    <button class="back-btn" onclick="history.back()">← Back</button>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      fetch('/api/me')
+        .then(res => res.json())
+        .then(data => {
+          const userId = data.userId;
+          if (!userId) return;
+          const theme = localStorage.getItem(`theme_${userId}`);
+          if (theme === 'dark') {
+            document.body.classList.add('dark-mode');
+          } else {
+            document.body.classList.remove('dark-mode');
+          }
+        })
+        .catch(() => {
+          const fallbackTheme = localStorage.getItem('theme');
+          if (fallbackTheme === 'dark') {
+            document.body.classList.add('dark-mode');
+          }
+        });
+
+      fetchMaterials();
+    });
+
+    async function fetchMaterials() {
+      const res = await fetch('/training-materials');
+      const data = await res.json();
+      const container = document.getElementById('materials');
+
+      if (!Array.isArray(data) || data.length === 0) {
+        container.innerHTML = "<p>No training materials uploaded yet.</p>";
+        return;
+      }
+
+      data.forEach(doc => {
+        const div = document.createElement('div');
+        div.className = 'material';
+        div.innerHTML = `
+          <h3>${doc.title}</h3>
+          <p>${doc.description || 'No description provided.'}</p>
+          <small>Uploaded on ${new Date(doc.uploaded_at).toLocaleString()}</small><br>
+          <a href="${doc.file_path}" target="_blank">📄 View / Download</a>
+        `;
+        container.appendChild(div);
+      });
+    }
+  </script>
+</body>
+</html>
