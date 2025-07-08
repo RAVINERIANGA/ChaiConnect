@@ -2773,6 +2773,32 @@ app.get('/api/training-materials/count', (req, res) => {
   });
 });
 
+app.get('/training-materials', (req, res) => {
+  const query = `
+    SELECT id, title, description, filename, upload_date
+    FROM training_materials
+    ORDER BY upload_date DESC
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching training materials:', err);
+      return res.status(500).json({ success: false, message: 'Database error' });
+    }
+
+    const formattedResults = results.map(row => ({
+      id: row.id,
+      title: row.title,
+      description: row.description,
+      upload_date: row.upload_date,
+      file_path: `/uploads/training/${row.filename}`
+    }));
+
+    res.json(formattedResults);
+  });
+});
+
+
 //Shows account status on farmers dashboard
 
 app.get('/api/farmer/:farmerId/profile', (req, res) => {
