@@ -7,131 +7,165 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
-    :root {
-      --primary-color: #3498db;
-      --success-color: #2ecc71;
-      --danger-color: #e74c3c;
-      --text-color: #2c3e50;
-      --light-gray: #f7f9fc;
-      --border-color: #ddd;
-    }
-    
-    body {
-      font-family: 'Poppins', sans-serif;
-      background-color: var(--light-gray);
-      margin: 0;
-      padding: 20px;
-    }
-    
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-      background: white;
-      border-radius: 12px;
-      padding: 30px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-    }
-    
-    h2 {
-      color: var(--primary-color);
-      margin-bottom: 25px;
-      font-size: 24px;
-    }
-    
-    .form-group {
-      margin-bottom: 20px;
-    }
-    
-    label {
-      display: block;
-      font-weight: 500;
-      margin-bottom: 8px;
-      color: var(--text-color);
-    }
-    
-    input, select, textarea {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      font-family: 'Poppins', sans-serif;
-    }
-    
-    textarea {
-      min-height: 100px;
-      resize: vertical;
-    }
-    
-    .btn-submit {
-      background-color: var(--primary-color);
-      color: white;
-      padding: 12px 24px;
-      border: none;
-      border-radius: 8px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background-color 0.3s;
-    }
-    
-    .btn-submit:hover {
-      background-color: #2980b9;
-    }
-    
-    .notification {
-      padding: 15px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-      display: none;
-    }
-    
-    .success {
-      background-color: rgba(46, 204, 113, 0.1);
-      color: var(--success-color);
-      border: 1px solid rgba(46, 204, 113, 0.3);
-    }
-    
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 30px;
-    }
-    
-    th, td {
-      padding: 12px;
-      text-align: left;
-      border-bottom: 1px solid var(--border-color);
-    }
-    
-    th {
-      background-color: var(--light-gray);
-      font-weight: 500;
-    }
-    
-    .status-pending {
-      color: #e67e22;
-    }
-    
-    .status-scheduled {
-      color: var(--primary-color);
-    }
-    
-    .status-completed {
-      color: var(--success-color);
-    }
-    
-    .status-cancelled {
-      color: var(--danger-color);
-    }
-    
-    .btn-cancel {
-      background-color: var(--danger-color);
-      color: white;
-      padding: 6px 12px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-  </style>
+  :root {
+    --primary-color: #27ae60; /* Green */
+    --primary-hover: #219150;
+    --success-color: #2ecc71;
+    --danger-color: #e74c3c;
+    --text-color: #2c3e50;
+    --light-gray: #f4fdf6;
+    --border-color: #cce8d7;
+  }
+
+  body {
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--light-gray);
+    margin: 0;
+    padding: 20px;
+  }
+
+  .container {
+    max-width: 800px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  }
+
+  h2 {
+    color: var(--primary-color);
+    margin-bottom: 25px;
+    font-size: 26px;
+    font-weight: 600;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: var(--text-color);
+  }
+
+  input, select, textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background-color: #fefefe;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    font-family: 'Poppins', sans-serif;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 6px rgba(39, 174, 96, 0.2);
+    outline: none;
+  }
+
+  textarea {
+    min-height: 100px;
+    resize: vertical;
+  }
+
+  .btn-submit {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+  }
+
+  .btn-submit:hover {
+    background-color: var(--primary-hover);
+    transform: translateY(-2px);
+  }
+
+  .notification {
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    display: none;
+    font-weight: 500;
+  }
+
+  .success {
+    background-color: rgba(46, 204, 113, 0.15);
+    color: var(--success-color);
+    border: 1px solid rgba(46, 204, 113, 0.3);
+  }
+
+  .error {
+    background-color: rgba(231, 76, 60, 0.15);
+    color: var(--danger-color);
+    border: 1px solid rgba(231, 76, 60, 0.3);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 30px;
+    background-color: white;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  th, td {
+    padding: 14px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 15px;
+  }
+
+  th {
+    background-color: #e9f9ee;
+    color: var(--text-color);
+    font-weight: 600;
+  }
+
+  .status-pending {
+    color: #f39c12;
+    font-weight: 500;
+  }
+
+  .status-scheduled {
+    color: var(--primary-color);
+    font-weight: 500;
+  }
+
+  .status-completed {
+    color: var(--success-color);
+    font-weight: 500;
+  }
+
+  .status-cancelled {
+    color: var(--danger-color);
+    font-weight: 500;
+  }
+
+  .btn-cancel {
+    background-color: var(--danger-color);
+    color: white;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+
+  .btn-cancel:hover {
+    background-color: #c0392b;
+  }
+</style>
+
 </head>
 <body>
   <div class="container">
@@ -180,7 +214,7 @@
           <th>Date</th>
           <th>Purpose</th>
           <th>Status</th>
-          <th>Action</th>
+          
         </tr>
       </thead>
       <tbody>
@@ -250,13 +284,7 @@
               <td>${formatDate(visit.preferred_date)}</td>
               <td>${formatPurpose(visit.purpose)}</td>
               <td class="status-${visit.status}">${formatStatus(visit.status)}</td>
-              <td>
-                ${visit.status === 'requested' || visit.status === 'scheduled' ? `
-                  <button class="btn-cancel" data-id="${visit.visit_id}">
-                    <i class="fas fa-times"></i> Cancel
-                  </button>
-                ` : ''}
-              </td>
+              
             `;
             tbody.appendChild(tr);
           });
@@ -278,31 +306,7 @@
       }
     }
     
-    // Cancel visit
-    async function cancelVisit(e) {
-      const visitId = e.target.closest('button').dataset.id;
-      
-      if (!confirm('Are you sure you want to cancel this visit?')) return;
-      
-      try {
-        const response = await fetch(`/api/farmer/cancel-visit/${visitId}`, {
-          method: 'PUT',
-          credentials: 'include'
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-          showNotification('Visit cancelled successfully', 'success');
-          loadVisitHistory();
-        } else {
-          throw new Error(data.message || 'Failed to cancel visit');
-        }
-      } catch (error) {
-        showNotification(error.message, 'error');
-        console.error('Error cancelling visit:', error);
-      }
-    }
+    
     
     // Helper functions
     function formatDate(dateString) {
