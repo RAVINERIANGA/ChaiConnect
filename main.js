@@ -2196,6 +2196,7 @@ app.get('/api/trainings', (req, res) => {
 
 
 
+
 // Extension Officer: Get visit requests
 app.get('/api/visit-requests', (req, res) => {
     if (!req.session.userId || req.session.role !== 'extension_officer') {
@@ -2660,6 +2661,31 @@ app.get('/api/training-materials/count', (req, res) => {
       return res.status(500).json({ success: false });
     }
     res.json({ success: true, count: results[0].count });
+  });
+});
+
+app.get('/training-materials', (req, res) => {
+  const query = `
+    SELECT id, title, description, filename, upload_date
+    FROM training_materials
+    ORDER BY upload_date DESC
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching training materials:', err);
+      return res.status(500).json({ success: false, message: 'Database error' });
+    }
+
+    const formattedResults = results.map(row => ({
+      id: row.id,
+      title: row.title,
+      description: row.description,
+      upload_date: row.upload_date,
+      file_path: `/uploads/training/${row.filename}`
+    }));
+
+    res.json(formattedResults);
   });
 });
 
